@@ -19,7 +19,7 @@ numpy==1.26.3
 scipy==1.11.4
 
 # Trading and market data
-ccxt==4.1.0
+ccxt==4.4.99
 yfinance==0.2.36
 
 # Async and networking
