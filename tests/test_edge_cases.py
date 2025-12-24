@@ -18,8 +18,8 @@ class TestKnowledgeGraphEdgeCases:
 
         mock_result.data.return_value = []
         mock_session.run.return_value = mock_result
-        mock_session.__enter__ = Mock(return_value=mock_session)
-        mock_session.__exit__ = Mock(return_value=False)
+        mock_session.__enter__.return_value = mock_session
+        mock_session.__exit__.return_value = False
         mock_driver.session.return_value = mock_session
         kg.driver = mock_driver
 
@@ -40,8 +40,8 @@ class TestKnowledgeGraphEdgeCases:
         large_dataset = [{"id": i} for i in range(10000)]
         mock_result.data.return_value = large_dataset
         mock_session.run.return_value = mock_result
-        mock_session.__enter__ = Mock(return_value=mock_session)
-        mock_session.__exit__ = Mock(return_value=False)
+        mock_session.__enter__.return_value = mock_session
+        mock_session.__exit__.return_value = False
         mock_driver.session.return_value = mock_session
         kg.driver = mock_driver
 
@@ -60,8 +60,8 @@ class TestKnowledgeGraphEdgeCases:
 
         mock_result.data.return_value = [{"result": "data"}]
         mock_session.run.return_value = mock_result
-        mock_session.__enter__ = Mock(return_value=mock_session)
-        mock_session.__exit__ = Mock(return_value=False)
+        mock_session.__enter__.return_value = mock_session
+        mock_session.__exit__.return_value = False
         mock_driver.session.return_value = mock_session
         kg.driver = mock_driver
 
@@ -83,8 +83,8 @@ class TestKnowledgeGraphEdgeCases:
 
         mock_result.consume.return_value = MagicMock()
         mock_session.run.return_value = mock_result
-        mock_session.__enter__ = Mock(return_value=mock_session)
-        mock_session.__exit__ = Mock(return_value=False)
+        mock_session.__enter__.return_value = mock_session
+        mock_session.__exit__.return_value = False
         mock_driver.session.return_value = mock_session
         kg.driver = mock_driver
 
