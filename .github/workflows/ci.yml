@@ -92,7 +92,7 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: false  # Disabled - Docker builds no longer pushed to public registry
     steps:
     - uses: actions/checkout@v4
 
