@@ -23,7 +23,7 @@ ccxt==4.4.99
 yfinance==0.2.36
 
 # Async and networking
-aiohttp==3.9.1
+aiohttp>=3.9.5,<4.0.0
 websockets==12.0
 
 # Logging and monitoring
