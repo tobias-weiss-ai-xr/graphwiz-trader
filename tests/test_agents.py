@@ -161,9 +161,9 @@ class TestAgentOrchestrator:
         orchestrator = AgentOrchestrator(config, mock_kg)
 
         assert len(orchestrator.agents) == 3
-        assert orchestrator.agents["conservative"]["temperature"] == 0.1
-        assert orchestrator.agents["aggressive"]["temperature"] == 0.9
-        assert orchestrator.agents["balanced"]["temperature"] == 0.5
+        assert orchestrator.agents["conservative"]["config"]["temperature"] == 0.1
+        assert orchestrator.agents["aggressive"]["config"]["temperature"] == 0.9
+        assert orchestrator.agents["balanced"]["config"]["temperature"] == 0.5
 
     def test_agent_count(self, agents_config, mock_kg):
         """Test that only enabled agents are initialized."""

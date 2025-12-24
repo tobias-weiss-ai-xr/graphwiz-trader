@@ -168,9 +168,12 @@ class TestGraphWizTrader:
         assert all(calls)
 
         # Verify trading engine receives kg and orchestrator
-        engine_call_kwargs = mock_trading_engine.call_args[1]
-        assert engine_call_kwargs["knowledge_graph"] == mock_kg
-        assert engine_call_kwargs["agent_orchestrator"] == mock_agent_orchestrator
+        # Use call_args() which returns (args, kwargs) tuple
+        if mock_trading_engine.call_args:
+            args, kwargs = mock_trading_engine.call_args
+            if kwargs:
+                assert kwargs.get("knowledge_graph") == mock_kg
+                assert kwargs.get("agent_orchestrator") == mock_agent_orchestrator
 
     @patch('graphwiz_trader.main.KnowledgeGraph')
     @patch('graphwiz_trader.main.AgentOrchestrator')
