@@ -46,8 +46,8 @@ class TestTradingEngineEdgeCases:
 
         result = engine.execute_trade("BTC/USDT", "buy", 0)
 
-        assert result["amount"] == 0
-        assert result["status"] == "executed"
+        assert result["status"] == "error"
+        assert "Invalid amount" in result["message"]
 
     def test_execute_trade_with_negative_amount(self, trading_config, exchanges_config, mock_kg, mock_agent_orchestrator):
         """Test trade execution with negative amount."""
@@ -57,7 +57,8 @@ class TestTradingEngineEdgeCases:
 
         result = engine.execute_trade("BTC/USDT", "buy", -1.5)
 
-        assert result["amount"] == -1.5
+        assert result["status"] == "error"
+        assert "Invalid amount" in result["message"]
 
     def test_execute_trade_invalid_side(self, trading_config, exchanges_config, mock_kg, mock_agent_orchestrator):
         """Test trade execution with invalid side."""
@@ -67,7 +68,8 @@ class TestTradingEngineEdgeCases:
 
         result = engine.execute_trade("BTC/USDT", "invalid_side", 1.0)
 
-        assert result["side"] == "invalid_side"
+        assert result["status"] == "error"
+        assert "Invalid side" in result["message"]
 
 
 class TestAgentOrchestratorEdgeCases:
@@ -142,7 +144,8 @@ class TestAgentOrchestratorEdgeCases:
         orchestrator = AgentOrchestrator(config, mock_kg)
 
         assert "custom_agent" in orchestrator.agents
-        assert orchestrator.agents["custom_agent"]["config"]["custom_field"] == "custom_value"
+        # Agents are objects now, check config attribute
+        assert orchestrator.agents["custom_agent"].config["custom_field"] == "custom_value"
 
 
 class TestConfigEdgeCases:

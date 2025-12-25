@@ -108,9 +108,22 @@ class TestTradingEngine:
         # Should not raise exception
         engine._close_exchanges()
 
-    def test_execute_trade_stub(self, trading_config, exchanges_config, mock_kg, mock_agent_orchestrator):
-        """Test execute_trade stub implementation."""
+    @patch('graphwiz_trader.trading.engine.ccxt')
+    def test_execute_trade_stub(self, mock_ccxt, trading_config, exchanges_config, mock_kg, mock_agent_orchestrator):
+        """Test execute_trade implementation."""
+        # Setup mock exchange
+        mock_exchange = MagicMock()
+        mock_exchange.fetch_ticker.return_value = {"last": 50000}
+        mock_exchange.create_market_order.return_value = {
+            "id": "12345",
+            "status": "closed",
+            "price": 50000,
+            "amount": 0.1
+        }
+        mock_ccxt.binance.return_value = mock_exchange
+
         engine = TradingEngine(trading_config, exchanges_config, mock_kg, mock_agent_orchestrator)
+        engine._initialize_exchanges()
 
         result = engine.execute_trade("BTC/USDT", "buy", 0.1)
 
@@ -118,10 +131,25 @@ class TestTradingEngine:
         assert result["symbol"] == "BTC/USDT"
         assert result["side"] == "buy"
         assert result["amount"] == 0.1
+        assert "order_id" in result
+        assert len(engine.orders) == 1
+        assert len(engine.positions) == 1
 
-    def test_execute_trade_sell(self, trading_config, exchanges_config, mock_kg, mock_agent_orchestrator):
+    @patch('graphwiz_trader.trading.engine.ccxt')
+    def test_execute_trade_sell(self, mock_ccxt, trading_config, exchanges_config, mock_kg, mock_agent_orchestrator):
         """Test execute_trade with sell order."""
+        mock_exchange = MagicMock()
+        mock_exchange.fetch_ticker.return_value = {"last": 3000}
+        mock_exchange.create_market_order.return_value = {
+            "id": "67890",
+            "status": "closed",
+            "price": 3000,
+            "amount": 1.5
+        }
+        mock_ccxt.binance.return_value = mock_exchange
+
         engine = TradingEngine(trading_config, exchanges_config, mock_kg, mock_agent_orchestrator)
+        engine._initialize_exchanges()
 
         result = engine.execute_trade("ETH/USDT", "sell", 1.5)
 
@@ -129,6 +157,7 @@ class TestTradingEngine:
         assert result["symbol"] == "ETH/USDT"
         assert result["side"] == "sell"
         assert result["amount"] == 1.5
+        assert "order_id" in result
 
     @patch('graphwiz_trader.trading.engine.ccxt')
     def test_multiple_exchanges(self, mock_ccxt, trading_config, exchanges_config, mock_kg, mock_agent_orchestrator):
