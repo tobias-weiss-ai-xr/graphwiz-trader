@@ -134,3 +134,61 @@ notifications:
     username: "your_email@gmail.com"
     password: "your_email_password"
     to_address: "your_email@gmail.com"
+
+# High-Frequency Trading (HFT) Configuration
+hft:
+  enabled: false  # Set to true to enable HFT module
+
+  # Market data configuration
+  market_data:
+    exchanges:
+      binance:
+        enabled: true
+        symbols:
+          - "BTC/USDT"
+          - "ETH/USDT"
+          - "SOL/USDT"
+        websocket: true
+      okx:
+        enabled: false
+        symbols:
+          - "BTC/USDT"
+          - "ETH/USDT"
+        websocket: true
+
+  # Strategy configuration
+  strategies:
+    statistical_arbitrage:
+      enabled: true
+      lookback_period: 100  # Number of price points for mean calculation
+      z_score_threshold: 2.0  # Z-score threshold for signals
+      max_position_size: 0.5  # Maximum position size as fraction of portfolio
+
+    cross_exchange_arbitrage:
+      enabled: true
+      min_profit_bps: 5  # Minimum profit in basis points (5 bps = 0.05%)
+      max_position_size: 0.1  # Maximum position size
+      fee_bps: 10  # Trading fees in basis points (10 bps = 0.1%)
+
+  # Risk management
+  risk:
+    max_position_size: 1.0  # Maximum position size per symbol
+    max_exposure: 10000  # Maximum total exposure in USDT
+    max_orders_per_second: 10  # Rate limit for orders
+    circuit_breaker_threshold: -0.05  # Circuit breaker at -5% daily loss
+    max_drawdown_pct: 10.0  # Maximum drawdown percentage
+
+  # Performance settings
+  performance:
+    max_order_latency_ms: 10  # Target max order latency
+    max_processing_latency_ms: 5  # Target max processing latency
+    enable_profiling: false  # Enable performance profiling
+    monitoring_interval: 5  # Metrics collection interval in seconds
+
+  # Knowledge graph integration
+  knowledge_graph:
+    store_trades: true  # Store trades in Neo4j
+    store_patterns: true  # Store patterns in Neo4j
+    store_arbitrage_opportunities: true  # Store arbitrage opportunities
+    analyze_correlations: true  # Analyze pattern correlations
+    retention_days: 30  # Data retention period
