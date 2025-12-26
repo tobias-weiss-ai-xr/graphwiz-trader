@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
 import numpy as np
+import pandas as pd
 
 from graphwiz_trader.analysis import TechnicalAnalysis
 
@@ -489,3 +490,41 @@ class RSIMeanReversionStrategy:
             return "sell"
 
         return "hold"
+
+    def generate_signal(self, data: pd.DataFrame) -> Optional[str]:
+        """Generate trading signal from price data.
+
+        This is a convenience method for paper trading and live trading.
+        It calculates RSI from the DataFrame and returns a signal.
+
+        Args:
+            data: DataFrame with OHLCV data
+
+        Returns:
+            "buy", "sell", or None
+        """
+        try:
+            # Calculate RSI using existing TechnicalIndicators class
+            from ..analysis import TechnicalIndicators
+
+            prices = data["close"].tolist()
+            rsi_result = TechnicalIndicators.rsi(prices, period=14)
+
+            if not rsi_result.values or rsi_result.values[-1] is None:
+                return None
+
+            rsi_value = rsi_result.values[-1]
+
+            # Buy when oversold
+            if rsi_value <= self.oversold:
+                return "buy"
+
+            # Sell when overbought
+            if rsi_value >= self.overbought:
+                return "sell"
+
+            return None
+
+        except Exception as e:
+            logger.error(f"Error generating signal: {e}")
+            return None
