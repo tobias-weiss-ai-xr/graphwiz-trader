@@ -319,3 +319,157 @@ def format_metric_value(value: float, decimals: int = 2) -> str:
         return f"{value / 1_000:.{decimals}f}K"
     else:
         return f"{value:.{decimals}f}"
+
+
+def plot_candlestick_with_rsi(
+    ohlcv_df: pd.DataFrame,
+    rsi_series: Optional[pd.Series] = None,
+    title: str = "Price with RSI",
+) -> go.Figure:
+    """Create candlestick chart with RSI indicator.
+
+    Args:
+        ohlcv_df: DataFrame with columns: timestamp, open, high, low, close, volume
+        rsi_series: Optional Series of RSI values
+        title: Chart title
+
+    Returns:
+        Plotly Figure object with two subplots
+    """
+    if ohlcv_df.empty:
+        fig = go.Figure()
+        fig.update_layout(title=title)
+        return fig
+
+    # Calculate RSI if not provided
+    if rsi_series is None:
+        from .live_data import calculate_rsi
+        rsi_series = calculate_rsi(ohlcv_df["close"])
+
+    # Create subplot with 2 rows
+    fig = make_subplots(
+        rows=2,
+        cols=1,
+        shared_xaxes=True,
+        vertical_spacing=0.03,
+        row_heights=[0.7, 0.3],
+        subplot_titles=("Price", "RSI (14)"),
+    )
+
+    # Add candlestick chart
+    fig.add_trace(
+        go.Candlestick(
+            x=ohlcv_df["timestamp"],
+            open=ohlcv_df["open"],
+            high=ohlcv_df["high"],
+            low=ohlcv_df["low"],
+            close=ohlcv_df["close"],
+            name="OHLC",
+            increasing_line_color="#26A69A",
+            decreasing_line_color="#EF5350",
+        ),
+        row=1,
+        col=1,
+    )
+
+    # Add RSI line
+    fig.add_trace(
+        go.Scatter(
+            x=ohlcv_df["timestamp"],
+            y=rsi_series,
+            mode="lines",
+            name="RSI",
+            line=dict(color="#9C27B0", width=2),
+        ),
+        row=2,
+        col=1,
+    )
+
+    # Add RSI reference lines (overbought/oversold)
+    fig.add_hline(
+        y=70,
+        line_dash="dash",
+        line_color="red",
+        row=2,
+        col=1,
+        annotation_text="Overbought (70)",
+    )
+    fig.add_hline(
+        y=30,
+        line_dash="dash",
+        line_color="green",
+        row=2,
+        col=1,
+        annotation_text="Oversold (30)",
+    )
+
+    # Update layout
+    fig.update_layout(
+        title=title,
+        template="plotly_white",
+        height=600,
+        xaxis_rangeslider_visible=False,
+    )
+
+    fig.update_yaxes(title_text="Price ($)", row=1, col=1)
+    fig.update_yaxes(title_text="RSI", row=2, col=1)
+
+    return fig
+
+
+def plot_portfolio_aggregation(
+    portfolio_data: dict[str, dict],
+    title: str = "Portfolio Overview",
+) -> go.Figure:
+    """Create portfolio aggregation chart showing combined performance.
+
+    Args:
+        portfolio_data: Dict mapping symbol to {equity_df, current_price, etc.}
+        title: Chart title
+
+    Returns:
+        Plotly Figure object
+    """
+    if not portfolio_data:
+        fig = go.Figure()
+        fig.update_layout(title=title)
+        return fig
+
+    fig = go.Figure()
+
+    # Create stacked area chart for total portfolio value
+    total_values = []
+
+    # Get all timestamps from first symbol
+    first_symbol = list(portfolio_data.keys())[0]
+    timestamps = portfolio_data[first_symbol]["equity_df"]["timestamp"]
+
+    # Calculate total portfolio value over time
+    total_value = pd.Series(0.0, index=range(len(timestamps)))
+
+    colors = ["#2E86AB", "#A23B72", "#F18F01", "#C73E1D", "#6A994E"]
+
+    for i, (symbol, data) in enumerate(portfolio_data.items()):
+        equity_df = data["equity_df"]
+        if not equity_df.empty:
+            fig.add_trace(
+                go.Scatter(
+                    x=equity_df["timestamp"],
+                    y=equity_df["total_value"],
+                    mode="lines",
+                    name=f"{symbol} Value",
+                    line=dict(color=colors[i % len(colors)], width=2),
+                    stackgroup="one",  # Create stacked area
+                )
+            )
+
+    fig.update_layout(
+        title=title,
+        xaxis_title="Time",
+        yaxis_title="Portfolio Value ($)",
+        hovermode="x unified",
+        template="plotly_white",
+        height=400,
+    )
+
+    return fig

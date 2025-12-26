@@ -4,21 +4,33 @@ Paper trading dashboard - Main Streamlit application.
 Provides interactive visualization and analysis of paper trading results.
 """
 
+import sys
+from pathlib import Path
+
+# Add project root to path for imports when run directly by Streamlit
+project_root = Path(__file__).parent.parent.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
 import json
 from datetime import datetime
-from pathlib import Path
 from typing import Optional
 
 import pandas as pd
 import streamlit as st
 from loguru import logger
 
-from .dashboard.data_loader import get_available_symbols, load_all_symbols, load_equity_curve, load_summary
-from .dashboard.metrics import (
+from graphwiz_trader.paper_trading.dashboard.data_loader import (
+    get_available_symbols,
+    load_all_symbols,
+    load_equity_curve,
+    load_summary,
+)
+from graphwiz_trader.paper_trading.dashboard.metrics import (
     calculate_correlation,
     get_latest_metrics,
 )
-from .dashboard.charts import (
+from graphwiz_trader.paper_trading.dashboard.charts import (
     plot_equity_curve,
     plot_comparison,
     plot_drawdown,
@@ -26,11 +38,22 @@ from .dashboard.charts import (
     plot_correlation_heatmap,
     format_metric_value,
 )
-from .dashboard.service_monitor import (
+from graphwiz_trader.paper_trading.dashboard.service_monitor import (
     get_service_status,
     get_active_symbols,
     get_log_summary,
     is_service_running,
+)
+from graphwiz_trader.paper_trading.dashboard.live_data import (
+    get_current_price,
+    get_all_symbols_prices,
+    get_24h_stats,
+    fetch_recent_candles,
+    get_market_summary,
+)
+from graphwiz_trader.paper_trading.dashboard.charts import (
+    plot_candlestick_with_rsi,
+    plot_portfolio_aggregation,
 )
 
 # Page config
@@ -135,6 +158,57 @@ def render_overview_page(data: dict):
         use_container_width=True,
         hide_index=True,
     )
+
+    # Live prices section
+    st.markdown("---")
+    st.subheader("💰 Live Prices")
+
+    with st.spinner("Fetching live prices..."):
+        market_summary = get_market_summary()
+
+    if market_summary:
+        price_data = []
+        for symbol, stats in market_summary.items():
+            price_data.append({
+                "Symbol": symbol,
+                "Price": f"${stats['price']:,.2f}",
+                "24h Change": f"{stats['change_24h_pct']:+.2f}%",
+                "24h High": f"${stats['high_24h']:,.2f}",
+                "24h Low": f"${stats['low_24h']:,.2f}",
+                "Volume": f"${stats['volume_24h']:,.0f}",
+            })
+
+        st.dataframe(
+            pd.DataFrame(price_data),
+            use_container_width=True,
+            hide_index=True,
+        )
+
+        # Calculate total portfolio value
+        st.markdown("---")
+        st.subheader("📈 Portfolio Summary")
+
+        total_value = 0
+        for symbol, stats in market_summary.items():
+            equity_df = load_equity_curve(symbol)
+            if equity_df is not None and not equity_df.empty:
+                total_value += equity_df.iloc[-1]["total_value"]
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.metric("Total Portfolio Value", f"${total_value:,.2f}")
+
+        with col2:
+            # Calculate 24h change
+            total_24h_change = sum(
+                stats.get("change_24h_pct", 0) * stats.get("price", 0)
+                for stats in market_summary.values()
+            )
+            st.metric("24h Change (est.)", f"{total_24h_change:+.2f}%")
+
+        with col3:
+            st.metric("Symbols Active", len(market_summary))
 
     # Quick actions
     st.markdown("---")
@@ -382,7 +456,7 @@ def render_analytics_page(data: dict):
     # Basic statistics
     st.subheader("Return Statistics")
 
-    from .dashboard.metrics import calculate_returns
+    from graphwiz_trader.paper_trading.dashboard.metrics import calculate_returns
 
     returns = calculate_returns(equity_df) * 100  # Convert to percentage
 
@@ -413,6 +487,157 @@ def render_analytics_page(data: dict):
 
     fig_dd = plot_drawdown(equity_df, title=f"{selected_symbol} Drawdown Over Time")
     st.plotly_chart(fig_dd, use_container_width=True)
+
+
+def render_market_data_page(data: dict):
+    """Render market data page with live prices and candlestick charts."""
+    st.title("📡 Market Data")
+
+    available_symbols = data["config_symbols"]
+
+    if not available_symbols:
+        st.warning("No symbols configured.")
+        return
+
+    # Symbol selector
+    col1, col2, col3 = st.columns([2, 1, 1])
+
+    with col1:
+        selected_symbol = st.selectbox(
+            "Select Symbol",
+            available_symbols,
+            index=0,
+            key="market_symbol",
+        )
+
+    with col2:
+        timeframe = st.selectbox(
+            "Timeframe",
+            ["1m", "5m", "15m", "1h", "4h", "1d"],
+            index=3,
+            key="timeframe",
+        )
+
+    with col3:
+        limit = st.selectbox(
+            "Candles",
+            [50, 100, 200, 500],
+            index=1,
+            key="candle_limit",
+        )
+
+    # Fetch candles
+    with st.spinner(f"Fetching {selected_symbol} data..."):
+        candles_df = fetch_recent_candles(selected_symbol, timeframe=timeframe, limit=limit)
+
+    if candles_df is not None and not candles_df.empty:
+        st.subheader(f"💹 {selected_symbol} - Price & RSI")
+
+        # Display candlestick chart with RSI
+        fig = plot_candlestick_with_rsi(candles_df, title=f"{selected_symbol} ({timeframe})")
+        st.plotly_chart(fig, use_container_width=True)
+
+        # Display 24h statistics
+        st.markdown("---")
+        st.subheader("📊 24h Statistics")
+
+        stats = get_24h_stats(selected_symbol)
+
+        if stats:
+            col1, col2, col3, col4 = st.columns(4)
+
+            with col1:
+                st.metric("24h High", f"${stats['high']:,.2f}")
+
+            with col2:
+                st.metric("24h Low", f"${stats['low']:,.2f}")
+
+            with col3:
+                st.metric("24h Volume", f"${stats['quote_volume']:,.0f}")
+
+            with col4:
+                change_color = "normal" if stats['change_pct'] >= 0 else "inverse"
+                st.metric("24h Change", f"{stats['change_pct']:+.2f}%", delta_color=change_color)
+
+    else:
+        st.error(f"Failed to fetch data for {selected_symbol}")
+
+
+def render_performance_ranking(data: dict):
+    """Render performance ranking page."""
+    st.title("🏆 Performance Ranking")
+
+    available_symbols = data["symbols"]
+
+    if not available_symbols:
+        st.warning("No data available.")
+        return
+
+    # Load metrics for all symbols
+    rankings = []
+
+    for symbol in available_symbols:
+        equity_df = load_equity_curve(symbol)
+        summary = load_summary(symbol)
+
+        if equity_df is not None:
+            metrics = get_latest_metrics(symbol, equity_df, summary)
+            rankings.append({
+                "Symbol": symbol,
+                "Total Return %": metrics['total_return_pct'],
+                "Sharpe Ratio": metrics['sharpe_ratio'],
+                "Max Drawdown %": metrics['max_drawdown'],
+                "Volatility %": metrics['volatility'],
+                "Trades": metrics.get('total_trades', 0),
+                "Win Rate %": metrics.get('win_rate', 0),
+                "Final Value": metrics['final_value'],
+            })
+
+    if not rankings:
+        st.warning("No ranking data available.")
+        return
+
+    # Create DataFrame and sort by different metrics
+    ranking_df = pd.DataFrame(rankings)
+
+    st.subheader("Rank by Performance")
+
+    sort_metric = st.selectbox(
+        "Sort by",
+        ["Total Return %", "Sharpe Ratio", "Max Drawdown %", "Win Rate %"],
+        index=0,
+        key="rank_metric",
+    )
+
+    ascending = sort_metric == "Max Drawdown %"  # Lower drawdown is better
+
+    sorted_df = ranking_df.sort_values(by=sort_metric, ascending=ascending)
+
+    # Add rank column
+    sorted_df.insert(0, "Rank", range(1, len(sorted_df) + 1))
+
+    # Display with styling
+    st.dataframe(
+        sorted_df,
+        use_container_width=True,
+        hide_index=True,
+    )
+
+    # Export button
+    st.markdown("---")
+    st.subheader("Export Data")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if st.button("📥 Export Ranking as CSV", use_container_width=True):
+            csv = sorted_df.to_csv(index=False)
+            st.download_button(
+                label="Download CSV",
+                data=csv,
+                file_name=f"performance_ranking_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                mime="text/csv",
+            )
 
 
 def render_settings_page(data: dict):
@@ -477,6 +702,8 @@ def main():
                 "📈 Symbol Detail",
                 "🔍 Comparison",
                 "📊 Analytics",
+                "📡 Market Data",
+                "🏆 Performance Ranking",
                 "⚙️ Settings",
             ],
             key="page_navigation",
@@ -507,6 +734,10 @@ def main():
         render_comparison_page(data)
     elif page.startswith("📊 Analytics"):
         render_analytics_page(data)
+    elif page.startswith("📡 Market Data"):
+        render_market_data_page(data)
+    elif page.startswith("🏆 Performance Ranking"):
+        render_performance_ranking(data)
     elif page.startswith("⚙️ Settings"):
         render_settings_page(data)
 

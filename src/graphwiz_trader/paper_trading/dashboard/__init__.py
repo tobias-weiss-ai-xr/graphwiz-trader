@@ -17,6 +17,13 @@ from .metrics import (
     get_latest_metrics,
 )
 from .service_monitor import get_service_status, get_latest_log_lines
+from .live_data import (
+    get_current_price,
+    get_all_symbols_prices,
+    get_24h_stats,
+    fetch_recent_candles,
+    get_market_summary,
+)
 
 __all__ = [
     # Data loading
@@ -32,4 +39,10 @@ __all__ = [
     # Service monitoring
     "get_service_status",
     "get_latest_log_lines",
+    # Live data
+    "get_current_price",
+    "get_all_symbols_prices",
+    "get_24h_stats",
+    "fetch_recent_candles",
+    "get_market_summary",
 ]
