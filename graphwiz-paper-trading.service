@@ -1,0 +1,23 @@
+[Unit]
+Description=GraphWiz Paper Trading Service
+After=network.target
+
+[Service]
+Type=simple
+User=YOUR_USERNAME_HERE
+WorkingDirectory=/path/to/graphwiz-trader
+Environment="PATH=/path/to/graphwiz-trader/venv/bin"
+ExecStart=/path/to/graphwiz-trader/venv/bin/python scripts/paper_trading_service.py start
+ExecStop=/path/to/graphwiz-trader/venv/bin/python scripts/paper_trading_service.py stop
+Restart=on-failure
+RestartSec=10
+
+# Logging
+StandardOutput=append:/path/to/graphwiz-trader/logs/service.log
+StandardError=append:/path/to/graphwiz-trader/logs/service_error.log
+
+# Security
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
