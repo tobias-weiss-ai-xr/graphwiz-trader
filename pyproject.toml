@@ -97,7 +97,9 @@ addopts = [
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
-    "unit: marks tests as unit tests",
+    "unit: marks tests as unit tests (fast, isolated)",
+    "property: marks tests as property-based tests using Hypothesis",
+    "hft: marks tests as high-frequency trading tests",
 ]
 
 [tool.coverage.run]

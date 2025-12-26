@@ -124,28 +124,35 @@ class BacktestEngine:
                 trades.append(trade)
                 # Update state
                 if trade.action == "buy":
-                    if position_side == "long":
-                        # Adding to position
-                        total_cost = trade.quantity * trade.price * (1 + self.commission)
-                        capital -= total_cost
-                    else:
-                        # Opening new long position
-                        capital -= trade.value
+                    # Calculate cost with commission
+                    cost = trade.quantity * trade.price * (1 + self.commission)
+
+                    # Only buy if we have enough capital
+                    if cost > capital:
+                        # Reduce quantity to fit available capital
+                        trade.quantity = (capital / (1 + self.commission)) / trade.price
+                        cost = capital
+                        trade.value = trade.quantity * trade.price
+
+                    capital -= cost
                     position += trade.quantity
+
                     if position_side != "long":
                         entry_price = trade.price
                         position_side = "long"
+
                 elif trade.action == "sell":
                     if position_side == "long" and position > 0:
-                        # Closing long position
-                        capital += trade.value * (1 - self.commission)
-                        position -= trade.quantity
+                        # Sell the entire position or the specified quantity
+                        sell_quantity = min(trade.quantity, position)
+                        proceeds = sell_quantity * trade.price * (1 - self.commission)
+
+                        capital += proceeds
+                        position -= sell_quantity
+
                         if position <= 0:
                             position = 0
                             position_side = None
-                    else:
-                        # Short selling (simplified)
-                        capital += trade.value * (1 - self.commission)
 
             # Calculate current equity
             if position > 0:

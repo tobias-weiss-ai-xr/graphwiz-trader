@@ -6,9 +6,18 @@ from pathlib import Path
 import tempfile
 
 
-@pytest.fixture
+def pytest_configure(config):
+    """Configure custom markers."""
+    config.addinivalue_line("markers", "unit: Unit tests (fast, isolated)")
+    config.addinivalue_line("markers", "integration: Integration tests (slower, may use external services)")
+    config.addinivalue_line("markers", "slow: Slow-running tests (property-based, large datasets)")
+    config.addinivalue_line("markers", "property: Property-based tests using Hypothesis")
+    config.addinivalue_line("markers", "hft: High-frequency trading tests")
+
+
+@pytest.fixture(scope="session")
 def mock_neo4j_driver():
-    """Mock Neo4j driver."""
+    """Mock Neo4j driver (session-scoped for performance)."""
     mock_driver = MagicMock()
     mock_session = MagicMock()
     mock_result = MagicMock()
@@ -30,9 +39,9 @@ def mock_neo4j_driver():
     return mock_driver
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def neo4j_config():
-    """Neo4j configuration for testing."""
+    """Neo4j configuration for testing (session-scoped)."""
     return {
         "uri": "bolt://localhost:7687",
         "username": "neo4j",
@@ -41,9 +50,9 @@ def neo4j_config():
     }
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def trading_config():
-    """Trading configuration for testing."""
+    """Trading configuration for testing (session-scoped)."""
     return {
         "max_position_size": 1000,
         "risk_per_trade": 0.02,
@@ -52,9 +61,9 @@ def trading_config():
     }
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def exchanges_config():
-    """Exchange configuration for testing."""
+    """Exchange configuration for testing (session-scoped)."""
     return {
         "binance": {
             "enabled": True,
@@ -71,9 +80,9 @@ def exchanges_config():
     }
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def agents_config():
-    """Agent configuration for testing."""
+    """Agent configuration for testing (session-scoped)."""
     return {
         "technical": {
             "enabled": True,
@@ -111,6 +120,49 @@ def mock_agent_orchestrator():
         "reason": "Positive momentum"
     }
     return orchestrator
+
+
+@pytest.fixture(scope="session")
+def sample_prices():
+    """Sample price data for testing (session-scoped)."""
+    import numpy as np
+    np.random.seed(42)
+    base_price = 50000
+    returns = np.random.normal(0.001, 0.02, 100)
+    prices = [base_price]
+    for ret in returns:
+        prices.append(prices[-1] * (1 + ret))
+    return prices[:100]
+
+
+@pytest.fixture(scope="session")
+def sample_ohlcv_data():
+    """Sample OHLCV data for testing (session-scoped)."""
+    from datetime import datetime, timedelta
+    import numpy as np
+
+    np.random.seed(42)
+    data = []
+    base_price = 50000
+    now = datetime.now()
+
+    for i in range(100):
+        open_price = base_price + np.random.randn() * 100
+        high = open_price + abs(np.random.randn() * 50)
+        low = open_price - abs(np.random.randn() * 50)
+        close = open_price + np.random.randn() * 20
+        volume = 1000000 + np.random.randn() * 100000
+
+        data.append({
+            "timestamp": now + timedelta(minutes=i),
+            "open": open_price,
+            "high": high,
+            "low": low,
+            "close": close,
+            "volume": volume
+        })
+
+    return data
 
 
 @pytest.fixture

@@ -345,6 +345,8 @@ class TestEdgeCases:
             assert width < 1.0  # Should be very small
 
 
+@pytest.mark.slow
+@pytest.mark.property
 class TestTechnicalIndicatorsPropertyBased:
     """Property-based tests for TechnicalIndicators using hypothesis."""
 

@@ -20,6 +20,7 @@ from graphwiz_trader.hft import (
 
 
 # OrderBook Tests
+@pytest.mark.hft
 class TestOrderBook:
     """Test OrderBook class."""
 
@@ -122,6 +123,7 @@ class TestOrderBook:
 
 
 # OrderBookManager Tests
+@pytest.mark.hft
 class TestOrderBookManager:
     """Test OrderBookManager class."""
 
@@ -200,6 +202,7 @@ class TestOrderBookManager:
 
 
 # HFTRiskManager Tests
+@pytest.mark.hft
 class TestHFTRiskManager:
     """Test HFTRiskManager class."""
 
@@ -337,6 +340,7 @@ class TestHFTRiskManager:
 
 
 # StatisticalArbitrage Tests
+@pytest.mark.hft
 class TestStatisticalArbitrage:
     """Test StatisticalArbitrage strategy."""
 
@@ -396,6 +400,7 @@ class TestStatisticalArbitrage:
 
 
 # CrossExchangeArbitrage Tests
+@pytest.mark.hft
 class TestCrossExchangeArbitrage:
     """Test CrossExchangeArbitrage strategy."""
 
@@ -445,6 +450,7 @@ class TestCrossExchangeArbitrage:
 
 
 # FastOrderExecutor Tests
+@pytest.mark.hft
 class TestFastOrderExecutor:
     """Test FastOrderExecutor class."""
 
@@ -504,6 +510,7 @@ class TestFastOrderExecutor:
 
 
 # WebSocketMarketData Tests
+@pytest.mark.hft
 class TestWebSocketMarketData:
     """Test WebSocketMarketData class."""
 
