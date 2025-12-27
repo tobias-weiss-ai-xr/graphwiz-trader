@@ -36,6 +36,10 @@ from .modern_strategies import (
     TriangularArbitrageStrategy,
     create_modern_strategy,
 )
+from .modern_strategy_adapter import (
+    ModernStrategyAdapter,
+    create_modern_strategy_adapter,
+)
 
 __all__ = [
     "MarketRegime",
@@ -60,4 +64,6 @@ __all__ = [
     "AutomatedMarketMakingStrategy",
     "TriangularArbitrageStrategy",
     "create_modern_strategy",
+    "ModernStrategyAdapter",
+    "create_modern_strategy_adapter",
 ]
