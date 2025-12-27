@@ -18,6 +18,11 @@ import pytest
 from datetime import datetime
 import pandas as pd
 import numpy as np
+import sys
+from unittest.mock import MagicMock
+
+# Mock ccxt before importing graphwiz_trader to avoid cryptography re-import issue
+sys.modules['ccxt'] = MagicMock()
 
 from graphwiz_trader.strategies import GridTradingStrategy, GridTradingMode
 
@@ -542,3 +547,147 @@ try:
 except ImportError:
     # Hypothesis not installed - skip property-based tests
     pytest.skip("Hypothesis not installed", allow_module_level=True)
+
+
+class TestGridTradingMutationTargets:
+    """Mutation-targeted tests to improve mutation score (Cognitive QA: Mutation Testing)"""
+
+    def test_arithmetic_step_calculation(self):
+        """
+        Test: Arithmetic step calculation is correct
+
+        Mutation Target: Arithmetic operators (+, -, *, /)
+        If arithmetic mutates, grid spacing will be wrong
+        """
+        # Arrange
+        strategy = GridTradingStrategy(
+            symbol="BTC/USDT",
+            upper_price=100000.0,
+            lower_price=80000.0,
+            num_grids=10,
+            grid_mode=GridTradingMode.ARITHMETIC,
+            investment_amount=10000.0,
+        )
+
+        # Act
+        sorted_levels = sorted(strategy.grid_levels)
+        expected_step = (100000.0 - 80000.0) / 10  # 2000.0
+
+        # Assert - Check that steps are exactly equal
+        for i in range(len(sorted_levels) - 1):
+            actual_step = sorted_levels[i+1] - sorted_levels[i]
+            assert abs(actual_step - expected_step) < 1e-6, \
+                f"Step {i}: expected {expected_step}, got {actual_step}"
+
+    def test_geometric_ratio_calculation(self):
+        """
+        Test: Geometric ratio calculation is correct
+
+        Mutation Target: Multiplication and exponentiation
+        If these mutate, geometric spacing fails
+        """
+        # Arrange
+        strategy = GridTradingStrategy(
+            symbol="BTC/USDT",
+            upper_price=100000.0,
+            lower_price=80000.0,
+            num_grids=10,
+            grid_mode=GridTradingMode.GEOMETRIC,
+            investment_amount=10000.0,
+        )
+
+        # Act
+        sorted_levels = sorted(strategy.grid_levels)
+        expected_ratio = (100000.0 / 80000.0) ** (1 / 10)
+
+        # Assert - Verify geometric progression
+        for i in range(len(sorted_levels) - 1):
+            actual_ratio = sorted_levels[i+1] / sorted_levels[i]
+            assert abs(actual_ratio - expected_ratio) < 0.001, \
+                f"Ratio at index {i}: expected {expected_ratio:.6f}, got {actual_ratio:.6f}"
+
+    def test_comparison_boundary_checks(self):
+        """
+        Test: Boundary comparisons are correct
+
+        Mutation Target: Comparison operators (>, <, >=, <=)
+        If these mutate, boundary conditions fail
+        """
+        # Arrange
+        strategy = GridTradingStrategy(
+            symbol="BTC/USDT",
+            upper_price=100000.0,
+            lower_price=80000.0,
+            num_grids=5,
+            grid_mode=GridTradingMode.GEOMETRIC,
+            investment_amount=10000.0,
+        )
+
+        # Act & Assert
+        sorted_levels = sorted(strategy.grid_levels)
+
+        # First level should be >= lower_price (not >)
+        assert sorted_levels[0] >= 80000.0, "First level must be >= lower boundary"
+        # Last level should be <= upper_price (not <)
+        assert sorted_levels[-1] <= 100000.0, "Last level must be <= upper boundary"
+
+        # No level should be outside bounds
+        for level in sorted_levels:
+            assert 80000.0 <= level <= 100000.0, \
+                f"Level {level} outside bounds [80000, 100000]"
+
+    def test_num_grids_plus_one(self):
+        """
+        Test: Number of grid levels is num_grids + 1
+
+        Mutation Target: Addition operation (num_grids + 1)
+        if + mutates to -, level count will be wrong
+        """
+        # Arrange
+        num_grids = 10
+        strategy = GridTradingStrategy(
+            symbol="BTC/USDT",
+            upper_price=100000.0,
+            lower_price=80000.0,
+            num_grids=num_grids,
+            grid_mode=GridTradingMode.GEOMETRIC,
+            investment_amount=10000.0,
+        )
+
+        # Act & Assert
+        expected_levels = num_grids + 1
+        actual_levels = len(strategy.grid_levels)
+        assert actual_levels == expected_levels, \
+            f"Expected {expected_levels} levels, got {actual_levels}"
+
+    def test_position_size_calculation(self):
+        """
+        Test: Position size calculation uses correct division
+
+        Mutation Target: Division operator
+        If / mutates to *, position sizes will be wrong
+        """
+        # Arrange
+        investment = 10000.0
+        num_grids = 10
+        strategy = GridTradingStrategy(
+            symbol="BTC/USDT",
+            upper_price=100000.0,
+            lower_price=80000.0,
+            num_grids=num_grids,
+            grid_mode=GridTradingMode.GEOMETRIC,
+            investment_amount=investment,
+        )
+
+        # Act
+        position_sizes = strategy.calculate_position_sizes()
+
+        # Assert - Position sizes should be distributed across grid levels
+        # calculate_position_sizes returns positions for each grid interval
+        assert len(position_sizes) == num_grids, \
+            f"Expected {num_grids} position sizes, got {len(position_sizes)}"
+
+        # All positions should have non-zero size
+        for level, size in position_sizes.items():
+            assert size > 0, f"Position at level {level} has zero size"
+

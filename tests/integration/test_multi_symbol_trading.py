@@ -509,12 +509,12 @@ class TestRealDataIntegration:
             investment_amount=10000.0,
         )
 
-        signal = strategy.generate_trading_signals(current_price=current_price)
+        signals = strategy.generate_signals(current_price=current_price)
 
         # Assert
         assert strategy.lower_price < current_price < strategy.upper_price
-        assert signal is not None
-        assert "action" in signal
+        assert signals is not None
+        assert "orders_to_place" in signals
 
     @pytest.mark.slow
     def test_multi_symbol_real_data(self):
@@ -627,7 +627,7 @@ class TestPerformanceIntegration:
         # Act
         start_time = time.time()
         for _ in range(100):  # Generate 100 signals
-            strategy.generate_trading_signals(current_price=87500.0)
+            strategy.generate_signals(current_price=87500.0)
         elapsed = time.time() - start_time
 
         # Assert

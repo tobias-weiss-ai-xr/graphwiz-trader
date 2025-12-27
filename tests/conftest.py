@@ -4,6 +4,7 @@ import pytest
 from unittest.mock import Mock, MagicMock, patch
 from pathlib import Path
 import tempfile
+import asyncio
 
 
 def pytest_configure(config):
@@ -13,6 +14,15 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "slow: Slow-running tests (property-based, large datasets)")
     config.addinivalue_line("markers", "property: Property-based tests using Hypothesis")
     config.addinivalue_line("markers", "hft: High-frequency trading tests")
+    config.addinivalue_line("markers", "asyncio: Asynchronous tests")
+
+
+# Automatically mark async test functions
+def pytest_collection_modifyitems(items):
+    """Automatically apply asyncio marker to async test functions."""
+    for item in items:
+        if asyncio.iscoroutinefunction(item.obj):
+            item.add_marker(pytest.mark.asyncio)
 
 
 @pytest.fixture(scope="session")

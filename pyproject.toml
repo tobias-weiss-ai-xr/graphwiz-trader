@@ -87,6 +87,7 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+asyncio_mode = "auto"
 addopts = [
     "--strict-markers",
     "--strict-config",
@@ -100,6 +101,7 @@ markers = [
     "unit: marks tests as unit tests (fast, isolated)",
     "property: marks tests as property-based tests using Hypothesis",
     "hft: marks tests as high-frequency trading tests",
+    "asyncio: marks tests as asynchronous tests",
 ]
 
 [tool.coverage.run]

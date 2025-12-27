@@ -17,6 +17,11 @@ import pytest
 from datetime import datetime, timedelta
 import pandas as pd
 import numpy as np
+import sys
+from unittest.mock import MagicMock
+
+# Mock ccxt before importing graphwiz_trader to avoid cryptography re-import issue
+sys.modules['ccxt'] = MagicMock()
 
 from graphwiz_trader.strategies import SmartDCAStrategy
 
