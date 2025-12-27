@@ -457,32 +457,38 @@ def main():
     # Fetch BTC data
     btc_data = backtester.fetch_historical_data('BTC/USDT', days=30)
 
-    # Define configurations to test
+    # Get current price to center grid properly
+    current_btc_price = btc_data['close'].iloc[-1]
+
+    print(f"\nCurrent BTC price: ${current_btc_price:,.2f}")
+    print(f"Setting grid range around current price (±10%, ±15%, ±20%)")
+
+    # Define configurations to test - FIXED: Centered around current price
     grid_configs = [
         {
-            'upper_price': 60000,
-            'lower_price': 40000,
+            'upper_price': current_btc_price * 1.10,  # +10%
+            'lower_price': current_btc_price * 0.90,  # -10%
             'num_grids': 5,
             'grid_mode': GridTradingMode.ARITHMETIC,
             'investment_amount': 10000,
         },
         {
-            'upper_price': 60000,
-            'lower_price': 40000,
+            'upper_price': current_btc_price * 1.15,  # +15%
+            'lower_price': current_btc_price * 0.85,  # -15%
             'num_grids': 10,
             'grid_mode': GridTradingMode.ARITHMETIC,
             'investment_amount': 10000,
         },
         {
-            'upper_price': 60000,
-            'lower_price': 40000,
+            'upper_price': current_btc_price * 1.15,  # +15%
+            'lower_price': current_btc_price * 0.85,  # -15%
             'num_grids': 10,
             'grid_mode': GridTradingMode.GEOMETRIC,
             'investment_amount': 10000,
         },
         {
-            'upper_price': 60000,
-            'lower_price': 40000,
+            'upper_price': current_btc_price * 1.20,  # +20%
+            'lower_price': current_btc_price * 0.80,  # -20%
             'num_grids': 15,
             'grid_mode': GridTradingMode.GEOMETRIC,
             'investment_amount': 10000,
