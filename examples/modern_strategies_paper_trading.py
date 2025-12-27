@@ -183,6 +183,7 @@ class ModernStrategyPaperTrader:
                 # Update strategy state
                 trade_result = {
                     'status': 'executed',
+                    'symbol': order['symbol'],
                     'side': order['side'],
                     'amount': order['amount'],
                     'price': order['price'],

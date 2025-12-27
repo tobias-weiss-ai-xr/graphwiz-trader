@@ -259,13 +259,16 @@ class ModernStrategyAdapter:
             if isinstance(self.strategy, SmartDCAStrategy):
                 # Record DCA purchase
                 if trade_result.get('status') == 'executed':
-                    self.strategy.execute_purchase({
+                    purchase_data = {
                         'action': trade_result['side'],
                         'amount': trade_result.get('metadata', {}).get('amount_usd', 0),
                         'price': trade_result['price'],
                         'quantity': trade_result['amount'],
-                        'symbol': trade_result['symbol'],
-                    })
+                    }
+                    # symbol is optional for execute_purchase
+                    if 'symbol' in trade_result:
+                        purchase_data['symbol'] = trade_result['symbol']
+                    self.strategy.execute_purchase(purchase_data)
                     logger.info(f"Recorded DCA purchase: {trade_result['amount']} @ ${trade_result['price']}")
 
             elif isinstance(self.strategy, AutomatedMarketMakingStrategy):
