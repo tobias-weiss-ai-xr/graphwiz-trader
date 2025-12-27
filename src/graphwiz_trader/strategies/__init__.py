@@ -8,6 +8,7 @@ Includes:
 - Ensemble methods
 - Qlib ML-based strategy (V1: Basic, V2: With portfolio optimization)
 - 2025 Research-based strategies (Mean Reversion, Pairs Trading, Momentum, Multi-Factor)
+- Modern strategies (Grid Trading, Smart DCA, AMM, Triangular Arbitrage)
 """
 
 from .regime_detection import MarketRegime, RegimeDetector
@@ -26,6 +27,16 @@ from .advanced_strategies import (
     create_advanced_strategy,
 )
 
+# Modern strategies (2025)
+from .modern_strategies import (
+    GridTradingStrategy,
+    GridTradingMode,
+    SmartDCAStrategy,
+    AutomatedMarketMakingStrategy,
+    TriangularArbitrageStrategy,
+    create_modern_strategy,
+)
+
 __all__ = [
     "MarketRegime",
     "RegimeDetector",
@@ -42,4 +53,11 @@ __all__ = [
     "ConfidenceThresholdStrategy",
     "MeanReversionType",
     "create_advanced_strategy",
+    # Modern strategies
+    "GridTradingStrategy",
+    "GridTradingMode",
+    "SmartDCAStrategy",
+    "AutomatedMarketMakingStrategy",
+    "TriangularArbitrageStrategy",
+    "create_modern_strategy",
 ]
