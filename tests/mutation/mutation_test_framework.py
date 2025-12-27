@@ -113,13 +113,18 @@ class MutationTester:
         }
 
         for mutant in self.mutants:
-            # Write mutant to temporary file
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
-                # Create temporary source file
-                temp_file = Path(f.name)
-                f.write(mutant.mutated_code)
+            # Backup original source file
+            backup_file = self.source_file.with_suffix('.py.bak')
 
             try:
+                # Read original code
+                with open(self.source_file, 'r') as f:
+                    original_code = f.read()
+
+                # Write mutated code to source file (temporarily replace it)
+                with open(self.source_file, 'w') as f:
+                    f.write(mutant.mutated_code)
+
                 # Run tests against mutant
                 result = subprocess.run(
                     test_command,
@@ -141,9 +146,10 @@ class MutationTester:
             except Exception as e:
                 results["errors"] += 1
             finally:
-                # Clean up temporary file
+                # Restore original source file
                 try:
-                    temp_file.unlink()
+                    with open(self.source_file, 'w') as f:
+                        f.write(original_code)
                 except:
                     pass
 
