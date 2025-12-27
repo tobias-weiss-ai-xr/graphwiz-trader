@@ -1,0 +1,5 @@
+# Dashboard Requirements
+# Install with: pip install -r dashboard_requirements.txt
+
+flask>=3.0.0
+flask-sock>=0.7.0
