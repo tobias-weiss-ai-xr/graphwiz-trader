@@ -1,0 +1,15 @@
+{
+  "timestamp": "2026-01-01T13:43:08.736794",
+  "iteration": 10,
+  "elapsed_hours": 0.025028382499999998,
+  "metrics": {
+    "trades_executed": 1,
+    "optimizations_run": 2,
+    "optimizations_applied": 0,
+    "sharpe_ratio": 1.52,
+    "max_drawdown": 0.1532300721597945,
+    "win_rate": 0.545,
+    "portfolio_value": 99353.9855680411,
+    "total_return": -0.6460144319589017
+  }
+}

@@ -1,0 +1,89 @@
+[Unit]
+Description=GraphWiz Trader - AI-Powered Trading System
+Documentation=https://github.com/graphwiz-trader/graphwiz-trader
+After=network-online.target docker.service neo4j.service
+Wants=docker.service neo4j.service
+Requires=network-online.target
+
+[Service]
+# User and group configuration
+User=graphwiz
+Group=graphwiz
+WorkingDirectory=/opt/git/graphwiz-trader
+
+# Environment configuration
+Environment="PATH=/opt/git/graphwiz-trader/venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONPATH=/opt/git/graphwiz-trader/src"
+Environment="PYTHONUNBUFFERED=1"
+Environment="LOG_LEVEL=INFO"
+Environment="CONFIG_PATH=/opt/git/graphwiz-trader/config/production.yaml"
+
+# Environment file for sensitive data
+EnvironmentFile=/opt/git/graphwiz-trader/.env
+
+# Execution mode
+Type=notify
+NotifyAccess=all
+
+# Main service command (production mode)
+ExecStart=/opt/git/graphwiz-trader/venv/bin/python -m graphwiz_trader.main \
+    --config /opt/git/graphwiz-trader/config/production.yaml
+
+# Reload command (graceful restart)
+ExecReload=/bin/kill -HUP $MAINPID
+
+# Stop command (graceful shutdown with timeout)
+ExecStop=/bin/kill -TERM $MAINPID
+TimeoutStopSec=30
+
+# Restart policy
+Restart=always
+RestartSec=10
+StartLimitInterval=300
+StartLimitBurst=5
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+MemoryMax=8G
+CPUQuota=400%
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/git/graphwiz-trader/data /opt/git/graphwiz-trader/logs /opt/git/graphwiz-trader/backtests
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictRealtime=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallFilter=~@clock @debug @module @mount @privileged @reboot @swap
+SystemCallErrorNumber=EPERM
+
+# Network access
+# PrivateNetwork=false  # Need network access for exchanges and APIs
+# Network namespace path (optional)
+# BindReadOnlyPaths=/etc/resolv.conf
+
+# Logging
+StandardOutput=append:/opt/git/graphwiz-trader/logs/systemd-stdout.log
+StandardError=append:/opt/git/graphwiz-trader/logs/systemd-stderr.log
+SyslogIdentifier=graphwiz-trader
+
+# Process management
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStartSec=60
+TimeoutStopSec=30
+
+# OOM policy
+OOMPolicy=continue
+OOMScoreAdjust=-100
+
+[Install]
+WantedBy=multi-user.target

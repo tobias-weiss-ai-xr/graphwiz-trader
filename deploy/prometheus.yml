@@ -1,0 +1,64 @@
+# Prometheus configuration for GraphWiz Trader
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'graphwiz-trader'
+    environment: 'production'
+
+# Alertmanager configuration (optional)
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+# Rule files
+rule_files:
+  # - "alerts/*.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+
+  # GraphWiz Trader application metrics
+  - job_name: 'graphwiz-trader'
+    static_configs:
+      - targets: ['graphwiz-trader:9090']
+        labels:
+          service: 'graphwiz-trader'
+          component: 'trading-engine'
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  # Neo4j metrics (if enabled)
+  - job_name: 'neo4j'
+    static_configs:
+      - targets: ['neo4j:7474']
+        labels:
+          service: 'neo4j'
+          component: 'knowledge-graph'
+    metrics_path: '/metrics'
+    basic_auth:
+      username: 'neo4j'
+      password: 'graphwiz_secure_password'
+
+  # Docker container metrics (via cAdvisor)
+  - job_name: 'docker'
+    static_configs:
+      - targets: ['cadvisor:8080']
+        labels:
+          service: 'docker'
+          component: 'containers'
+
+  # Node exporter (system metrics)
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          service: 'node'
+          component: 'system'

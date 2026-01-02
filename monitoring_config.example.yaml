@@ -1,0 +1,119 @@
+# Monitoring Configuration Example
+# Copy this file to monitoring.yaml and customize for your environment
+
+monitoring:
+  # Prometheus metrics server
+  prometheus_port: 8000
+  prometheus_url: "http://localhost:9090"
+  enable_prometheus: true
+
+  # Monitoring intervals (in seconds)
+  metrics_interval_seconds: 15
+  health_check_interval_seconds: 30
+  alert_check_interval_seconds: 10
+
+  # Real-time monitoring via WebSocket
+  enable_realtime: true
+  hostname: "graphwiz-trader"
+
+  # WebSocket configuration
+  websocket:
+    host: "0.0.0.0"
+    port: 8765
+
+# Alert configuration
+alerts:
+  # Cooldown periods for different severity levels (in seconds)
+  cooldown_info: 600      # 10 minutes
+  cooldown_warning: 300   # 5 minutes
+  cooldown_critical: 60   # 1 minute
+  cooldown_emergency: 10  # 10 seconds
+
+  # Custom alert rules (optional)
+  custom_rules:
+    # Example: Custom high CPU threshold
+    high_cpu_custom:
+      condition: "system['cpu']['percent'] > 95"
+      severity: "CRITICAL"
+      channels: ["DISCORD", "EMAIL"]
+      title: "CRITICAL: CPU Usage Extremely High"
+      message: "CPU usage is {cpu_percent}% on {hostname}"
+      cooldown_seconds: 300
+      enabled: true
+
+    # Example: Custom trading drawdown threshold
+    custom_drawdown:
+      condition: "trading.get('current_drawdown', 0) > 0.05"
+      severity: "WARNING"
+      channels: ["DISCORD", "SLACK"]
+      title: "Drawdown Warning"
+      message: "Current drawdown: {drawdown_percent}%"
+      cooldown_seconds: 600
+      enabled: true
+
+# Notification channels
+notifications:
+  # Discord webhook
+  discord:
+    webhook_url: "https://discord.com/api/webhooks/YOUR_WEBHOOK_URL"
+
+  # Slack webhook
+  slack:
+    webhook_url: "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+
+  # Email notifications
+  email:
+    enabled: true
+    smtp_server: "smtp.gmail.com"
+    smtp_port: 587
+    use_tls: true
+    from: "trading-alerts@example.com"
+    to:
+      - "trader@example.com"
+      - "ops@example.com"
+    username: "your-email@example.com"
+    password: "your-app-password"
+
+  # Telegram bot
+  telegram:
+    bot_token: "YOUR_BOT_TOKEN"
+    chat_id: "YOUR_CHAT_ID"
+
+  # Custom webhook
+  webhook:
+    url: "https://your-webhook-endpoint.com/alerts"
+
+# Health check configuration
+health_checks:
+  # Enable/disable specific health checks
+  exchange_connectivity:
+    enabled: true
+    interval_seconds: 30
+
+  neo4j_connectivity:
+    enabled: true
+    interval_seconds: 60
+
+  api_rate_limits:
+    enabled: true
+    interval_seconds: 10
+
+  system_resources:
+    enabled: true
+    interval_seconds: 60
+
+  disk_space:
+    enabled: true
+    interval_seconds: 300
+
+  agent_health:
+    enabled: true
+    interval_seconds: 60
+
+  portfolio_health:
+    enabled: true
+    interval_seconds: 30
+
+  database_locks:
+    enabled: true
+    interval_seconds: 60

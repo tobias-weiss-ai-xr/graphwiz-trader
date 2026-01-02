@@ -1,0 +1,82 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# CI/CD
+.github
+
+# Documentation
+*.md
+docs/
+LICENSE
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+*.cover
+.hypothesis/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs and data (will be mounted as volumes)
+logs/
+data/
+backtests/
+*.log
+
+# Environment and secrets
+.env
+.env.local
+*.key
+*.pem
+secrets/
+
+# Deployment files (not needed in image)
+deploy/
+docker-compose.yml
+docker-compose.*.yml
+.DS_Store
+
+# Development
+tests/
+examples/
+*.test.py
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Node (if any frontend)
+node_modules/
+npm-debug.log
+
+# Backup files
+*.bak
+*.backup
+backups/
+
+# SSL certificates (mount externally)
+ssl/
+certs/

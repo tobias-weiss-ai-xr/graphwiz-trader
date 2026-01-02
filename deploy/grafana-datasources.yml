@@ -1,0 +1,28 @@
+# Grafana datasources provisioning
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+    jsonData:
+      httpMethod: POST
+      timeInterval: 15s
+    version: 1
+
+  - name: Neo4j
+    type: neo4j
+    access: proxy
+    url: http://neo4j:7474
+    basicAuth: true
+    basicAuthUser: neo4j
+    secureJsonData:
+      basicAuthPassword: graphwiz_secure_password
+    editable: true
+    jsonData:
+      mode: single
+      serverName: neo4j
+    version: 1
