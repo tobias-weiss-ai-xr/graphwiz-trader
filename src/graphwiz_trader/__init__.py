@@ -10,5 +10,6 @@ __author__ = "Tobias Weiss"
 __email__ = "tobias.weiss@example.com"
 
 from graphwiz_trader.main import GraphWizTrader
+from graphwiz_trader import exceptions
 
-__all__ = ["GraphWizTrader", "__version__"]
+__all__ = ["GraphWizTrader", "exceptions", "__version__"]
