@@ -1,4 +1,4 @@
-"""Trading engine for order execution."""
+"""Trading engine for order execution with optimizations."""
 
 import ccxt
 import asyncio
@@ -8,6 +8,9 @@ from loguru import logger
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, field
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor
+import time
+import threading
 
 # Import alert system
 import sys
@@ -78,6 +81,15 @@ class TradingEngine:
         self.daily_trades = 0
         self._last_summary_date = None
 
+        # Performance optimizations
+        self._executor = ThreadPoolExecutor(max_workers=10, thread_name_prefix="trading_engine")
+        self._ticker_cache: Dict[str, tuple[Dict[str, Any], float]] = {}
+        self._ticker_cache_ttl = 1.0  # 1 second cache for tickers
+        self._cache_lock = threading.Lock()
+        self._trade_count = 0
+        self._total_trade_time = 0.0
+        self._metrics_lock = threading.Lock()
+
         # Initialize alert manager
         if alert_manager is None:
             logger.info("Initializing alert manager with console output only...")
@@ -92,13 +104,20 @@ class TradingEngine:
         logger.info("Starting trading engine...")
         self._initialize_exchanges()
         self._running = True
-        logger.info("Trading engine started")
+        logger.info("✅ Trading engine started with optimized performance")
 
     def stop(self) -> None:
-        """Stop the trading engine."""
+        """Stop the trading engine and cleanup resources."""
         logger.info("Stopping trading engine...")
         self._running = False
         self._close_exchanges()
+
+        # Shutdown thread pool
+        self._executor.shutdown(wait=True)
+
+        # Log performance metrics
+        self._log_performance_metrics()
+
         logger.info("Trading engine stopped")
 
     def _initialize_exchanges(self) -> None:
@@ -138,6 +157,82 @@ class TradingEngine:
                 logger.info("Closed exchange: {}", name)
             except Exception as e:
                 logger.warning("Error closing exchange {}: {}", name, e)
+
+    def _get_ticker(self, exchange: ccxt.Exchange, symbol: str) -> Dict[str, Any]:
+        """Get ticker with caching to reduce API calls.
+
+        Args:
+            exchange: Exchange instance
+            symbol: Trading pair symbol
+
+        Returns:
+            Ticker dictionary
+        """
+        cache_key = f"{exchange.id}:{symbol}"
+        current_time = time.time()
+
+        # Check cache
+        with self._cache_lock:
+            if cache_key in self._ticker_cache:
+                ticker, timestamp = self._ticker_cache[cache_key]
+                if current_time - timestamp < self._ticker_cache_ttl:
+                    logger.debug("Ticker cache hit for {}", cache_key)
+                    return ticker
+
+        # Fetch from exchange
+        ticker = exchange.fetch_ticker(symbol)
+
+        # Update cache
+        with self._cache_lock:
+            self._ticker_cache[cache_key] = (ticker, current_time)
+
+        return ticker
+
+    def fetch_tickers_parallel(self, symbols: List[str], exchange_name: str = "binance") -> Dict[str, Dict[str, Any]]:
+        """Fetch multiple tickers in parallel using thread pool.
+
+        Args:
+            symbols: List of trading pair symbols
+            exchange_name: Exchange to use
+
+        Returns:
+            Dictionary mapping symbols to tickers
+        """
+        if exchange_name not in self.exchanges:
+            logger.error("Exchange {} not initialized", exchange_name)
+            return {}
+
+        exchange = self.exchanges[exchange_name]
+        tickers = {}
+
+        # Use thread pool for parallel fetching
+        futures = []
+        for symbol in symbols:
+            future = self._executor.submit(self._get_ticker, exchange, symbol)
+            futures.append((symbol, future))
+
+        # Collect results
+        for symbol, future in futures:
+            try:
+                tickers[symbol] = future.result(timeout=5)
+            except Exception as e:
+                logger.warning("Failed to fetch ticker for {}: {}", symbol, e)
+                tickers[symbol] = {}
+
+        return tickers
+
+    def _log_performance_metrics(self) -> None:
+        """Log performance metrics."""
+        with self._metrics_lock:
+            avg_trade_time = (self._total_trade_time / self._trade_count
+                            if self._trade_count > 0 else 0)
+
+            logger.info(
+                "📊 Trading Engine Performance: {} trades, {:.3f}s total, {:.3f}s avg/trade",
+                self._trade_count,
+                self._total_trade_time,
+                avg_trade_time
+            )
 
     def execute_trade(
         self,
@@ -190,8 +285,8 @@ class TradingEngine:
                 )
                 return {"status": "rejected", "reason": risk_check["reason"]}
 
-            # Get current market price
-            ticker = exchange.fetch_ticker(symbol)
+            # Get current market price (with caching)
+            ticker = self._get_ticker(exchange, symbol)
             current_price = ticker["last"]
 
             # Execute order on exchange
@@ -235,6 +330,10 @@ class TradingEngine:
 
             # Update daily statistics
             self.daily_trades += 1
+
+            # Update performance metrics
+            with self._metrics_lock:
+                self._trade_count += 1
 
             logger.info("Order executed successfully: {} - {}", order_record.id, order["status"])
 
@@ -296,7 +395,7 @@ class TradingEngine:
         # Check minimum trade amount
         min_trade_amount = self.config.get("min_trade_amount", 10)
         try:
-            ticker = self.exchanges[exchange_name].fetch_ticker(symbol)
+            ticker = self._get_ticker(self.exchanges[exchange_name], symbol)
             estimated_value = amount * ticker["last"]
             if estimated_value < min_trade_amount:
                 return {
@@ -490,7 +589,7 @@ class TradingEngine:
                 if not exchange:
                     continue
 
-                ticker = exchange.fetch_ticker(position.symbol)
+                ticker = self._get_ticker(exchange, position.symbol)
                 current_price = ticker["last"]
                 position.current_price = current_price
 
