@@ -1,0 +1,2 @@
+timestamp,symbol,action,price,amount,total_usdt,commission,reason,confidence
+2026-01-03 17:29:36.729059,ETH/USDT,BUY,3109.39392,8.04417215815486,25025.0,25.0,RSI oversold/bearish (37.9),0.7017539051794995

@@ -1,0 +1,36 @@
+# Dockerfile for Live Trading Service
+FROM python:3.10-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    procps \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first for better caching
+COPY requirements-live-trading.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements-live-trading.txt
+
+# Copy application code
+COPY . .
+
+# Create logs directory
+RUN mkdir -p logs/live_trading
+
+# Set Python path
+ENV PYTHONPATH=/app/src
+ENV PYTHONUNBUFFERED=1
+ENV TRADING_MODE=live
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD pgrep -f "scripts/live_trade.py" || exit 1
+
+# Default command - can be overridden
+CMD ["python", "scripts/live_trade.py", "--exchange", "kraken", "--symbol", "BTC/EUR"]
