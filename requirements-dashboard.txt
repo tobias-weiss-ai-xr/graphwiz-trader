@@ -1,0 +1,12 @@
+# Performance Monitoring Dashboard Requirements
+
+# Web Dashboard (Streamlit)
+streamlit>=1.28.0
+plotly>=5.17.0
+pandas>=2.0.0
+
+# Terminal Dashboard
+rich>=13.6.0
+
+# Optional: For better visualization
+altair>=5.0.0
