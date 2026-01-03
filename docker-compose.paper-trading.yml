@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  paper-trading:
+    build:
+      context: .
+      dockerfile: Dockerfile.paper-trading
+    container_name: graphwiz-paper-trading
+    restart: unless-stopped
+
+    # Environment variables
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=INFO
+      - TZ=UTC
+
+    # Mount volumes for persistence
+    volumes:
+      - ./logs/paper_trading:/app/logs/paper_trading
+      - ./config:/app/config:ro
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    # Command-line arguments (can be overridden)
+    # --duration: Duration in hours (default: 168 = 1 week)
+    # --interval: Analysis interval in minutes (default: 30)
+    command: >
+      python run_extended_paper_trading.py
+      --duration 168
+      --interval 30
+
+  # Optional: Monitoring dashboard
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.paper-trading
+    container_name: graphwiz-dashboard
+    restart: unless-stopped
+    profiles:
+      - dashboard
+
+    ports:
+      - "8501:8501"
+
+    environment:
+      - PYTHONUNBUFFERED=1
+
+    volumes:
+      - ./logs/paper_trading:/app/logs/paper_trading:ro
+
+    command: streamlit run dashboard_performance.py --server.port=8501 --server.address=0.0.0.0
+
+volumes:
+  paper_trading_logs:
+    driver: local

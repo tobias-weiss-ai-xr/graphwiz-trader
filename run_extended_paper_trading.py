@@ -210,7 +210,7 @@ class ExtendedPaperTradingValidator:
 
     def _analyze_signals(self, market_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Analyze market data and generate trading signals.
+        Analyze market data and generate trading signals (AGGRESSIVE STRATEGY).
 
         Args:
             market_data: Market data dictionary
@@ -220,35 +220,84 @@ class ExtendedPaperTradingValidator:
         """
         rsi = market_data.get('rsi', 50)
         change_24h = market_data.get('change_24h', 0)
+        price = market_data.get('price', 0)
 
-        # RSI Strategy
-        if rsi < 30:
+        # AGGRESSIVE RSI Strategy - Wider trading range
+        # Buy when RSI < 42 (was 30), Sell when RSI > 58 (was 70)
+        if rsi < 42:
             action = "BUY"
-            confidence = min(0.9, 0.6 + (30 - rsi) / 100)
-            reason = f"RSI oversold ({rsi:.1f})"
-        elif rsi > 70:
-            action = "SELL"
-            confidence = min(0.9, 0.6 + (rsi - 70) / 100)
-            reason = f"RSI overbought ({rsi:.1f})"
-        else:
-            action = "HOLD"
-            confidence = 0.5
-            reason = f"RSI neutral ({rsi:.1f})"
+            # Higher base confidence for aggressive trading
+            confidence = min(0.95, 0.65 + (42 - rsi) / 80)
+            reason = f"RSI oversold/bearish ({rsi:.1f})"
 
-        # Adjust based on 24h trend
-        if change_24h < -5 and action == "BUY":
+            # Extra boost for very oversold conditions
+            if rsi < 35:
+                confidence += 0.15
+                reason = f"RSI VERY oversold ({rsi:.1f})"
+
+        elif rsi > 58:
+            action = "SELL"
+            confidence = min(0.95, 0.65 + (rsi - 58) / 80)
+            reason = f"RSI overbought/bullish ({rsi:.1f})"
+
+            # Extra boost for very overbought conditions
+            if rsi > 65:
+                confidence += 0.15
+                reason = f"RSI VERY overbought ({rsi:.1f})"
+
+        # Add momentum signals in neutral zone
+        elif change_24h < -2.0:
+            # Price dropping - buy on dip
+            action = "BUY"
+            confidence = 0.60 + min(0.15, abs(change_24h) / 20)
+            reason = f"Momentum: Price drop {change_24h:.1f}% (dip buying)"
+
+        elif change_24h > 2.0:
+            # Price rising - sell into strength
+            action = "SELL"
+            confidence = 0.60 + min(0.15, change_24h / 20)
+            reason = f"Momentum: Price rise {change_24h:.1f}% (profit taking)"
+
+        # Mid-range RSI with no strong momentum - still trade with lower confidence
+        elif rsi < 48:
+            action = "BUY"
+            confidence = 0.55
+            reason = f"RSI slightly low ({rsi:.1f}) - slight bullish bias"
+
+        elif rsi > 52:
+            action = "SELL"
+            confidence = 0.55
+            reason = f"RSI slightly high ({rsi:.1f}) - slight bearish bias"
+
+        else:
+            # Dead center (RSI 48-52) - trade on momentum if any
+            if change_24h < -1.0:
+                action = "BUY"
+                confidence = 0.52
+                reason = f"Slight downtrend ({change_24h:.1f}%) - contrarian buy"
+            elif change_24h > 1.0:
+                action = "SELL"
+                confidence = 0.52
+                reason = f"Slight uptrend ({change_24h:.1f}%) - contrarian sell"
+            else:
+                action = "HOLD"
+                confidence = 0.5
+                reason = f"No clear signal (RSI: {rsi:.1f}, Change: {change_24h:.1f}%)"
+
+        # Adjust confidence based on 24h trend strength
+        if action == "BUY" and change_24h < -3.0:
             confidence += 0.1
-            reason += ", strong downtrend"
-        elif change_24h > 5 and action == "SELL":
+            reason += f", strong downtrend ({change_24h:.1f}%)"
+        elif action == "SELL" and change_24h > 3.0:
             confidence += 0.1
-            reason += ", strong uptrend"
+            reason += f", strong uptrend ({change_24h:.1f}%)"
 
         return {
             'action': action,
-            'confidence': min(confidence, 1.0),
+            'confidence': min(confidence, 0.98),  # Cap at 98%
             'reason': reason,
             'rsi': rsi,
-            'price': market_data['price']
+            'price': price
         }
 
     def _execute_trade(self, symbol: str, signal: Dict[str, Any]) -> Dict[str, Any]:
@@ -271,8 +320,8 @@ class ExtendedPaperTradingValidator:
         slippage_rate = 0.0005   # 0.05%
 
         if action == "BUY" and self.portfolio["USDT"] > 100:
-            # Calculate position size (10% of available USDT)
-            amount_usdt = self.portfolio["USDT"] * 0.10
+            # Calculate position size (25% of available USDT - increased from 10%)
+            amount_usdt = self.portfolio["USDT"] * 0.25
             amount = amount_usdt / price
 
             # Apply commission and slippage
@@ -302,7 +351,7 @@ class ExtendedPaperTradingValidator:
                 return trade
 
         elif action == "SELL" and self.portfolio[base_currency] > 0:
-            amount = self.portfolio[base_currency] * 0.50  # Sell 50% of position
+            amount = self.portfolio[base_currency] * 0.75  # Sell 75% of position (increased from 50%)
 
             # Apply commission and slippage
             actual_price = price * (1 - slippage_rate)
