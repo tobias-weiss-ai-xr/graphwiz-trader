@@ -604,8 +604,8 @@ class ExtendedPaperTradingValidator:
                         logger.info(f"    Signal: {signal['action']} (confidence: {signal['confidence']:.2f})")
                         logger.info(f"    Reason: {signal['reason']}")
 
-                        # Execute trade if signal is strong
-                        if signal['action'] != 'HOLD' and signal['confidence'] > 0.7:
+                        # Execute trade if signal is strong (lowered threshold for aggressive strategy)
+                        if signal['action'] != 'HOLD' and signal['confidence'] > 0.6:
                             self._execute_trade(symbol, signal)
 
                     await asyncio.sleep(2)  # Small delay between symbols
