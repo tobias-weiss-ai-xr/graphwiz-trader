@@ -3,10 +3,17 @@
 import ccxt
 import asyncio
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, timedelta
 from loguru import logger
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, field
+from pathlib import Path
+
+# Import alert system
+import sys
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+from graphwiz_trader.alerts import AlertManager
+from graphwiz_trader.alerts.config import CONSOLE_ONLY
 
 
 @dataclass
@@ -46,7 +53,8 @@ class TradingEngine:
         trading_config: Dict[str, Any],
         exchanges_config: Dict[str, Any],
         knowledge_graph,
-        agent_orchestrator
+        agent_orchestrator,
+        alert_manager: Optional[AlertManager] = None
     ):
         """Initialize trading engine.
 
@@ -55,6 +63,7 @@ class TradingEngine:
             exchanges_config: Exchange configurations
             knowledge_graph: Knowledge graph instance
             agent_orchestrator: Agent orchestrator instance
+            alert_manager: Optional alert manager instance
         """
         self.config = trading_config
         self.exchanges_config = exchanges_config
@@ -65,6 +74,18 @@ class TradingEngine:
         self.orders: List[Order] = []
         self._running = False
         self._order_counter = 0
+        self.daily_pnl = 0.0
+        self.daily_trades = 0
+        self._last_summary_date = None
+
+        # Initialize alert manager
+        if alert_manager is None:
+            logger.info("Initializing alert manager with console output only...")
+            self.alert_manager = AlertManager(CONSOLE_ONLY)
+        else:
+            self.alert_manager = alert_manager
+
+        logger.info("✅ Alert Manager initialized in TradingEngine")
 
     def start(self) -> None:
         """Start the trading engine."""
@@ -104,6 +125,10 @@ class TradingEngine:
 
             except Exception as e:
                 logger.error("Failed to initialize exchange {}: {}", exchange_name, e)
+                self.alert_manager.exchange_disconnected(
+                    exchange=exchange_name,
+                    error=str(e)
+                )
 
     def _close_exchanges(self) -> None:
         """Close exchange connections."""
@@ -157,6 +182,12 @@ class TradingEngine:
             risk_check = self._check_risk_limits(symbol, side, amount, exchange_name)
             if risk_check["allowed"] is False:
                 logger.warning("Trade rejected by risk management: {}", risk_check["reason"])
+                self.alert_manager.position_size_warning(
+                    exchange=exchange_name,
+                    symbol=symbol,
+                    current_size=amount,
+                    max_size=self.config.get("max_position_size", 0.1)
+                )
                 return {"status": "rejected", "reason": risk_check["reason"]}
 
             # Get current market price
@@ -192,6 +223,19 @@ class TradingEngine:
             # Store in knowledge graph
             self._store_trade_in_kg(order_record, order)
 
+            # Send trade execution alert
+            self.alert_manager.trade_executed(
+                exchange=exchange_name,
+                symbol=symbol,
+                side=side,
+                amount=amount,
+                price=order_record.price,
+                order_id=order_record.id
+            )
+
+            # Update daily statistics
+            self.daily_trades += 1
+
             logger.info("Order executed successfully: {} - {}", order_record.id, order["status"])
 
             return {
@@ -208,12 +252,27 @@ class TradingEngine:
 
         except ccxt.InsufficientFunds as e:
             logger.error("Insufficient funds for trade: {}", e)
+            self.alert_manager.trade_failed(
+                exchange=exchange_name,
+                symbol=symbol,
+                side=side,
+                amount=amount,
+                error=str(e)
+            )
             return {"status": "error", "message": "Insufficient funds"}
         except ccxt.NetworkError as e:
             logger.error("Network error during trade: {}", e)
+            self.alert_manager.exchange_disconnected(
+                exchange=exchange_name,
+                error=str(e)
+            )
             return {"status": "error", "message": "Network error"}
         except Exception as e:
             logger.error("Error executing trade: {}", e)
+            self.alert_manager.system_error(
+                component="TradingEngine",
+                error=f"Trade execution failed: {str(e)}"
+            )
             return {"status": "error", "message": str(e)}
 
     def _check_risk_limits(
@@ -293,11 +352,20 @@ class TradingEngine:
                 position.entry_price = total_value / total_amount if total_amount > 0 else 0
             else:
                 # Reducing or closing position
+                # Calculate realized P&L for the closed portion
+                if position.side == "buy":
+                    realized_pnl = (order.price - position.entry_price) * order.amount
+                else:
+                    realized_pnl = (position.entry_price - order.price) * order.amount
+
                 position.amount -= order.amount
                 if position.amount <= 0:
-                    # Position closed
+                    # Position fully closed
                     del self.positions[position_key]
                     logger.info("Position closed: {}", position_key)
+
+                    # Update daily P&L with realized profit/loss
+                    self.update_position_pnl(position_key, realized_pnl)
                     return
 
             position.current_price = current_price
@@ -445,6 +513,26 @@ class TradingEngine:
                         reason = "take_profit"
 
                 if should_close:
+                    # Send alert before closing
+                    if reason == "stop_loss":
+                        loss_pct = abs((current_price - position.entry_price) / position.entry_price * 100)
+                        self.alert_manager.stop_loss_hit(
+                            exchange=position.exchange,
+                            symbol=position.symbol,
+                            entry_price=position.entry_price,
+                            current_price=current_price,
+                            loss_pct=loss_pct
+                        )
+                    elif reason == "take_profit":
+                        profit_pct = (current_price - position.entry_price) / position.entry_price * 100
+                        self.alert_manager.profit_target(
+                            exchange=position.exchange,
+                            symbol=position.symbol,
+                            entry_price=position.entry_price,
+                            current_price=current_price,
+                            profit_pct=profit_pct
+                        )
+
                     # Close position
                     close_side = "sell" if position.side == "buy" else "buy"
                     result = self.execute_trade(
@@ -467,3 +555,70 @@ class TradingEngine:
                 logger.error("Error checking position {}: {}", position_key, e)
 
         return triggered_actions
+
+    def check_daily_loss_limit(self) -> None:
+        """Check if daily loss limit has been reached and alert if needed."""
+        daily_loss_limit = self.config.get("daily_loss_limit", 150)
+
+        # Calculate total unrealized P&L
+        total_unrealized_pnl = 0.0
+        for position in self.positions.values():
+            if position.side == "buy":
+                total_unrealized_pnl += (position.current_price - position.entry_price) * position.amount
+            else:
+                total_unrealized_pnl += (position.entry_price - position.current_price) * position.amount
+
+        total_pnl = self.daily_pnl + total_unrealized_pnl
+
+        # Check if we've hit the daily loss limit
+        if total_pnl <= -daily_loss_limit:
+            self.alert_manager.daily_loss_limit(
+                current_loss=abs(total_pnl),
+                limit=daily_loss_limit,
+                exchange=list(self.exchanges.keys())[0] if self.exchanges else "Unknown"
+            )
+
+    def send_daily_summary(self) -> None:
+        """Send daily trading summary alert."""
+        today = datetime.now().date()
+
+        # Only send once per day
+        if self._last_summary_date == today:
+            return
+
+        # Calculate current P&L from open positions
+        total_unrealized_pnl = 0.0
+        for position in self.positions.values():
+            if position.side == "buy":
+                total_unrealized_pnl += (position.current_price - position.entry_price) * position.amount
+            else:
+                total_unrealized_pnl += (position.entry_price - position.current_price) * position.amount
+
+        total_pnl = self.daily_pnl + total_unrealized_pnl
+
+        # Send daily summary alert
+        self.alert_manager.daily_summary(
+            date=today.isoformat(),
+            trades=self.daily_trades,
+            pnl=total_pnl,
+            positions=len(self.positions)
+        )
+
+        self._last_summary_date = today
+
+        # Reset daily statistics (but keep position tracking)
+        self.daily_pnl = total_unrealized_pnl  # Carry over unrealized P&L
+        self.daily_trades = 0
+
+    def update_position_pnl(self, position_key: str, realized_pnl: float) -> None:
+        """Update daily P&L when a position is closed.
+
+        Args:
+            position_key: Position identifier
+            realized_pnl: Realized profit/loss from closed position
+        """
+        self.daily_pnl += realized_pnl
+
+        # Check daily loss limit after each position close
+        self.check_daily_loss_limit()
+

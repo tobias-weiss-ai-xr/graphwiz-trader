@@ -9,6 +9,10 @@ from graphwiz_trader.graph import KnowledgeGraph
 from graphwiz_trader.trading import TradingEngine
 from graphwiz_trader.agents import AgentOrchestrator
 from graphwiz_trader.utils.config import load_config
+from graphwiz_trader.alerts import AlertManager
+from graphwiz_trader.alerts.config import CONSOLE_ONLY
+import yaml
+from pathlib import Path
 
 
 class GraphWizTrader:
@@ -24,7 +28,63 @@ class GraphWizTrader:
         self.kg = None
         self.trading_engine = None
         self.agent_orchestrator = None
+        self.alert_manager = None
         self._running = False
+
+        # Initialize alert system
+        self._initialize_alerts()
+
+    def _initialize_alerts(self) -> None:
+        """Initialize the alert system with configuration."""
+        try:
+            # Try to load alert configuration
+            alert_config_path = Path("config/alerts.yaml")
+
+            if alert_config_path.exists():
+                with open(alert_config_path, 'r') as f:
+                    alert_config = yaml.safe_load(f)
+
+                # Expand environment variables
+                alert_config = self._expand_env_vars(alert_config)
+                self.alert_manager = AlertManager(alert_config)
+                logger.info("✅ Alert system initialized from config/alerts.yaml")
+            else:
+                logger.warning("Alert config not found, using console-only mode")
+                self.alert_manager = AlertManager(CONSOLE_ONLY)
+
+        except Exception as e:
+            logger.warning("Failed to load alert configuration: {}. Using console-only mode", e)
+            self.alert_manager = AlertManager(CONSOLE_ONLY)
+
+    def _expand_env_vars(self, config: dict) -> dict:
+        """Expand environment variables in configuration.
+
+        Args:
+            config: Configuration dictionary
+
+        Returns:
+            Configuration with expanded environment variables
+        """
+        import os
+        import re
+
+        def expand_value(value):
+            if isinstance(value, str):
+                # Expand ${VAR} or $VAR format
+                if '${' in value:
+                    pattern = r'\$\{([^}]+)\}'
+                    matches = re.findall(pattern, value)
+                    for match in matches:
+                        env_value = os.getenv(match, '')
+                        value = value.replace(f'${{{match}}}', env_value)
+                return value
+            elif isinstance(value, dict):
+                return {k: expand_value(v) for k, v in value.items()}
+            elif isinstance(value, list):
+                return [expand_value(item) for item in value]
+            return value
+
+        return expand_value(config)
 
     def start(self) -> None:
         """Start the trading system."""
@@ -48,7 +108,8 @@ class GraphWizTrader:
             self.config.get("trading", {}),
             self.config.get("exchanges", {}),
             self.kg,
-            self.agent_orchestrator
+            self.agent_orchestrator,
+            self.alert_manager
         )
 
         # Start trading
