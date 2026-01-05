@@ -75,9 +75,15 @@ class PaperTradingService:
     def _create_default_config(self):
         """Create default configuration."""
         defaults = {
-            "BTC/USDT": PaperTradingConfig(symbol="BTC/USDT", capital=10000, oversold=25, overbought=65),
-            "ETH/USDT": PaperTradingConfig(symbol="ETH/USDT", capital=10000, oversold=25, overbought=65),
-            "SOL/USDT": PaperTradingConfig(symbol="SOL/USDT", capital=10000, oversold=25, overbought=65),
+            "BTC/USDT": PaperTradingConfig(
+                symbol="BTC/USDT", capital=10000, oversold=25, overbought=65
+            ),
+            "ETH/USDT": PaperTradingConfig(
+                symbol="ETH/USDT", capital=10000, oversold=25, overbought=65
+            ),
+            "SOL/USDT": PaperTradingConfig(
+                symbol="SOL/USDT", capital=10000, oversold=25, overbought=65
+            ),
         }
         self.configs = defaults
         self._save_config()
@@ -136,12 +142,17 @@ class PaperTradingService:
                 cmd = [
                     sys.executable,
                     "scripts/paper_trade.py",
-                    "--symbol", config.symbol,
-                    "--capital", str(config.capital),
-                    "--oversold", str(config.oversold),
-                    "--overbought", str(config.overbought),
+                    "--symbol",
+                    config.symbol,
+                    "--capital",
+                    str(config.capital),
+                    "--oversold",
+                    str(config.oversold),
+                    "--overbought",
+                    str(config.overbought),
                     "--continuous",
-                    "--interval", str(config.interval),
+                    "--interval",
+                    str(config.interval),
                 ]
 
                 # Redirect output to log file
@@ -245,11 +256,13 @@ class PaperTradingService:
                                 symbol = cmdline[idx + 1]
                                 break
 
-                    running.append({
-                        "symbol": symbol,
-                        "pid": proc.info["pid"],
-                        "uptime": time.time() - proc.info["create_time"],
-                    })
+                    running.append(
+                        {
+                            "symbol": symbol,
+                            "pid": proc.info["pid"],
+                            "uptime": time.time() - proc.info["create_time"],
+                        }
+                    )
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 pass
 

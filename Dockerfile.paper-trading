@@ -31,7 +31,8 @@ ENV PYTHONUNBUFFERED=1
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD pgrep -f "run_extended_paper_trading.py" || exit 1
+    CMD pgrep -f "run_extended_paper_trading_goemotions.py" || exit 1
 
 # Default command - can be overridden
-CMD ["python", "run_extended_paper_trading.py", "--duration", "168", "--interval", "30"]
+# GoEmotions paper trading with 72-hour duration
+CMD ["python", "run_extended_paper_trading_goemotions.py", "--duration", "72", "--symbols", "BTC/EUR", "--capital", "10000", "--interval", "30"]

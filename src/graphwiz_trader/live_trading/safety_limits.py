@@ -68,35 +68,59 @@ class SafetyLimits:
 
         # Check position size
         if trade_value > self.max_position_size:
-            return False, f"Trade size ${trade_value:,.2f} exceeds max ${self.max_position_size:,.2f}"
+            return (
+                False,
+                f"Trade size ${trade_value:,.2f} exceeds max ${self.max_position_size:,.2f}",
+            )
 
         if trade_value > portfolio_value * self.max_position_pct:
-            return False, f"Trade size {trade_value/portfolio_value*100:.1f}% exceeds max {self.max_position_pct*100:.1f}%"
+            return (
+                False,
+                f"Trade size {trade_value/portfolio_value*100:.1f}% exceeds max {self.max_position_pct*100:.1f}%",
+            )
 
         # Check total exposure
         new_exposure = current_exposure + trade_value
         if new_exposure > portfolio_value * self.max_total_exposure:
-            return False, f"Total exposure would be {new_exposure/portfolio_value*100:.1f}%, max {self.max_total_exposure*100:.1f}%"
+            return (
+                False,
+                f"Total exposure would be {new_exposure/portfolio_value*100:.1f}%, max {self.max_total_exposure*100:.1f}%",
+            )
 
         # Check daily loss limit
         if daily_pnl < -self.max_daily_loss:
-            return False, f"Daily loss ${abs(daily_pnl):,.2f} exceeds max ${self.max_daily_loss:,.2f}"
+            return (
+                False,
+                f"Daily loss ${abs(daily_pnl):,.2f} exceeds max ${self.max_daily_loss:,.2f}",
+            )
 
         if daily_pnl < -portfolio_value * self.max_daily_loss_pct:
-            return False, f"Daily loss {abs(daily_pnl/portfolio_value)*100:.1f}% exceeds max {self.max_daily_loss_pct*100:.1f}%"
+            return (
+                False,
+                f"Daily loss {abs(daily_pnl/portfolio_value)*100:.1f}% exceeds max {self.max_daily_loss_pct*100:.1f}%",
+            )
 
         # Check daily trade count
         if daily_trade_count >= self.max_daily_trades:
-            return False, f"Daily trade count {daily_trade_count} exceeds max {self.max_daily_trades}"
+            return (
+                False,
+                f"Daily trade count {daily_trade_count} exceeds max {self.max_daily_trades}",
+            )
 
         # Check minimum trade size
         if trade_value < self.min_trade_size:
-            return False, f"Trade size ${trade_value:,.2f} below minimum ${self.min_trade_size:,.2f}"
+            return (
+                False,
+                f"Trade size ${trade_value:,.2f} below minimum ${self.min_trade_size:,.2f}",
+            )
 
         # Check trading hours
         if self.trading_hours_only and current_time:
             if not (self.trading_start_hour <= current_time.hour < self.trading_end_hour):
-                return False, f"Outside trading hours ({self.trading_start_hour}:00-{self.trading_end_hour}:00)"
+                return (
+                    False,
+                    f"Outside trading hours ({self.trading_start_hour}:00-{self.trading_end_hour}:00)",
+                )
 
         return True, "All checks passed"
 
@@ -140,10 +164,12 @@ class SafetyLimits:
         """
         self.emergency_shutdown = True
         from loguru import logger
+
         logger.error(f"🚨 EMERGENCY SHUTDOWN TRIGGERED: {reason}")
 
     def reset_emergency_shutdown(self):
         """Reset emergency shutdown flag."""
         self.emergency_shutdown = False
         from loguru import logger
+
         logger.info("✅ Emergency shutdown reset")

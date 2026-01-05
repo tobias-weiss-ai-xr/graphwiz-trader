@@ -26,17 +26,17 @@ print_msg() {
 # Show usage
 show_usage() {
     cat << EOF
-${GREEN}Paper Trading Container Management${NC}
+${GREEN}GoEmotions Paper Trading Container Management${NC}
 
 ${BLUE}Usage:${NC}
     $0 [command] [options]
 
 ${BLUE}Commands:${NC}
-    build       Build the paper trading Docker image
+    build       Build the GoEmotions paper trading Docker image
     start       Start the paper trading service
     stop        Stop the paper trading service
     restart     Restart the paper trading service
-    status      Show service status
+    status      Show service status and recent trades
     logs        Show service logs (follow mode)
     stats       Show resource usage statistics
     shell       Open shell in container
@@ -44,15 +44,25 @@ ${BLUE}Commands:${NC}
     help        Show this help message
 
 ${BLUE}Options:${NC}
-    --duration  Trading duration in hours (default: 168)
+    --duration  Trading duration in hours (default: 72)
+    --symbols   Trading pairs, e.g., BTC/EUR (default: BTC/EUR)
+    --capital   Initial capital in EUR (default: 10000)
     --interval  Analysis interval in minutes (default: 30)
 
 ${BLUE}Examples:${NC}
     $0 build                                    # Build image
-    $0 start                                    # Start service
-    $0 start --duration 24 --interval 5         # Start with custom settings
-    $0 logs                                     # View logs
+    $0 start                                    # Start 72-hour validation
+    $0 start --duration 24 --interval 10        # Quick 24-hour test
+    $0 start --duration 168 --symbols BTC/EUR ETH/EUR  # Full week, 2 symbols
+    $0 logs                                     # View live logs
     $0 status                                   # Check status
+
+${BLUE}Features:${NC}
+    • Real-time market data from Kraken (German approved)
+    • GoEmotions sentiment analysis (27 emotions)
+    • Multi-factor signals (Technical + Emotion)
+    • Contrarian trading (buy at fear, sell at euphoria)
+    • Performance tracking and equity curves
 
 EOF
 }
@@ -67,13 +77,23 @@ build_image() {
 # Start service
 start_service() {
     # Parse arguments
-    DURATION="168"
+    DURATION="72"
+    SYMBOLS="BTC/EUR"
+    CAPITAL="10000"
     INTERVAL="30"
 
     while [[ $# -gt 0 ]]; do
         case $1 in
             --duration)
                 DURATION="$2"
+                shift 2
+                ;;
+            --symbols)
+                SYMBOLS="$2"
+                shift 2
+                ;;
+            --capital)
+                CAPITAL="$2"
                 shift 2
                 ;;
             --interval)
@@ -96,16 +116,20 @@ start_service() {
         return 1
     fi
 
-    print_msg $BLUE "Starting paper trading service..."
+    print_msg $BLUE "Starting GoEmotions paper trading service..."
     print_msg $BLUE "  Duration: ${DURATION} hours"
+    print_msg $BLUE "  Symbols: ${SYMBOLS}"
+    print_msg $BLUE "  Capital: €${CAPITAL}"
     print_msg $BLUE "  Interval: ${INTERVAL} minutes"
 
     # Start with docker-compose
-    DURATION=$DURATION INTERVAL=$INTERVAL docker-compose -f $COMPOSE_FILE up -d
+    DURATION=$DURATION SYMBOLS=$SYMBOLS CAPITAL=$CAPITAL INTERVAL=$INTERVAL \
+        docker-compose -f $COMPOSE_FILE up -d
 
     print_msg $GREEN "✓ Service started successfully"
     print_msg $BLUE "\nView logs: $0 logs"
     print_msg $BLUE "Check status: $0 status"
+    print_msg $BLUE "Stop service: $0 stop"
 }
 
 # Stop service

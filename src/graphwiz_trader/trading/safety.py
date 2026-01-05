@@ -18,11 +18,7 @@ class SafetyViolation:
     """Represents a safety violation."""
 
     def __init__(
-        self,
-        check_type: str,
-        severity: str,
-        message: str,
-        details: Optional[Dict[str, Any]] = None
+        self, check_type: str, severity: str, message: str, details: Optional[Dict[str, Any]] = None
     ):
         """Initialize safety violation.
 
@@ -45,7 +41,7 @@ class SafetyViolation:
             "severity": self.severity,
             "message": self.message,
             "details": self.details,
-            "timestamp": self.timestamp.isoformat()
+            "timestamp": self.timestamp.isoformat(),
         }
 
 
@@ -56,7 +52,7 @@ class SafetyChecks:
         self,
         knowledge_graph,
         config: Optional[Dict[str, Any]] = None,
-        violation_callback: Optional[Callable] = None
+        violation_callback: Optional[Callable] = None,
     ):
         """Initialize safety checks.
 
@@ -95,9 +91,7 @@ class SafetyChecks:
             str(safety_config.get("max_position_size_pct", 30.0))
         ) / Decimal("100")
 
-        self.max_position_value = Decimal(
-            str(safety_config.get("max_position_value", 50000.0))
-        )
+        self.max_position_value = Decimal(str(safety_config.get("max_position_value", 50000.0)))
 
         # Daily loss limits
         self.daily_loss_limit_soft = Decimal(
@@ -109,9 +103,9 @@ class SafetyChecks:
         ) / Decimal("100")
 
         # Drawdown limits
-        self.max_drawdown_pct = Decimal(
-            str(safety_config.get("max_drawdown_pct", 10.0))
-        ) / Decimal("100")
+        self.max_drawdown_pct = Decimal(str(safety_config.get("max_drawdown_pct", 10.0))) / Decimal(
+            "100"
+        )
 
         # Trade limits
         self.max_daily_trades = safety_config.get("max_daily_trades", 100)
@@ -126,9 +120,7 @@ class SafetyChecks:
             str(safety_config.get("circuit_breaker_threshold_pct", 15.0))
         ) / Decimal("100")
 
-        self.circuit_breaker_duration = safety_config.get(
-            "circuit_breaker_duration_minutes", 30
-        )
+        self.circuit_breaker_duration = safety_config.get("circuit_breaker_duration_minutes", 30)
 
         # Market conditions
         self.volatility_threshold = Decimal(
@@ -136,9 +128,7 @@ class SafetyChecks:
         ) / Decimal("100")
 
         # Balance checks
-        self.min_balance_threshold = Decimal(
-            str(safety_config.get("min_balance_threshold", 100.0))
-        )
+        self.min_balance_threshold = Decimal(str(safety_config.get("min_balance_threshold", 100.0)))
 
         # Whitelist/blacklist
         self.symbol_whitelist = set(safety_config.get("symbol_whitelist", []))
@@ -152,7 +142,7 @@ class SafetyChecks:
         price: float,
         portfolio_value: float,
         current_positions: Dict[str, Any],
-        exchange_name: str
+        exchange_name: str,
     ) -> Tuple[bool, List[SafetyViolation]]:
         """Comprehensive pre-trade validation.
 
@@ -178,12 +168,14 @@ class SafetyChecks:
             # Check circuit breaker
             if self.circuit_breaker_active:
                 if not await self._check_circuit_breaker_expired():
-                    violations.append(SafetyViolation(
-                        check_type="circuit_breaker",
-                        severity="critical",
-                        message="Circuit breaker is active - trading halted",
-                        details={"active_since": self.circuit_breaker_active}
-                    ))
+                    violations.append(
+                        SafetyViolation(
+                            check_type="circuit_breaker",
+                            severity="critical",
+                            message="Circuit breaker is active - trading halted",
+                            details={"active_since": self.circuit_breaker_active},
+                        )
+                    )
                     all_passed = False
                 else:
                     self.circuit_breaker_active = False
@@ -201,7 +193,7 @@ class SafetyChecks:
                 self._check_symbol_allowed,
                 self._check_api_rate_limit,
                 self._check_portfolio_balance,
-                self._check_trade_frequency
+                self._check_trade_frequency,
             ]
 
             for check in checks:
@@ -213,7 +205,7 @@ class SafetyChecks:
                         price=price,
                         portfolio_value=portfolio_value,
                         current_positions=current_positions,
-                        exchange_name=exchange_name
+                        exchange_name=exchange_name,
                     )
 
                     if not result["passed"]:
@@ -223,12 +215,14 @@ class SafetyChecks:
 
                 except Exception as e:
                     logger.error("Safety check failed with error: {}", e)
-                    violations.append(SafetyViolation(
-                        check_type="check_error",
-                        severity="warning",
-                        message=f"Safety check error: {str(e)}",
-                        details={"check": check.__name__}
-                    ))
+                    violations.append(
+                        SafetyViolation(
+                            check_type="check_error",
+                            severity="warning",
+                            message=f"Safety check error: {str(e)}",
+                            details={"check": check.__name__},
+                        )
+                    )
 
             # Log violations
             if violations:
@@ -247,11 +241,13 @@ class SafetyChecks:
 
         except Exception as e:
             logger.error("Pre-trade validation failed: {}", e)
-            return False, [SafetyViolation(
-                check_type="validation_error",
-                severity="critical",
-                message=f"Validation error: {str(e)}"
-            )]
+            return False, [
+                SafetyViolation(
+                    check_type="validation_error",
+                    severity="critical",
+                    message=f"Validation error: {str(e)}",
+                )
+            ]
 
     async def _check_daily_limits(
         self,
@@ -261,7 +257,7 @@ class SafetyChecks:
         price: float,
         portfolio_value: float,
         current_positions: Dict[str, Any],
-        exchange_name: str
+        exchange_name: str,
     ) -> Dict[str, Any]:
         """Check daily trade limits.
 
@@ -275,11 +271,8 @@ class SafetyChecks:
                     check_type="daily_trade_limit",
                     severity="critical",
                     message=f"Daily trade limit reached: {self.daily_trade_count}/{self.max_daily_trades}",
-                    details={
-                        "current": self.daily_trade_count,
-                        "limit": self.max_daily_trades
-                    }
-                )
+                    details={"current": self.daily_trade_count, "limit": self.max_daily_trades},
+                ),
             }
 
         return {"passed": True}
@@ -292,7 +285,7 @@ class SafetyChecks:
         price: float,
         portfolio_value: float,
         current_positions: Dict[str, Any],
-        exchange_name: str
+        exchange_name: str,
     ) -> Dict[str, Any]:
         """Check position size limits.
 
@@ -311,13 +304,15 @@ class SafetyChecks:
                     message=f"Position value exceeds maximum: ${float(position_value):.2f} > ${float(self.max_position_value):.2f}",
                     details={
                         "position_value": float(position_value),
-                        "max_value": float(self.max_position_value)
-                    }
-                )
+                        "max_value": float(self.max_position_value),
+                    },
+                ),
             }
 
         # Check position as percentage of portfolio
-        position_pct = position_value / Decimal(str(portfolio_value)) if portfolio_value > 0 else Decimal("0")
+        position_pct = (
+            position_value / Decimal(str(portfolio_value)) if portfolio_value > 0 else Decimal("0")
+        )
 
         if position_pct > self.max_position_size_pct:
             return {
@@ -328,9 +323,9 @@ class SafetyChecks:
                     message=f"Position size exceeds maximum: {float(position_pct*100):.2f}% > {float(self.max_position_size_pct*100):.2f}%",
                     details={
                         "position_pct": float(position_pct * 100),
-                        "max_pct": float(self.max_position_size_pct * 100)
-                    }
-                )
+                        "max_pct": float(self.max_position_size_pct * 100),
+                    },
+                ),
             }
 
         return {"passed": True}
@@ -343,7 +338,7 @@ class SafetyChecks:
         price: float,
         portfolio_value: float,
         current_positions: Dict[str, Any],
-        exchange_name: str
+        exchange_name: str,
     ) -> Dict[str, Any]:
         """Check daily loss limits.
 
@@ -368,10 +363,10 @@ class SafetyChecks:
                     details={
                         "loss_pct": float(loss_pct * 100),
                         "limit": float(self.daily_loss_limit_hard * 100),
-                        "daily_pnl": float(self.daily_pnl)
+                        "daily_pnl": float(self.daily_pnl),
                     },
-                    severity="critical"
-                )
+                    severity="critical",
+                ),
             }
 
         # Soft limit (warning only)
@@ -385,9 +380,9 @@ class SafetyChecks:
                     details={
                         "loss_pct": float(loss_pct * 100),
                         "soft_limit": float(self.daily_loss_limit_soft * 100),
-                        "hard_limit": float(self.daily_loss_limit_hard * 100)
-                    }
-                )
+                        "hard_limit": float(self.daily_loss_limit_hard * 100),
+                    },
+                ),
             }
 
         return {"passed": True}
@@ -400,7 +395,7 @@ class SafetyChecks:
         price: float,
         portfolio_value: float,
         current_positions: Dict[str, Any],
-        exchange_name: str
+        exchange_name: str,
     ) -> Dict[str, Any]:
         """Check if symbol is allowed for trading.
 
@@ -415,8 +410,8 @@ class SafetyChecks:
                     check_type="symbol_restriction",
                     severity="critical",
                     message=f"Symbol is blacklisted: {symbol}",
-                    details={"symbol": symbol}
-                )
+                    details={"symbol": symbol},
+                ),
             }
 
         # Check whitelist (if configured)
@@ -427,11 +422,8 @@ class SafetyChecks:
                     check_type="symbol_restriction",
                     severity="critical",
                     message=f"Symbol not in whitelist: {symbol}",
-                    details={
-                        "symbol": symbol,
-                        "whitelist": list(self.symbol_whitelist)
-                    }
-                )
+                    details={"symbol": symbol, "whitelist": list(self.symbol_whitelist)},
+                ),
             }
 
         return {"passed": True}
@@ -444,7 +436,7 @@ class SafetyChecks:
         price: float,
         portfolio_value: float,
         current_positions: Dict[str, Any],
-        exchange_name: str
+        exchange_name: str,
     ) -> Dict[str, Any]:
         """Check API rate limits.
 
@@ -458,16 +450,18 @@ class SafetyChecks:
             # Remove calls older than 1 minute
             cutoff = now - timedelta(minutes=1)
             self.api_calls[exchange_name] = [
-                call_time for call_time in self.api_calls[exchange_name]
-                if call_time > cutoff
+                call_time for call_time in self.api_calls[exchange_name] if call_time > cutoff
             ]
 
         # Check burst limit (per second)
         second_ago = now - timedelta(seconds=1)
-        recent_calls = len([
-            call_time for call_time in self.api_calls.get(exchange_name, [])
-            if call_time > second_ago
-        ])
+        recent_calls = len(
+            [
+                call_time
+                for call_time in self.api_calls.get(exchange_name, [])
+                if call_time > second_ago
+            ]
+        )
 
         if recent_calls >= self.api_burst_limit:
             return {
@@ -476,11 +470,8 @@ class SafetyChecks:
                     check_type="api_rate_limit",
                     severity="warning",
                     message="API burst limit reached - backing off",
-                    details={
-                        "recent_calls": recent_calls,
-                        "burst_limit": self.api_burst_limit
-                    }
-                )
+                    details={"recent_calls": recent_calls, "burst_limit": self.api_burst_limit},
+                ),
             }
 
         # Check rate limit (per minute)
@@ -493,11 +484,8 @@ class SafetyChecks:
                     check_type="api_rate_limit",
                     severity="warning",
                     message="API rate limit reached - backing off",
-                    details={
-                        "minute_calls": minute_calls,
-                        "rate_limit": self.api_rate_limit
-                    }
-                )
+                    details={"minute_calls": minute_calls, "rate_limit": self.api_rate_limit},
+                ),
             }
 
         # Record this call
@@ -515,7 +503,7 @@ class SafetyChecks:
         price: float,
         portfolio_value: float,
         current_positions: Dict[str, Any],
-        exchange_name: str
+        exchange_name: str,
     ) -> Dict[str, Any]:
         """Check portfolio balance is above minimum threshold.
 
@@ -531,9 +519,9 @@ class SafetyChecks:
                     message=f"Portfolio balance below minimum: ${portfolio_value:.2f} < ${float(self.min_balance_threshold):.2f}",
                     details={
                         "current_balance": portfolio_value,
-                        "min_threshold": float(self.min_balance_threshold)
-                    }
-                )
+                        "min_threshold": float(self.min_balance_threshold),
+                    },
+                ),
             }
 
         return {"passed": True}
@@ -546,7 +534,7 @@ class SafetyChecks:
         price: float,
         portfolio_value: float,
         current_positions: Dict[str, Any],
-        exchange_name: str
+        exchange_name: str,
     ) -> Dict[str, Any]:
         """Check trade frequency limits.
 
@@ -596,8 +584,11 @@ class SafetyChecks:
             return False, "API key or secret appears invalid (too short)"
 
         # Check for default/test keys
-        if api_key in ["your_api_key", "test_key", ""] or \
-           api_secret in ["your_api_secret", "test_secret", ""]:
+        if api_key in ["your_api_key", "test_key", ""] or api_secret in [
+            "your_api_secret",
+            "test_secret",
+            "",
+        ]:
             return False, "Default or test API keys detected"
 
         return True, "API keys appear valid"
@@ -671,7 +662,7 @@ class SafetyChecks:
                     })
                     RETURN sv
                     """,
-                    **violation.to_dict()
+                    **violation.to_dict(),
                 )
                 logger.debug("Logged safety violation to knowledge graph")
         except Exception as e:
@@ -698,16 +689,14 @@ class SafetyChecks:
                     """,
                     timestamp=datetime.now(timezone.utc).isoformat(),
                     reason=reason,
-                    duration=self.circuit_breaker_duration
+                    duration=self.circuit_breaker_duration,
                 )
                 logger.debug("Logged circuit breaker activation to knowledge graph")
         except Exception as e:
             logger.warning("Failed to log circuit breaker to graph: {}", e)
 
     def get_violations(
-        self,
-        severity: Optional[str] = None,
-        limit: int = 100
+        self, severity: Optional[str] = None, limit: int = 100
     ) -> List[SafetyViolation]:
         """Get safety violations.
 
@@ -737,7 +726,7 @@ class SafetyChecks:
             "daily_trade_count": self.daily_trade_count,
             "total_violations": len(self.violations),
             "api_rate_limit": self.api_rate_limit,
-            "api_burst_limit": self.api_burst_limit
+            "api_burst_limit": self.api_burst_limit,
         }
 
     def __repr__(self) -> str:

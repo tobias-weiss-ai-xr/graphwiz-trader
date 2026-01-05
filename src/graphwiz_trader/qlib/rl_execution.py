@@ -18,11 +18,13 @@ from loguru import logger
 try:
     import gymnasium as gym
     from gymnasium import spaces
+
     GYM_AVAILABLE = True
 except ImportError:
     try:
         import gym
         from gym import spaces
+
         GYM_AVAILABLE = True
     except ImportError:
         GYM_AVAILABLE = False
@@ -33,6 +35,7 @@ from .config import QlibConfig
 
 class ExecutionAction(Enum):
     """Possible execution actions."""
+
     WAIT = 0
     BUY_MARKET_SMALL = 1
     BUY_MARKET_MEDIUM = 2
@@ -47,6 +50,7 @@ class ExecutionAction(Enum):
 @dataclass
 class OrderBook:
     """Order book state."""
+
     bids: pd.DataFrame = field(default_factory=pd.DataFrame)  # [price, volume]
     asks: pd.DataFrame = field(default_factory=pd.DataFrame)  # [price, volume]
     timestamp: datetime = field(default_factory=datetime.now)
@@ -54,13 +58,13 @@ class OrderBook:
     def get_best_bid(self) -> float:
         """Get best bid price."""
         if len(self.bids) > 0:
-            return self.bids.iloc[0]['price']
+            return self.bids.iloc[0]["price"]
         return 0.0
 
     def get_best_ask(self) -> float:
         """Get best ask price."""
         if len(self.asks) > 0:
-            return self.asks.iloc[0]['price']
+            return self.asks.iloc[0]["price"]
         return 0.0
 
     def get_spread(self) -> float:
@@ -75,6 +79,7 @@ class OrderBook:
 @dataclass
 class ExecutionState:
     """Current execution state."""
+
     target_quantity: float  # Total quantity to execute
     executed_quantity: float = 0.0  # Quantity executed so far
     avg_execution_price: float = 0.0  # Average execution price
@@ -100,7 +105,7 @@ class ExecutionEnvironment(gym.Env if GYM_AVAILABLE else object):
         order_book_history: pd.DataFrame,
         target_quantity: float,
         time_horizon: int = 100,  # Number of steps
-        side: str = 'buy',
+        side: str = "buy",
     ):
         """
         Initialize execution environment.
@@ -143,7 +148,9 @@ class ExecutionEnvironment(gym.Env if GYM_AVAILABLE else object):
         self.execution_prices = []
         self.execution_volumes = []
 
-        logger.info(f"Execution environment initialized: {side} {target_quantity} units over {time_horizon} steps")
+        logger.info(
+            f"Execution environment initialized: {side} {target_quantity} units over {time_horizon} steps"
+        )
 
     def reset(self):
         """Reset environment to initial state."""
@@ -170,28 +177,35 @@ class ExecutionEnvironment(gym.Env if GYM_AVAILABLE else object):
 
         # Price momentum (recent price change)
         window = min(10, self.current_step + 1)
-        recent_prices = self.order_book_history['mid_price'].iloc[
-            max(0, self.current_step - window):self.current_step + 1
+        recent_prices = self.order_book_history["mid_price"].iloc[
+            max(0, self.current_step - window) : self.current_step + 1
         ]
-        price_momentum = (recent_prices.iloc[-1] - recent_prices.iloc[0]) / recent_prices.iloc[0] if len(recent_prices) > 1 else 0
+        price_momentum = (
+            (recent_prices.iloc[-1] - recent_prices.iloc[0]) / recent_prices.iloc[0]
+            if len(recent_prices) > 1
+            else 0
+        )
 
         # Volatility
         volatility = recent_prices.std() / recent_prices.mean() if len(recent_prices) > 1 else 0
 
         # Spread
-        spread = current_book['spread'] if 'spread' in current_book else 0
+        spread = current_book["spread"] if "spread" in current_book else 0
 
         # Depth ratio (bid/ask depth imbalance)
-        depth_ratio = current_book.get('depth_ratio', 1.0)
+        depth_ratio = current_book.get("depth_ratio", 1.0)
 
-        observation = np.array([
-            remaining_ratio,
-            time_ratio,
-            price_momentum,
-            volatility,
-            spread,
-            depth_ratio,
-        ], dtype=np.float32)
+        observation = np.array(
+            [
+                remaining_ratio,
+                time_ratio,
+                price_momentum,
+                volatility,
+                spread,
+                depth_ratio,
+            ],
+            dtype=np.float32,
+        )
 
         return observation
 
@@ -210,7 +224,7 @@ class ExecutionEnvironment(gym.Env if GYM_AVAILABLE else object):
 
         # Get current market state
         current_state = self.order_book_history.iloc[self.current_step]
-        current_price = current_state['mid_price']
+        current_price = current_state["mid_price"]
 
         # Execute action
         execution_quantity, execution_price = self._execute_action(action, current_state)
@@ -222,32 +236,33 @@ class ExecutionEnvironment(gym.Env if GYM_AVAILABLE else object):
 
             self.execution_state.executed_quantity += execution_quantity
             self.execution_state.remaining_quantity = max(
-                0,
-                self.target_quantity - self.execution_state.executed_quantity
+                0, self.target_quantity - self.execution_state.executed_quantity
             )
 
             # Update average execution price
             total_value = sum(p * v for p, v in zip(self.execution_prices, self.execution_volumes))
             total_volume = sum(self.execution_volumes)
-            self.execution_state.avg_execution_price = total_value / total_volume if total_volume > 0 else 0
+            self.execution_state.avg_execution_price = (
+                total_value / total_volume if total_volume > 0 else 0
+            )
 
         # Calculate reward
         reward = self._calculate_reward(execution_quantity, execution_price, current_price)
 
         # Check if done
         done = (
-            self.execution_state.remaining_quantity <= 0.01 or
-            self.current_step >= self.time_horizon - 1
+            self.execution_state.remaining_quantity <= 0.01
+            or self.current_step >= self.time_horizon - 1
         )
 
         self.current_step += 1
         self.execution_state.elapsed_time = self.current_step
 
         info = {
-            'executed_quantity': self.execution_state.executed_quantity,
-            'remaining_quantity': self.execution_state.remaining_quantity,
-            'avg_price': self.execution_state.avg_execution_price,
-            'step': self.current_step,
+            "executed_quantity": self.execution_state.executed_quantity,
+            "remaining_quantity": self.execution_state.remaining_quantity,
+            "avg_price": self.execution_state.avg_execution_price,
+            "step": self.current_step,
         }
 
         return self._get_observation(), reward, done, False, info
@@ -257,8 +272,8 @@ class ExecutionEnvironment(gym.Env if GYM_AVAILABLE else object):
         action_enum = ExecutionAction(action)
 
         # Get current prices
-        bid_price = market_state.get('best_bid', market_state['mid_price'])
-        ask_price = market_state.get('best_ask', market_state['mid_price'])
+        bid_price = market_state.get("best_bid", market_state["mid_price"])
+        ask_price = market_state.get("best_ask", market_state["mid_price"])
 
         # Determine quantity based on action
         if action_enum == ExecutionAction.WAIT:
@@ -291,11 +306,13 @@ class ExecutionEnvironment(gym.Env if GYM_AVAILABLE else object):
         elif action_enum == ExecutionAction.SELL_LIMIT_BELOW:
             price = ask_price * 1.0005
         else:
-            price = market_state['mid_price']
+            price = market_state["mid_price"]
 
         return quantity, price
 
-    def _calculate_reward(self, quantity: float, execution_price: float, market_price: float) -> float:
+    def _calculate_reward(
+        self, quantity: float, execution_price: float, market_price: float
+    ) -> float:
         """Calculate reward for execution."""
         if quantity == 0:
             # Small penalty for waiting when time is limited
@@ -303,7 +320,7 @@ class ExecutionEnvironment(gym.Env if GYM_AVAILABLE else object):
             return -0.01 * time_pressure
 
         # Reward based on execution quality
-        if self.side == 'buy':
+        if self.side == "buy":
             # For buys, lower price is better
             price_advantage = (market_price - execution_price) / market_price
         else:
@@ -327,7 +344,7 @@ class TWAPExecutor:
     def __init__(
         self,
         num_slices: int = 10,
-        time_interval: str = '1h',
+        time_interval: str = "1h",
     ):
         """
         Initialize TWAP executor.
@@ -360,14 +377,16 @@ class TWAPExecutor:
         schedule = []
 
         for i in range(self.num_slices):
-            execution_time = start_time + timedelta(hours=i+1)
+            execution_time = start_time + timedelta(hours=i + 1)
 
-            schedule.append({
-                'slice': i + 1,
-                'quantity': slice_quantity,
-                'execution_time': execution_time,
-                'type': 'market',
-            })
+            schedule.append(
+                {
+                    "slice": i + 1,
+                    "quantity": slice_quantity,
+                    "execution_time": execution_time,
+                    "type": "market",
+                }
+            )
 
         logger.info(f"Generated TWAP schedule: {len(schedule)} slices of {slice_quantity:.4f} each")
 
@@ -422,7 +441,7 @@ class SmartOrderRouter:
             Tuple of (exchange, price, total_cost)
         """
         best_exchange = None
-        best_total_cost = float('inf')
+        best_total_cost = float("inf")
         best_price = None
 
         for exchange in self.exchanges:
@@ -433,7 +452,7 @@ class SmartOrderRouter:
             fee = self.fee_schedule[exchange]
 
             # Get execution price
-            if side == 'buy':
+            if side == "buy":
                 price = order_book.get_best_ask()
             else:
                 price = order_book.get_best_bid()
@@ -479,7 +498,7 @@ class ExecutionAnalyzer:
         Returns:
             Slippage as percentage
         """
-        if side == 'buy':
+        if side == "buy":
             slippage = (execution_price - benchmark_price) / benchmark_price
         else:
             slippage = (benchmark_price - execution_price) / benchmark_price
@@ -536,30 +555,30 @@ class ExecutionAnalyzer:
         metrics = {}
 
         # Completion rate
-        metrics['completion_rate'] = (
+        metrics["completion_rate"] = (
             execution_state.executed_quantity / execution_state.target_quantity
         )
 
         # Average execution price
-        metrics['avg_execution_price'] = execution_state.avg_execution_price
+        metrics["avg_execution_price"] = execution_state.avg_execution_price
 
         # Slippage vs benchmark
         # Assume buy side for now
-        metrics['slippage_benchmark'] = ExecutionAnalyzer.calculate_slippage(
+        metrics["slippage_benchmark"] = ExecutionAnalyzer.calculate_slippage(
             execution_state.avg_execution_price,
             benchmark_price,
-            'buy',
+            "buy",
         )
 
         # Market impact
-        metrics['market_impact'] = ExecutionAnalyzer.calculate_market_impact(
+        metrics["market_impact"] = ExecutionAnalyzer.calculate_market_impact(
             [],  # Would need actual execution history
             [],
             arrival_price,
         )
 
         # Execution time
-        metrics['execution_time'] = execution_state.elapsed_time
+        metrics["execution_time"] = execution_state.elapsed_time
 
         return metrics
 
@@ -568,7 +587,7 @@ def create_execution_environment(
     order_book_history: pd.DataFrame,
     target_quantity: float,
     time_horizon: int = 100,
-    side: str = 'buy',
+    side: str = "buy",
 ) -> ExecutionEnvironment:
     """
     Convenience function to create execution environment.

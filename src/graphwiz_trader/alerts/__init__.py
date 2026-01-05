@@ -36,6 +36,7 @@ except ImportError:
 
 class AlertPriority(str, Enum):
     """Alert priority levels."""
+
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
@@ -44,6 +45,7 @@ class AlertPriority(str, Enum):
 
 class AlertType(str, Enum):
     """Types of trading alerts."""
+
     # Trade alerts
     TRADE_EXECUTED = "trade_executed"
     TRADE_FAILED = "trade_failed"
@@ -86,6 +88,7 @@ class AlertType(str, Enum):
 @dataclass
 class Alert:
     """Alert data structure."""
+
     alert_type: AlertType
     priority: AlertPriority
     title: str
@@ -105,7 +108,7 @@ class Alert:
             "timestamp": self.timestamp.isoformat(),
             "exchange": self.exchange,
             "symbol": self.symbol,
-            "data": self.data
+            "data": self.data,
         }
 
 
@@ -158,9 +161,9 @@ class ConsoleAlertChannel(AlertChannel):
         """Send alert to console."""
         # Color coding based on priority
         colors = {
-            AlertPriority.INFO: "\033[0;36m",      # Cyan
+            AlertPriority.INFO: "\033[0;36m",  # Cyan
             AlertPriority.WARNING: "\033[1;33m",  # Yellow
-            AlertPriority.ERROR: "\033[0;31m",      # Red
+            AlertPriority.ERROR: "\033[0;31m",  # Red
             AlertPriority.CRITICAL: "\033[1;31m",  # Bold Red
         }
         reset = "\033[0m"
@@ -198,32 +201,27 @@ class EmailAlertChannel(AlertChannel):
         """Send email alert."""
         try:
             # Compose email
-            msg = MIMEMultipart('alternative')
-            msg['Subject'] = f"[{alert.priority.value.upper()}] {alert.title}"
-            msg['From'] = self.config['from']
-            msg['To'] = ', '.join(self.config['to'])
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = f"[{alert.priority.value.upper()}] {alert.title}"
+            msg["From"] = self.config["from"]
+            msg["To"] = ", ".join(self.config["to"])
 
             # Plain text version
             text = self._format_text(alert)
-            part1 = MIMEText(text, 'plain')
+            part1 = MIMEText(text, "plain")
             msg.attach(part1)
 
             # HTML version
             html = self._format_html(alert)
-            part2 = MIMEText(html, 'html')
+            part2 = MIMEText(html, "html")
             msg.attach(part2)
 
             # Send email
             with smtplib.SMTP(
-                self.config['smtp_host'],
-                self.config['smtp_port'],
-                timeout=30
+                self.config["smtp_host"], self.config["smtp_port"], timeout=30
             ) as server:
                 server.starttls()
-                server.login(
-                    self.config['smtp_username'],
-                    self.config['smtp_password']
-                )
+                server.login(self.config["smtp_username"], self.config["smtp_password"])
                 server.send_message(msg)
 
             logger.info(f"✅ Email alert sent: {alert.title}")
@@ -322,16 +320,16 @@ class SlackAlertChannel(AlertChannel):
 
     def _send(self, alert: Alert) -> bool:
         """Send Slack alert."""
-        webhook_url = self.config.get('webhook_url')
+        webhook_url = self.config.get("webhook_url")
         if not webhook_url:
             return False
 
         # Color coding
         colors = {
-            AlertPriority.INFO: "36a64f",      # Blue
-            AlertPriority.WARNING: "ff9900",    # Orange
-            AlertPriority.ERROR: "cc0000",      # Red
-            AlertPriority.CRITICAL: "990000",   # Dark Red
+            AlertPriority.INFO: "36a64f",  # Blue
+            AlertPriority.WARNING: "ff9900",  # Orange
+            AlertPriority.ERROR: "cc0000",  # Red
+            AlertPriority.CRITICAL: "990000",  # Dark Red
         }
         color = colors.get(alert.priority, "666666")
 
@@ -341,43 +339,25 @@ class SlackAlertChannel(AlertChannel):
             "title": alert.title,
             "text": alert.message,
             "fields": [
-                {
-                    "title": "Priority",
-                    "value": alert.priority.value.upper(),
-                    "short": True
-                },
+                {"title": "Priority", "value": alert.priority.value.upper(), "short": True},
                 {
                     "title": "Time",
                     "value": alert.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
-                    "short": True
+                    "short": True,
                 },
-                {
-                    "title": "Exchange",
-                    "value": alert.exchange,
-                    "short": True
-                },
-                {
-                    "title": "Symbol",
-                    "value": alert.symbol,
-                    "short": True
-                }
+                {"title": "Exchange", "value": alert.exchange, "short": True},
+                {"title": "Symbol", "value": alert.symbol, "short": True},
             ],
             "footer": "GraphWiz Trader",
-            "ts": int(alert.alert.timestamp.timestamp())
+            "ts": int(alert.alert.timestamp.timestamp()),
         }
 
         # Add data fields
         if alert.data:
             for key, value in alert.data.items():
-                attachment["fields"].append({
-                    "title": key,
-                    "value": str(value),
-                    "short": True
-                })
+                attachment["fields"].append({"title": key, "value": str(value), "short": True})
 
-        payload = {
-            "attachments": [attachment]
-        }
+        payload = {"attachments": [attachment]}
 
         response = requests.post(webhook_url, json=payload, timeout=10)
         response.raise_for_status()
@@ -391,8 +371,8 @@ class TelegramAlertChannel(AlertChannel):
 
     def _send(self, alert: Alert) -> bool:
         """Send Telegram alert."""
-        bot_token = self.config.get('bot_token')
-        chat_id = self.config.get('chat_id')
+        bot_token = self.config.get("bot_token")
+        chat_id = self.config.get("chat_id")
 
         if not bot_token or not chat_id:
             return False
@@ -419,11 +399,7 @@ class TelegramAlertChannel(AlertChannel):
 
         # Send message
         url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-        payload = {
-            "chat_id": chat_id,
-            "text": message,
-            "parse_mode": "Markdown"
-        }
+        payload = {"chat_id": chat_id, "text": message, "parse_mode": "Markdown"}
 
         response = requests.post(url, json=payload, timeout=10)
         response.raise_for_status()
@@ -437,14 +413,11 @@ class WebhookAlertChannel(AlertChannel):
 
     def _send(self, alert: Alert) -> bool:
         """Send webhook alert."""
-        url = self.config.get('url')
+        url = self.config.get("url")
         if not url:
             return False
 
-        payload = {
-            "alert": alert.to_dict(),
-            "timestamp": datetime.now().isoformat()
-        }
+        payload = {"alert": alert.to_dict(), "timestamp": datetime.now().isoformat()}
 
         # Send POST request
         response = requests.post(url, json=payload, timeout=10)
@@ -469,7 +442,7 @@ class AlertManager:
         self._initialize_channels()
 
         # Alert rules
-        self.rules = config.get('rules', {})
+        self.rules = config.get("rules", {})
 
         logger.info("✅ Alert Manager initialized")
 
@@ -479,23 +452,23 @@ class AlertManager:
         self.channels.append(ConsoleAlertChannel({"enabled": True}))
 
         # Email channel
-        if self.config.get('email', {}).get('enabled', False):
-            self.channels.append(EmailAlertChannel(self.config['email']))
+        if self.config.get("email", {}).get("enabled", False):
+            self.channels.append(EmailAlertChannel(self.config["email"]))
             logger.info("✅ Email alerts enabled")
 
         # Slack channel
-        if self.config.get('slack', {}).get('enabled', False):
-            self.channels.append(SlackAlertChannel(self.config['slack']))
+        if self.config.get("slack", {}).get("enabled", False):
+            self.channels.append(SlackAlertChannel(self.config["slack"]))
             logger.info("✅ Slack alerts enabled")
 
         # Telegram channel
-        if self.config.get('telegram', {}).get('enabled', False):
-            self.channels.append(TelegramAlertChannel(self.config['telegram']))
+        if self.config.get("telegram", {}).get("enabled", False):
+            self.channels.append(TelegramAlertChannel(self.config["telegram"]))
             logger.info("✅ Telegram alerts enabled")
 
         # Webhook channel
-        if self.config.get('webhook', {}).get('enabled', False):
-            self.channels.append(WebhookAlertChannel(self.config['webhook']))
+        if self.config.get("webhook", {}).get("enabled", False):
+            self.channels.append(WebhookAlertChannel(self.config["webhook"]))
             logger.info("✅ Webhook alerts enabled")
 
     def send_alert(
@@ -506,7 +479,7 @@ class AlertManager:
         priority: AlertPriority = AlertPriority.INFO,
         exchange: str = "",
         symbol: str = "",
-        data: Optional[Dict[str, Any]] = None
+        data: Optional[Dict[str, Any]] = None,
     ) -> bool:
         """Send alert to all enabled channels.
 
@@ -529,7 +502,7 @@ class AlertManager:
             message=message,
             exchange=exchange,
             symbol=symbol,
-            data=data or {}
+            data=data or {},
         )
 
         # Add to history
@@ -548,13 +521,7 @@ class AlertManager:
         return success
 
     def trade_executed(
-        self,
-        exchange: str,
-        symbol: str,
-        side: str,
-        amount: float,
-        price: float,
-        order_id: str
+        self, exchange: str, symbol: str, side: str, amount: float, price: float, order_id: str
     ) -> bool:
         """Send trade executed alert.
 
@@ -581,8 +548,8 @@ class AlertManager:
                 "amount": f"{amount:.6f}",
                 "price": f"€{price:,.2f}",
                 "value": f"€{amount * price:,.2f}",
-                "order_id": order_id
-            }
+                "order_id": order_id,
+            },
         )
 
     def profit_target(
@@ -591,7 +558,7 @@ class AlertManager:
         symbol: str,
         entry_price: float,
         current_price: float,
-        profit_pct: float
+        profit_pct: float,
     ) -> bool:
         """Send profit target alert.
 
@@ -615,17 +582,12 @@ class AlertManager:
             data={
                 "entry_price": f"€{entry_price:,.2f}",
                 "current_price": f"€{current_price:,.2f}",
-                "profit_percent": f"{profit_pct:.2f}%"
-            }
+                "profit_percent": f"{profit_pct:.2f}%",
+            },
         )
 
     def stop_loss_hit(
-        self,
-        exchange: str,
-        symbol: str,
-        entry_price: float,
-        current_price: float,
-        loss_pct: float
+        self, exchange: str, symbol: str, entry_price: float, current_price: float, loss_pct: float
     ) -> bool:
         """Send stop loss alert.
 
@@ -649,16 +611,11 @@ class AlertManager:
             data={
                 "entry_price": f"€{entry_price:,.2f}",
                 "current_price": f"€{current_price:,.2f}",
-                "loss_percent": f"{loss_pct:.2f}%"
-            }
+                "loss_percent": f"{loss_pct:.2f}%",
+            },
         )
 
-    def daily_loss_limit(
-        self,
-        current_loss: float,
-        limit: float,
-        exchange: str
-    ) -> bool:
+    def daily_loss_limit(self, current_loss: float, limit: float, exchange: str) -> bool:
         """Send daily loss limit alert.
 
         Args:
@@ -673,21 +630,17 @@ class AlertManager:
             alert_type=AlertType.DAILY_LOSS_LIMIT,
             title=f"⚠️ Daily Loss Limit: €{current_loss:,.2f}",
             message=f"Daily loss of €{current_loss:,.2f} has reached limit of €{limit:,.2f}. "
-                    f"Consider stopping trading for today.",
+            f"Consider stopping trading for today.",
             priority=AlertPriority.WARNING,
             exchange=exchange,
             data={
                 "current_loss": f"€{current_loss:,.2f}",
                 "limit": f"€{limit:,.2f}",
-                "utilization": f"{(current_loss/limit)*100:.1f}%"
-            }
+                "utilization": f"{(current_loss/limit)*100:.1f}%",
+            },
         )
 
-    def exchange_disconnected(
-        self,
-        exchange: str,
-        error: str
-    ) -> bool:
+    def exchange_disconnected(self, exchange: str, error: str) -> bool:
         """Send exchange disconnect alert.
 
         Args:
@@ -703,16 +656,10 @@ class AlertManager:
             message=f"Lost connection to {exchange}. Attempting to reconnect...",
             priority=AlertPriority.ERROR,
             exchange=exchange,
-            data={
-                "error": error
-            }
+            data={"error": error},
         )
 
-    def system_error(
-        self,
-        component: str,
-        error: str
-    ) -> bool:
+    def system_error(self, component: str, error: str) -> bool:
         """Send system error alert.
 
         Args:
@@ -727,19 +674,10 @@ class AlertManager:
             title=f"❌ System Error: {component}",
             message=f"Error in {component}: {error}",
             priority=AlertPriority.ERROR,
-            data={
-                "component": component,
-                "error": error
-            }
+            data={"component": component, "error": error},
         )
 
-    def daily_summary(
-        self,
-        date: str,
-        trades: int,
-        pnl: float,
-        positions: int
-    ) -> bool:
+    def daily_summary(self, date: str, trades: int, pnl: float, positions: int) -> bool:
         """Send daily summary alert.
 
         Args:
@@ -761,16 +699,12 @@ class AlertManager:
             data={
                 "trades": trades,
                 "pnl": f"{pnl_symbol} €{pnl:+,.2f}",
-                "open_positions": positions
-            }
+                "open_positions": positions,
+            },
         )
 
     def position_size_warning(
-        self,
-        exchange: str,
-        symbol: str,
-        current_size: float,
-        max_size: float
+        self, exchange: str, symbol: str, current_size: float, max_size: float
     ) -> bool:
         """Send position size warning alert.
 
@@ -795,17 +729,12 @@ class AlertManager:
             data={
                 "current_size": f"{current_size:.4f}",
                 "max_size": f"{max_size:.4f}",
-                "utilization": f"{utilization_pct:.1f}%"
-            }
+                "utilization": f"{utilization_pct:.1f}%",
+            },
         )
 
     def trade_failed(
-        self,
-        exchange: str,
-        symbol: str,
-        side: str,
-        amount: float,
-        error: str
+        self, exchange: str, symbol: str, side: str, amount: float, error: str
     ) -> bool:
         """Send trade failure alert.
 
@@ -826,11 +755,7 @@ class AlertManager:
             priority=AlertPriority.ERROR,
             exchange=exchange,
             symbol=symbol,
-            data={
-                "side": side.upper(),
-                "amount": f"{amount:.6f}",
-                "error": error
-            }
+            data={"side": side.upper(), "amount": f"{amount:.6f}", "error": error},
         )
 
 

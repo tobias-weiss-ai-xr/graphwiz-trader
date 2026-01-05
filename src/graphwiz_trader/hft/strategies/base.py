@@ -135,15 +135,11 @@ class HFTStrategy(ABC):
         logger.info(f"  Losing Trades: {self.performance['losing_trades']}")
 
         if self.performance["winning_trades"] > 0:
-            avg_win = (
-                self.performance["total_profit"] / self.performance["winning_trades"]
-            )
+            avg_win = self.performance["total_profit"] / self.performance["winning_trades"]
             logger.info(f"  Average Win: ${avg_win:.2f}")
 
         if self.performance["losing_trades"] > 0:
-            avg_loss = (
-                self.performance["total_loss"] / self.performance["losing_trades"]
-            )
+            avg_loss = self.performance["total_loss"] / self.performance["losing_trades"]
             logger.info(f"  Average Loss: ${avg_loss:.2f}")
 
     def get_performance(self) -> Dict[str, Any]:

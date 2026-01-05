@@ -12,6 +12,7 @@ try:
         QlibDataAdapter,
         QlibSignalGenerator,
     )
+
     QLIB_AVAILABLE = True
 except ImportError:
     QLIB_AVAILABLE = False
@@ -144,9 +145,11 @@ class QlibStrategy:
 
                 training_results[symbol] = results
 
-                logger.info(f"Training complete for {symbol}: "
-                           f"Train Acc={results['train_accuracy']:.4f}, "
-                           f"Val Acc={results['val_accuracy']:.4f}")
+                logger.info(
+                    f"Training complete for {symbol}: "
+                    f"Train Acc={results['train_accuracy']:.4f}, "
+                    f"Val Acc={results['val_accuracy']:.4f}"
+                )
 
             except Exception as e:
                 logger.error(f"Error training model for {symbol}: {e}")
@@ -195,9 +198,11 @@ class QlibStrategy:
 
                 signals[symbol] = prediction
 
-                logger.info(f"Generated signal for {symbol}: "
-                           f"{prediction['signal']} (prob={prediction['probability']:.4f}, "
-                           f"confidence={prediction['confidence']})")
+                logger.info(
+                    f"Generated signal for {symbol}: "
+                    f"{prediction['signal']} (prob={prediction['probability']:.4f}, "
+                    f"confidence={prediction['confidence']})"
+                )
 
             except Exception as e:
                 logger.error(f"Error generating signal for {symbol}: {e}")
@@ -219,18 +224,15 @@ class QlibStrategy:
 
         # Check current positions
         current_positions = self.trading_engine.get_positions()
-        current_symbols = {pos['symbol'] for pos in current_positions}
+        current_symbols = {pos["symbol"] for pos in current_positions}
 
         for symbol, signal in signals.items():
             try:
                 # Get current positions for this symbol
-                symbol_positions = [
-                    pos for pos in current_positions
-                    if symbol in pos['symbol']
-                ]
+                symbol_positions = [pos for pos in current_positions if symbol in pos["symbol"]]
 
                 # Execute based on signal
-                if signal['signal'] == 'BUY':
+                if signal["signal"] == "BUY":
                     # Only buy if we don't already have a position
                     if not symbol_positions:
                         # Check max positions limit
@@ -241,21 +243,17 @@ class QlibStrategy:
                         result = await self._execute_buy(symbol, signal)
                         results.append(result)
 
-                elif signal['signal'] in ['HOLD', 'SELL']:
+                elif signal["signal"] in ["HOLD", "SELL"]:
                     # Check if we should sell existing positions
                     if symbol_positions:
                         # Sell if signal is weak
-                        if signal['probability'] < 0.3:
+                        if signal["probability"] < 0.3:
                             result = await self._execute_sell(symbol, signal)
                             results.append(result)
 
             except Exception as e:
                 logger.error(f"Error executing signal for {symbol}: {e}")
-                results.append({
-                    'symbol': symbol,
-                    'status': 'error',
-                    'error': str(e)
-                })
+                results.append({"symbol": symbol, "status": "error", "error": str(e)})
 
         return results
 
@@ -289,7 +287,7 @@ class QlibStrategy:
 
         except Exception as e:
             logger.error(f"Error executing buy for {symbol}: {e}")
-            return {'symbol': symbol, 'status': 'error', 'error': str(e)}
+            return {"symbol": symbol, "status": "error", "error": str(e)}
 
     async def _execute_sell(
         self,
@@ -303,16 +301,15 @@ class QlibStrategy:
             # Get current position
             positions = self.trading_engine.get_positions()
             symbol_positions = [
-                pos for pos in positions
-                if symbol in pos['symbol'] and pos['side'] == 'buy'
+                pos for pos in positions if symbol in pos["symbol"] and pos["side"] == "buy"
             ]
 
             if not symbol_positions:
                 logger.info(f"No long position to close for {symbol}")
-                return {'symbol': symbol, 'status': 'skipped', 'reason': 'No position'}
+                return {"symbol": symbol, "status": "skipped", "reason": "No position"}
 
             # Sell the entire position
-            amount = symbol_positions[0]['amount']
+            amount = symbol_positions[0]["amount"]
 
             logger.info(f"Executing SELL for {symbol}: {signal}")
 
@@ -330,7 +327,7 @@ class QlibStrategy:
 
         except Exception as e:
             logger.error(f"Error executing sell for {symbol}: {e}")
-            return {'symbol': symbol, 'status': 'error', 'error': str(e)}
+            return {"symbol": symbol, "status": "error", "error": str(e)}
 
     def _calculate_position_size(self, symbol: str) -> float:
         """
@@ -387,11 +384,11 @@ class QlibStrategy:
         execution_results = await self.execute_signals(signals)
 
         cycle_results = {
-            'timestamp': datetime.now().isoformat(),
-            'signals_generated': len(signals),
-            'trades_executed': len(execution_results),
-            'signals': signals,
-            'executions': execution_results,
+            "timestamp": datetime.now().isoformat(),
+            "signals_generated": len(signals),
+            "trades_executed": len(execution_results),
+            "signals": signals,
+            "executions": execution_results,
         }
 
         logger.info(f"Cycle complete: {len(signals)} signals, {len(execution_results)} trades")
@@ -406,15 +403,17 @@ class QlibStrategy:
             Dictionary with strategy information
         """
         return {
-            'strategy_type': 'qlib_ml',
-            'symbols': self.symbols,
-            'running': self._running,
-            'signal_threshold': self.signal_threshold,
-            'position_size': self.position_size,
-            'max_positions': self.max_positions,
-            'last_retrain_time': self.last_retrain_time.isoformat() if self.last_retrain_time else None,
-            'model_loaded': self.signal_generator.model is not None,
-            'config': self.config,
+            "strategy_type": "qlib_ml",
+            "symbols": self.symbols,
+            "running": self._running,
+            "signal_threshold": self.signal_threshold,
+            "position_size": self.position_size,
+            "max_positions": self.max_positions,
+            "last_retrain_time": (
+                self.last_retrain_time.isoformat() if self.last_retrain_time else None
+            ),
+            "model_loaded": self.signal_generator.model is not None,
+            "config": self.config,
         }
 
 

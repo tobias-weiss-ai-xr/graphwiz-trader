@@ -41,7 +41,7 @@ class GraphWizTrader:
             alert_config_path = Path("config/alerts.yaml")
 
             if alert_config_path.exists():
-                with open(alert_config_path, 'r') as f:
+                with open(alert_config_path, "r") as f:
                     alert_config = yaml.safe_load(f)
 
                 # Expand environment variables
@@ -71,12 +71,12 @@ class GraphWizTrader:
         def expand_value(value):
             if isinstance(value, str):
                 # Expand ${VAR} or $VAR format
-                if '${' in value:
-                    pattern = r'\$\{([^}]+)\}'
+                if "${" in value:
+                    pattern = r"\$\{([^}]+)\}"
                     matches = re.findall(pattern, value)
                     for match in matches:
-                        env_value = os.getenv(match, '')
-                        value = value.replace(f'${{{match}}}', env_value)
+                        env_value = os.getenv(match, "")
+                        value = value.replace(f"${{{match}}}", env_value)
                 return value
             elif isinstance(value, dict):
                 return {k: expand_value(v) for k, v in value.items()}
@@ -97,10 +97,7 @@ class GraphWizTrader:
 
         # Initialize agent orchestrator
         logger.info("Initializing AI agents...")
-        self.agent_orchestrator = AgentOrchestrator(
-            self.config.get("agents", {}),
-            self.kg
-        )
+        self.agent_orchestrator = AgentOrchestrator(self.config.get("agents", {}), self.kg)
 
         # Initialize trading engine
         logger.info("Initializing trading engine...")
@@ -109,7 +106,7 @@ class GraphWizTrader:
             self.config.get("exchanges", {}),
             self.kg,
             self.agent_orchestrator,
-            self.alert_manager
+            self.alert_manager,
         )
 
         # Start trading
@@ -152,13 +149,9 @@ def main() -> int:
     parser.add_argument(
         "--config",
         default="config/config.yaml",
-        help="Path to configuration file (default: config/config.yaml)"
+        help="Path to configuration file (default: config/config.yaml)",
     )
-    parser.add_argument(
-        "--version",
-        action="version",
-        version="GraphWiz Trader 0.1.0"
-    )
+    parser.add_argument("--version", action="version", version="GraphWiz Trader 0.1.0")
 
     args = parser.parse_args()
 
@@ -177,6 +170,7 @@ def main() -> int:
         while trader.is_running():
             try:
                 import time
+
                 time.sleep(1)
             except KeyboardInterrupt:
                 logger.info("Received interrupt signal")

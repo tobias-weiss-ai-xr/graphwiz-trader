@@ -28,6 +28,7 @@ try:
     from sklearn.linear_model import Ridge
     from sklearn.model_selection import train_test_split
     from sklearn.metrics import mean_squared_error
+
     SCIKIT_AVAILABLE = True
 except ImportError:
     SCIKIT_AVAILABLE = False
@@ -38,6 +39,7 @@ from ..trading.engine import TradingEngine
 
 class MeanReversionType(Enum):
     """Types of mean reversion strategies."""
+
     BOLLINGER = "bollinger"  # Price deviation from moving average
     RSI = "rsi"  # RSI-based reversion
     ZSCORE = "zscore"  # Statistical z-score
@@ -113,9 +115,9 @@ class AdvancedMeanReversionStrategy:
 
         # Apply volatility filter if enabled
         if self.volatility_filter:
-            volatility = df['close'].pct_change().rolling(self.lookback_period).std()
+            volatility = df["close"].pct_change().rolling(self.lookback_period).std()
             volatility_mask = volatility < self.volatility_threshold
-            signals['signal'] = signals['signal'] & volatility_mask
+            signals["signal"] = signals["signal"] & volatility_mask
 
         return signals
 
@@ -124,8 +126,8 @@ class AdvancedMeanReversionStrategy:
         signals = pd.DataFrame(index=df.index)
 
         # Calculate Bollinger Bands
-        sma = df['close'].rolling(window=self.lookback_period).mean()
-        std = df['close'].rolling(window=self.lookback_period).std()
+        sma = df["close"].rolling(window=self.lookback_period).mean()
+        std = df["close"].rolling(window=self.lookback_period).std()
 
         upper_band = sma + (self.entry_threshold * std)
         lower_band = sma - (self.entry_threshold * std)
@@ -133,16 +135,18 @@ class AdvancedMeanReversionStrategy:
 
         # Generate signals
         # Buy when price is below lower band (oversold)
-        signals['signal'] = (df['close'] < lower_band).astype(int)
+        signals["signal"] = (df["close"] < lower_band).astype(int)
 
         # Exit when price crosses back to mean
-        signals['exit_signal'] = (df['close'] > sma).astype(int)
+        signals["exit_signal"] = (df["close"] > sma).astype(int)
 
         # Store metrics
-        signals['upper_band'] = upper_band
-        signals['lower_band'] = lower_band
-        signals['sma'] = sma
-        signals['position_size'] = (lower_band - df['close']) / lower_band  # More oversold = larger position
+        signals["upper_band"] = upper_band
+        signals["lower_band"] = lower_band
+        signals["sma"] = sma
+        signals["position_size"] = (
+            lower_band - df["close"]
+        ) / lower_band  # More oversold = larger position
 
         return signals
 
@@ -151,24 +155,24 @@ class AdvancedMeanReversionStrategy:
         signals = pd.DataFrame(index=df.index)
 
         # Calculate RSI
-        delta = df['close'].diff()
+        delta = df["close"].diff()
         gain = (delta.where(delta > 0, 0)).rolling(window=self.lookback_period).mean()
         loss = (-delta.where(delta < 0, 0)).rolling(window=self.lookback_period).mean()
         rs = gain / (loss + 1e-10)
         rsi = 100 - (100 / (1 + rs))
 
-        signals['rsi'] = rsi
+        signals["rsi"] = rsi
 
         # Generate signals
         # Buy when RSI < 30 (oversold)
-        signals['signal'] = (rsi < 30).astype(int)
+        signals["signal"] = (rsi < 30).astype(int)
 
         # Exit when RSI > 50
-        signals['exit_signal'] = (rsi > 50).astype(int)
+        signals["exit_signal"] = (rsi > 50).astype(int)
 
         # Position size based on RSI level
-        signals['position_size'] = (30 - rsi) / 30  # Lower RSI = larger position
-        signals['position_size'] = signals['position_size'].clip(0, 1)
+        signals["position_size"] = (30 - rsi) / 30  # Lower RSI = larger position
+        signals["position_size"] = signals["position_size"].clip(0, 1)
 
         return signals
 
@@ -177,21 +181,21 @@ class AdvancedMeanReversionStrategy:
         signals = pd.DataFrame(index=df.index)
 
         # Calculate z-score
-        mean = df['close'].rolling(window=self.lookback_period).mean()
-        std = df['close'].rolling(window=self.lookback_period).std()
-        zscore = (df['close'] - mean) / std
+        mean = df["close"].rolling(window=self.lookback_period).mean()
+        std = df["close"].rolling(window=self.lookback_period).std()
+        zscore = (df["close"] - mean) / std
 
-        signals['zscore'] = zscore
+        signals["zscore"] = zscore
 
         # Generate signals
         # Buy when z-score < -entry_threshold (very oversold)
-        signals['signal'] = (zscore < -self.entry_threshold).astype(int)
+        signals["signal"] = (zscore < -self.entry_threshold).astype(int)
 
         # Exit when z-score crosses 0
-        signals['exit_signal'] = (zscore > 0).astype(int)
+        signals["exit_signal"] = (zscore > 0).astype(int)
 
         # Position size based on z-score magnitude
-        signals['position_size'] = (-zscore.abs() / self.entry_threshold).clip(0, 1)
+        signals["position_size"] = (-zscore.abs() / self.entry_threshold).clip(0, 1)
 
         return signals
 
@@ -200,8 +204,8 @@ class AdvancedMeanReversionStrategy:
         signals = pd.DataFrame(index=df.index)
 
         # Calculate envelopes (using high/low moving averages)
-        ma_high = df['high'].rolling(window=self.lookback_period).mean()
-        ma_low = df['low'].rolling(window=self.lookback_period).mean()
+        ma_high = df["high"].rolling(window=self.lookback_period).mean()
+        ma_low = df["low"].rolling(window=self.lookback_period).mean()
         ma_mid = (ma_high + ma_low) / 2
 
         # Envelope percentage
@@ -210,12 +214,12 @@ class AdvancedMeanReversionStrategy:
         upper_envelope = ma_mid * (1 + envelope_pct)
         lower_envelope = ma_mid * (1 - envelope_pct)
 
-        signals['upper_envelope'] = upper_envelope
-        signals['lower_envelope'] = lower_envelope
+        signals["upper_envelope"] = upper_envelope
+        signals["lower_envelope"] = lower_envelope
 
         # Generate signals
-        signals['signal'] = (df['close'] < lower_envelope).astype(int)
-        signals['exit_signal'] = (df['close'] > ma_mid).astype(int)
+        signals["signal"] = (df["close"] < lower_envelope).astype(int)
+        signals["exit_signal"] = (df["close"] > ma_mid).astype(int)
 
         return signals
 
@@ -229,23 +233,21 @@ class AdvancedMeanReversionStrategy:
         signals = pd.DataFrame(index=df.index)
 
         # Combine signals (voting mechanism)
-        signals['bollinger_signal'] = bollinger['signal']
-        signals['rsi_signal'] = rsi['signal']
-        signals['zscore_signal'] = zscore['signal']
+        signals["bollinger_signal"] = bollinger["signal"]
+        signals["rsi_signal"] = rsi["signal"]
+        signals["zscore_signal"] = zscore["signal"]
 
         # Buy when at least 2 indicators agree
-        signal_sum = bollinger['signal'] + rsi['signal'] + zscore['signal']
-        signals['signal'] = (signal_sum >= 2).astype(int)
+        signal_sum = bollinger["signal"] + rsi["signal"] + zscore["signal"]
+        signals["signal"] = (signal_sum >= 2).astype(int)
 
         # Exit when price returns to mean
-        sma = df['close'].rolling(window=self.lookback_period).mean()
-        signals['exit_signal'] = (df['close'] > sma).astype(int)
+        sma = df["close"].rolling(window=self.lookback_period).mean()
+        signals["exit_signal"] = (df["close"] > sma).astype(int)
 
         # Weighted position size (average of individual sizes)
-        signals['position_size'] = (
-            bollinger['position_size'] +
-            rsi['position_size'] +
-            zscore['position_size']
+        signals["position_size"] = (
+            bollinger["position_size"] + rsi["position_size"] + zscore["position_size"]
         ) / 3
 
         return signals
@@ -328,7 +330,7 @@ class PairsTradingStrategy:
             top_indices = loadings.argsort()[-4:]  # Top 4 symbols
 
             for i in range(len(top_indices)):
-                for j in range(i+1, len(top_indices)):
+                for j in range(i + 1, len(top_indices)):
                     symbol1 = prices_df.columns[top_indices[i]]
                     symbol2 = prices_df.columns[top_indices[j]]
 
@@ -375,17 +377,17 @@ class PairsTradingStrategy:
         spread_std = spread.rolling(window=self.lookback_period).std()
         spread_zscore = (spread - spread_mean) / spread_std
 
-        signals['spread'] = spread
-        signals['spread_zscore'] = spread_zscore
-        signals['hedge_ratio'] = hedge_ratio
+        signals["spread"] = spread
+        signals["spread_zscore"] = spread_zscore
+        signals["hedge_ratio"] = hedge_ratio
 
         # Generate signals
         # Long the spread when it's low (short when high)
-        signals['signal'] = (spread_zscore < -self.entry_zscore).astype(int)  # Long spread
-        signals['exit_signal'] = (abs(spread_zscore) < self.exit_zscore).astype(int)
+        signals["signal"] = (spread_zscore < -self.entry_zscore).astype(int)  # Long spread
+        signals["exit_signal"] = (abs(spread_zscore) < self.exit_zscore).astype(int)
 
         # Position sizing based on z-score confidence
-        signals['position_size'] = (abs(spread_zscore) / self.entry_zscore).clip(0, 2)
+        signals["position_size"] = (abs(spread_zscore) / self.entry_zscore).clip(0, 2)
 
         return signals
 
@@ -412,13 +414,13 @@ class PairsTradingStrategy:
         model = Ridge(alpha=1.0)
 
         # Remove NaN values
-        df = pd.DataFrame({'y': price1, 'x': price2}).dropna()
+        df = pd.DataFrame({"y": price1, "x": price2}).dropna()
 
         if len(df) < 30:
             return price1.mean() / price2.mean()
 
-        X = df[['x']].values
-        y = df['y'].values
+        X = df[["x"]].values
+        y = df["y"].values
 
         model.fit(X, y)
         return model.coef_[0]
@@ -471,26 +473,26 @@ class MomentumVolatilityFilteringStrategy:
         signals = pd.DataFrame(index=df.index)
 
         # Calculate momentum
-        momentum = df['close'].pct_change(self.momentum_period)
+        momentum = df["close"].pct_change(self.momentum_period)
 
         # Calculate volatility
-        volatility = df['close'].pct_change().rolling(self.volatility_period).std()
+        volatility = df["close"].pct_change().rolling(self.volatility_period).std()
 
-        signals['momentum'] = momentum
-        signals['volatility'] = volatility
+        signals["momentum"] = momentum
+        signals["volatility"] = volatility
 
         # Generate signals only when volatility is low
         low_volatility = volatility < self.volatility_threshold
 
         # Buy when momentum is positive and volatility is low
-        signals['signal'] = (momentum > self.momentum_threshold) & low_volatility
-        signals['signal'] = signals['signal'].astype(int)
+        signals["signal"] = (momentum > self.momentum_threshold) & low_volatility
+        signals["signal"] = signals["signal"].astype(int)
 
         # Position size based on momentum strength
-        signals['position_size'] = (momentum / volatility).clip(0, 2)
+        signals["position_size"] = (momentum / volatility).clip(0, 2)
 
         # Exit signal when momentum turns negative
-        signals['exit_signal'] = (momentum < 0).astype(int)
+        signals["exit_signal"] = (momentum < 0).astype(int)
 
         return signals
 
@@ -521,19 +523,19 @@ class MultiFactorStrategy:
             factor_weights: Weights for each factor
         """
         self.factors = factors or [
-            'momentum',
-            'mean_reversion',
-            'volatility',
-            'volume',
-            'on_chain_activity',
+            "momentum",
+            "mean_reversion",
+            "volatility",
+            "volume",
+            "on_chain_activity",
         ]
 
         self.factor_weights = factor_weights or {
-            'momentum': 0.3,
-            'mean_reversion': 0.2,
-            'volatility': 0.2,
-            'volume': 0.15,
-            'on_chain_activity': 0.15,
+            "momentum": 0.3,
+            "mean_reversion": 0.2,
+            "volatility": 0.2,
+            "volume": 0.15,
+            "on_chain_activity": 0.15,
         }
 
         logger.info(f"Multi-Factor Strategy initialized with {len(self.factors)} factors")
@@ -556,24 +558,24 @@ class MultiFactorStrategy:
         factors_df = pd.DataFrame(index=df.index)
 
         # Momentum factor
-        factors_df['momentum'] = df['close'].pct_change(50)
+        factors_df["momentum"] = df["close"].pct_change(50)
 
         # Mean reversion factor (inverse of momentum)
-        factors_df['mean_reversion'] = -factors_df['momentum']
+        factors_df["mean_reversion"] = -factors_df["momentum"]
 
         # Volatility factor
-        factors_df['volatility'] = df['close'].pct_change().rolling(20).std()
+        factors_df["volatility"] = df["close"].pct_change().rolling(20).std()
 
         # Volume factor
-        factors_df['volume'] = df['volume'].rolling(20).mean() / df['volume'].rolling(50).mean()
+        factors_df["volume"] = df["volume"].rolling(20).mean() / df["volume"].rolling(50).mean()
 
         # On-chain activity (if provided)
         if on_chain_data is not None and not on_chain_data.empty:
             # Normalize on-chain data
-            factors_df['on_chain_activity'] = on_chain_data['activity_score']
+            factors_df["on_chain_activity"] = on_chain_data["activity_score"]
         else:
             # Use volume as proxy for on-chain activity
-            factors_df['on_chain_activity'] = factors_df['volume']
+            factors_df["on_chain_activity"] = factors_df["volume"]
 
         # Normalize all factors to 0-1 range
         for factor in self.factors:
@@ -581,9 +583,11 @@ class MultiFactorStrategy:
                 min_val = factors_df[factor].min()
                 max_val = factors_df[factor].max()
                 if max_val > min_val:
-                    factors_df[f'{factor}_norm'] = (factors_df[factor] - min_val) / (max_val - min_val)
+                    factors_df[f"{factor}_norm"] = (factors_df[factor] - min_val) / (
+                        max_val - min_val
+                    )
                 else:
-                    factors_df[f'{factor}_norm'] = 0
+                    factors_df[f"{factor}_norm"] = 0
 
         return factors_df
 
@@ -611,21 +615,21 @@ class MultiFactorStrategy:
         weighted_score = pd.Series(0.0, index=df.index)
 
         for factor, weight in self.factor_weights.items():
-            col_name = f'{factor}_norm'
+            col_name = f"{factor}_norm"
             if col_name in factors_df.columns:
                 weighted_score += factors_df[col_name] * weight
 
-        signals['factor_score'] = weighted_score
+        signals["factor_score"] = weighted_score
 
         # Generate signals based on combined score
         # Buy when score > 0.6 (top 40% of scores)
-        signals['signal'] = (weighted_score > 0.6).astype(int)
+        signals["signal"] = (weighted_score > 0.6).astype(int)
 
         # Position size based on score strength
-        signals['position_size'] = weighted_score.clip(0, 2)
+        signals["position_size"] = weighted_score.clip(0, 2)
 
         # Exit signal when score drops below 0.4
-        signals['exit_signal'] = (weighted_score < 0.4).astype(int)
+        signals["exit_signal"] = (weighted_score < 0.4).astype(int)
 
         return signals
 
@@ -645,7 +649,7 @@ class ConfidenceThresholdStrategy:
         base_threshold: float = 0.6,
         aggressive_threshold: float = 0.7,
         conservative_threshold: float = 0.5,
-        mode: str = 'normal',  # 'aggressive', 'normal', 'conservative'
+        mode: str = "normal",  # 'aggressive', 'normal', 'conservative'
     ):
         """
         Initialize confidence threshold strategy.
@@ -658,9 +662,9 @@ class ConfidenceThresholdStrategy:
         """
         self.mode = mode
 
-        if mode == 'aggressive':
+        if mode == "aggressive":
             self.threshold = aggressive_threshold
-        elif mode == 'conservative':
+        elif mode == "conservative":
             self.threshold = conservative_threshold
         else:
             self.threshold = base_threshold
@@ -686,7 +690,11 @@ class ConfidenceThresholdStrategy:
 
         # Adjust based on recent performance
         if len(recent_performance) >= 10:
-            sharpe = recent_performance.mean() / recent_performance.std() if recent_performance.std() > 0 else 0
+            sharpe = (
+                recent_performance.mean() / recent_performance.std()
+                if recent_performance.std() > 0
+                else 0
+            )
 
             # Lower threshold if Sharpe is good
             if sharpe > 1.5:

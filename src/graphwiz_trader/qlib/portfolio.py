@@ -18,6 +18,7 @@ from loguru import logger
 try:
     from scipy.optimize import minimize
     from scipy import stats
+
     SCIPY_AVAILABLE = True
 except ImportError:
     SCIPY_AVAILABLE = False
@@ -77,7 +78,9 @@ class PortfolioOptimizer:
         if not SCIPY_AVAILABLE:
             logger.warning("Scipy not available. Using simplified optimization methods.")
 
-        logger.info(f"Portfolio optimizer initialized with method: {self.config.optimization_method}")
+        logger.info(
+            f"Portfolio optimizer initialized with method: {self.config.optimization_method}"
+        )
 
     def optimize(
         self,
@@ -134,7 +137,9 @@ class PortfolioOptimizer:
                 current_weights,
             )
         else:
-            logger.warning(f"Unknown method: {self.config.optimization_method}. Using equal weight.")
+            logger.warning(
+                f"Unknown method: {self.config.optimization_method}. Using equal weight."
+            )
             weights = self._equal_weight(returns.columns)
 
         # Apply constraints
@@ -172,7 +177,7 @@ class PortfolioOptimizer:
 
         # Constraints
         constraints = [
-            {'type': 'eq', 'fun': lambda w: np.sum(w) - 1.0},  # Weights sum to 1
+            {"type": "eq", "fun": lambda w: np.sum(w) - 1.0},  # Weights sum to 1
         ]
 
         # Bounds
@@ -192,10 +197,10 @@ class PortfolioOptimizer:
         result = minimize(
             objective,
             x0=x0,
-            method='SLSQP',
+            method="SLSQP",
             bounds=bounds,
             constraints=constraints,
-            options={'ftol': 1e-9},
+            options={"ftol": 1e-9},
         )
 
         if not result.success:
@@ -234,7 +239,7 @@ class PortfolioOptimizer:
 
         # Constraints
         constraints = [
-            {'type': 'eq', 'fun': lambda w: np.sum(w) - 1.0},
+            {"type": "eq", "fun": lambda w: np.sum(w) - 1.0},
         ]
 
         # Bounds
@@ -254,10 +259,10 @@ class PortfolioOptimizer:
         result = minimize(
             objective,
             x0=x0,
-            method='SLSQP',
+            method="SLSQP",
             bounds=bounds,
             constraints=constraints,
-            options={'ftol': 1e-9},
+            options={"ftol": 1e-9},
         )
 
         if not result.success:
@@ -290,7 +295,7 @@ class PortfolioOptimizer:
 
         # Constraints
         constraints = [
-            {'type': 'eq', 'fun': lambda w: np.sum(w) - 1.0},
+            {"type": "eq", "fun": lambda w: np.sum(w) - 1.0},
         ]
 
         # Bounds
@@ -310,10 +315,10 @@ class PortfolioOptimizer:
         result = minimize(
             objective,
             x0=x0,
-            method='SLSQP',
+            method="SLSQP",
             bounds=bounds,
             constraints=constraints,
-            options={'ftol': 1e-9},
+            options={"ftol": 1e-9},
         )
 
         if not result.success:
@@ -351,7 +356,7 @@ class PortfolioOptimizer:
 
         # Constraints
         constraints = [
-            {'type': 'eq', 'fun': lambda w: np.sum(w) - 1.0},
+            {"type": "eq", "fun": lambda w: np.sum(w) - 1.0},
         ]
 
         # Bounds
@@ -371,10 +376,10 @@ class PortfolioOptimizer:
         result = minimize(
             objective,
             x0=x0,
-            method='SLSQP',
+            method="SLSQP",
             bounds=bounds,
             constraints=constraints,
-            options={'ftol': 1e-9},
+            options={"ftol": 1e-9},
         )
 
         if not result.success:
@@ -409,7 +414,9 @@ class PortfolioOptimizer:
         expected_returns = pd.Series(implied_returns, index=returns.columns)
 
         # Use mean-variance with equilibrium returns
-        return self._mean_variance_optimization(expected_returns, covariance_matrix, current_weights)
+        return self._mean_variance_optimization(
+            expected_returns, covariance_matrix, current_weights
+        )
 
     def _equal_weight(self, assets: pd.Index) -> pd.Series:
         """Equal weight allocation."""
@@ -476,14 +483,14 @@ class PortfolioOptimizer:
         cvar_95 = portfolio_returns[portfolio_returns <= var_95].mean()
 
         metrics = {
-            'total_return': total_return,
-            'annualized_return': annualized_return,
-            'volatility': volatility,
-            'sharpe_ratio': sharpe_ratio,
-            'max_drawdown': max_drawdown,
-            'var_95': var_95,
-            'cvar_95': cvar_95,
-            'portfolio_returns': portfolio_returns,
+            "total_return": total_return,
+            "annualized_return": annualized_return,
+            "volatility": volatility,
+            "sharpe_ratio": sharpe_ratio,
+            "max_drawdown": max_drawdown,
+            "var_95": var_95,
+            "cvar_95": cvar_95,
+            "portfolio_returns": portfolio_returns,
         }
 
         return metrics
@@ -549,7 +556,9 @@ class DynamicPositionSizer:
         # Risk-based position sizing (Kelly Criterion inspired)
         # Position size = (confidence * expected_return) / (asset_volatility^2)
         # Simplified: Scale by risk tolerance and volatility
-        risk_adjusted_size = (self.risk_tolerance * portfolio_value) / (asset_volatility * np.sqrt(252))
+        risk_adjusted_size = (self.risk_tolerance * portfolio_value) / (
+            asset_volatility * np.sqrt(252)
+        )
 
         # Take minimum of base and risk-adjusted
         position_size = min(base_position, risk_adjusted_size)

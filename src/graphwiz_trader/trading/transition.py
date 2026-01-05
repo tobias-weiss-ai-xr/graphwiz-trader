@@ -58,7 +58,7 @@ class TransitionManager:
         safety_checks: SafetyChecks,
         knowledge_graph,
         config: Optional[Dict[str, Any]] = None,
-        alert_callback: Optional[Callable] = None
+        alert_callback: Optional[Callable] = None,
     ):
         """Initialize transition manager.
 
@@ -95,8 +95,7 @@ class TransitionManager:
         logger.info("Transition manager initialized")
 
     async def validate_paper_trading_readiness(
-        self,
-        current_prices: Optional[Dict[str, float]] = None
+        self, current_prices: Optional[Dict[str, float]] = None
     ) -> Dict[str, Any]:
         """Validate if paper trading meets live trading requirements.
 
@@ -123,7 +122,7 @@ class TransitionManager:
             "win_rate": self._validate_win_rate(metrics["win_rate"] * 100),
             "sharpe_ratio": self._validate_sharpe_ratio(metrics["sharpe_ratio"]),
             "profitability": self._validate_profitability(metrics),
-            "consistency": self._validate_consistency(runtime_days, metrics)
+            "consistency": self._validate_consistency(runtime_days, metrics),
         }
 
         # Overall status
@@ -140,7 +139,7 @@ class TransitionManager:
             "validations": validations,
             "current_metrics": metrics,
             "recommendations": recommendations,
-            "runtime_days": runtime_days
+            "runtime_days": runtime_days,
         }
 
         # Log to knowledge graph
@@ -167,7 +166,7 @@ class TransitionManager:
             "message": (
                 f"Paper trading duration: {runtime_days} days "
                 f"(minimum: {self.requirements.min_paper_days} days)"
-            )
+            ),
         }
 
     def _validate_min_trades(self, trade_count: int) -> Dict[str, Any]:
@@ -179,9 +178,8 @@ class TransitionManager:
             "requirement": f"Minimum {self.requirements.min_trades} trades",
             "actual": f"{trade_count} trades",
             "message": (
-                f"Trade count: {trade_count} "
-                f"(minimum: {self.requirements.min_trades} trades)"
-            )
+                f"Trade count: {trade_count} " f"(minimum: {self.requirements.min_trades} trades)"
+            ),
         }
 
     def _validate_max_drawdown(self, drawdown_pct: float) -> Dict[str, Any]:
@@ -195,7 +193,7 @@ class TransitionManager:
             "message": (
                 f"Maximum drawdown: {drawdown_pct:.2f}% "
                 f"(limit: {self.requirements.max_drawdown_pct}%)"
-            )
+            ),
         }
 
     def _validate_win_rate(self, win_rate_pct: float) -> Dict[str, Any]:
@@ -207,9 +205,8 @@ class TransitionManager:
             "requirement": f"Minimum {self.requirements.min_win_rate}%",
             "actual": f"{win_rate_pct:.2f}%",
             "message": (
-                f"Win rate: {win_rate_pct:.2f}% "
-                f"(minimum: {self.requirements.min_win_rate}%)"
-            )
+                f"Win rate: {win_rate_pct:.2f}% " f"(minimum: {self.requirements.min_win_rate}%)"
+            ),
         }
 
     def _validate_sharpe_ratio(self, sharpe_ratio: float) -> Dict[str, Any]:
@@ -223,7 +220,7 @@ class TransitionManager:
             "message": (
                 f"Sharpe ratio: {sharpe_ratio:.2f} "
                 f"(minimum: {self.requirements.min_sharpe_ratio})"
-            )
+            ),
         }
 
     def _validate_profitability(self, metrics: Dict[str, Any]) -> Dict[str, Any]:
@@ -235,14 +232,10 @@ class TransitionManager:
             "passed": passed,
             "requirement": "Positive returns",
             "actual": f"{total_return:.2f}%",
-            "message": f"Total return: {total_return:.2f}%"
+            "message": f"Total return: {total_return:.2f}%",
         }
 
-    def _validate_consistency(
-        self,
-        runtime_days: int,
-        metrics: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _validate_consistency(self, runtime_days: int, metrics: Dict[str, Any]) -> Dict[str, Any]:
         """Validate trading consistency."""
         # Check if winning trades > losing trades
         win_rate = metrics["win_rate"]
@@ -252,13 +245,11 @@ class TransitionManager:
             "passed": passed,
             "requirement": "Win rate > 50%",
             "actual": f"{win_rate*100:.2f}%",
-            "message": f"Consistency check: {win_rate*100:.2f}% win rate"
+            "message": f"Consistency check: {win_rate*100:.2f}% win rate",
         }
 
     def _generate_recommendations(
-        self,
-        validations: Dict[str, Dict[str, Any]],
-        metrics: Dict[str, Any]
+        self, validations: Dict[str, Dict[str, Any]], metrics: Dict[str, Any]
     ) -> List[str]:
         """Generate recommendations for improvement.
 
@@ -272,7 +263,9 @@ class TransitionManager:
         recommendations = []
 
         if not validations["min_days"]["passed"]:
-            days_needed = self.requirements.min_paper_days - validations["min_days"]["actual"].split()[0]
+            days_needed = (
+                self.requirements.min_paper_days - validations["min_days"]["actual"].split()[0]
+            )
             recommendations.append(f"Continue paper trading for {days_needed} more days")
 
         if not validations["min_trades"]["passed"]:
@@ -280,14 +273,10 @@ class TransitionManager:
             recommendations.append(f"Execute {trades_needed} more trades")
 
         if not validations["max_drawdown"]["passed"]:
-            recommendations.append(
-                "Review and improve risk management to reduce maximum drawdown"
-            )
+            recommendations.append("Review and improve risk management to reduce maximum drawdown")
 
         if not validations["win_rate"]["passed"]:
-            recommendations.append(
-                "Refine trading strategy to improve win rate"
-            )
+            recommendations.append("Refine trading strategy to improve win rate")
 
         if not validations["sharpe_ratio"]["passed"]:
             recommendations.append(
@@ -295,13 +284,13 @@ class TransitionManager:
             )
 
         if not validations["profitability"]["passed"]:
-            recommendations.append(
-                "Ensure positive returns before transitioning to live trading"
-            )
+            recommendations.append("Ensure positive returns before transitioning to live trading")
 
         return recommendations
 
-    async def start_gradual_transition(self, initial_capital_pct: Optional[float] = None) -> Dict[str, Any]:
+    async def start_gradual_transition(
+        self, initial_capital_pct: Optional[float] = None
+    ) -> Dict[str, Any]:
         """Start gradual transition to live trading.
 
         Args:
@@ -317,7 +306,7 @@ class TransitionManager:
             return {
                 "success": False,
                 "message": "Paper trading does not meet requirements",
-                "validation": validation
+                "validation": validation,
             }
 
         # Determine initial capital percentage
@@ -343,7 +332,7 @@ class TransitionManager:
             "success": True,
             "stage": "gradual",
             "capital_allocation_pct": initial_capital_pct,
-            "message": f"Started gradual transition with {initial_capital_pct}% of capital"
+            "message": f"Started gradual transition with {initial_capital_pct}% of capital",
         }
 
     async def increase_capital_allocation(self) -> Dict[str, Any]:
@@ -353,10 +342,7 @@ class TransitionManager:
             New allocation status
         """
         if self.transition_stage != "gradual":
-            return {
-                "success": False,
-                "message": "Not in gradual transition stage"
-            }
+            return {"success": False, "message": "Not in gradual transition stage"}
 
         # Check if enough time has passed since last change
         if self.last_stage_change:
@@ -364,7 +350,7 @@ class TransitionManager:
             if days_since_change < self.requirements.min_days_per_step:
                 return {
                     "success": False,
-                    "message": f"Need {self.requirements.min_days_per_step} days at current level"
+                    "message": f"Need {self.requirements.min_days_per_step} days at current level",
                 }
 
         # Find next capital level
@@ -374,7 +360,10 @@ class TransitionManager:
                 current_level_idx = i
                 break
 
-        if current_level_idx == -1 or current_level_idx >= len(self.requirements.capital_increase_steps) - 1:
+        if (
+            current_level_idx == -1
+            or current_level_idx >= len(self.requirements.capital_increase_steps) - 1
+        ):
             # Already at max
             self.transition_stage = "full"
             logger.warning("Reached full live trading - transition complete")
@@ -385,7 +374,7 @@ class TransitionManager:
                 "success": True,
                 "stage": "full",
                 "capital_allocation_pct": 100,
-                "message": "Transition complete - now at 100% capital allocation"
+                "message": "Transition complete - now at 100% capital allocation",
             }
 
         # Move to next level
@@ -396,13 +385,12 @@ class TransitionManager:
         logger.warning(
             "Increased capital allocation: {}% -> {}%",
             self.requirements.capital_increase_steps[current_level_idx],
-            new_allocation
+            new_allocation,
         )
 
         # Log to knowledge graph
         await self._log_capital_increase(
-            self.requirements.capital_increase_steps[current_level_idx],
-            new_allocation
+            self.requirements.capital_increase_steps[current_level_idx], new_allocation
         )
 
         return {
@@ -410,12 +398,11 @@ class TransitionManager:
             "stage": "gradual",
             "previous_allocation_pct": self.requirements.capital_increase_steps[current_level_idx],
             "capital_allocation_pct": new_allocation,
-            "message": f"Increased capital allocation to {new_allocation}%"
+            "message": f"Increased capital allocation to {new_allocation}%",
         }
 
     async def check_rollback_conditions(
-        self,
-        live_performance: Dict[str, Any]
+        self, live_performance: Dict[str, Any]
     ) -> Tuple[bool, Optional[str]]:
         """Check if rollback to paper trading is needed.
 
@@ -465,7 +452,7 @@ class TransitionManager:
             "from_stage": self.transition_stage,
             "to_stage": "paper",
             "capital_allocation": self.current_capital_pct,
-            "reason": reason
+            "reason": reason,
         }
         self.rollback_history.append(rollback_record)
         self.rollback_count += 1
@@ -484,7 +471,7 @@ class TransitionManager:
                 await self.alert_callback(
                     alert_type="rollback",
                     message=f"Rolled back to paper trading: {reason}",
-                    details=rollback_record
+                    details=rollback_record,
                 )
             except Exception as e:
                 logger.error("Alert callback failed: {}", e)
@@ -493,7 +480,7 @@ class TransitionManager:
             "success": True,
             "stage": "paper",
             "rollback_count": self.rollback_count,
-            "message": f"Rolled back to paper trading: {reason}"
+            "message": f"Rolled back to paper trading: {reason}",
         }
 
     async def _monitor_transition(self) -> None:
@@ -510,7 +497,7 @@ class TransitionManager:
                 logger.debug(
                     "Transition monitoring: stage={}, capital_allocation={}%",
                     self.transition_stage,
-                    self.current_capital_pct
+                    self.current_capital_pct,
                 )
 
                 # Sleep for monitoring interval
@@ -543,8 +530,8 @@ class TransitionManager:
                     timestamp=datetime.now(timezone.utc).isoformat(),
                     ready=result["ready_for_transition"],
                     validations=str(result["validations"]),
-                        metrics=str(result["current_metrics"]),
-                    recommendations=result["recommendations"]
+                    metrics=str(result["current_metrics"]),
+                    recommendations=result["recommendations"],
                 )
                 logger.debug("Logged validation result to knowledge graph")
         except Exception as e:
@@ -569,7 +556,7 @@ class TransitionManager:
                     RETURN ts
                     """,
                     timestamp=datetime.now(timezone.utc).isoformat(),
-                    capital_pct=capital_pct
+                    capital_pct=capital_pct,
                 )
                 logger.debug("Logged transition start to knowledge graph")
         except Exception as e:
@@ -596,7 +583,7 @@ class TransitionManager:
                     """,
                     timestamp=datetime.now(timezone.utc).isoformat(),
                     old_pct=old_pct,
-                    new_pct=new_pct
+                    new_pct=new_pct,
                 )
                 logger.debug("Logged capital increase to knowledge graph")
         except Exception as e:
@@ -616,7 +603,7 @@ class TransitionManager:
                     })
                     RETURN tc
                     """,
-                    timestamp=datetime.now(timezone.utc).isoformat()
+                    timestamp=datetime.now(timezone.utc).isoformat(),
                 )
                 logger.debug("Logged transition completion to knowledge graph")
         except Exception as e:
@@ -642,7 +629,7 @@ class TransitionManager:
                     """,
                     timestamp=datetime.now(timezone.utc).isoformat(),
                     reason=reason,
-                    count=self.rollback_count
+                    count=self.rollback_count,
                 )
                 logger.debug("Logged rollback to knowledge graph")
         except Exception as e:
@@ -663,8 +650,8 @@ class TransitionManager:
                 "min_trades": self.requirements.min_trades,
                 "max_drawdown_pct": self.requirements.max_drawdown_pct,
                 "min_win_rate": self.requirements.min_win_rate,
-                "min_sharpe_ratio": self.requirements.min_sharpe_ratio
-            }
+                "min_sharpe_ratio": self.requirements.min_sharpe_ratio,
+            },
         }
 
         if self.transition_start_time:
@@ -680,4 +667,6 @@ class TransitionManager:
         return status
 
     def __repr__(self) -> str:
-        return f"TransitionManager(stage={self.transition_stage}, capital={self.current_capital_pct}%)"
+        return (
+            f"TransitionManager(stage={self.transition_stage}, capital={self.current_capital_pct}%)"
+        )

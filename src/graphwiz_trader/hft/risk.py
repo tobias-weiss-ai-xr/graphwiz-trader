@@ -275,16 +275,14 @@ class HFTRiskManager:
             "peak_pnl": self.peak_pnl,
             "current_drawdown_pct": current_drawdown,
             "total_exposure": total_exposure,
-            "exposure_utilization_pct": (total_exposure / self.max_exposure * 100)
-            if self.max_exposure > 0
-            else 0,
+            "exposure_utilization_pct": (
+                (total_exposure / self.max_exposure * 100) if self.max_exposure > 0 else 0
+            ),
             "circuit_breaker_tripped": self.circuit_breaker_tripped,
             "total_orders_checked": self.total_orders_checked,
             "risk_violations": dict(self.risk_violations),
             "current_order_rate": len(self.order_timestamps),
-            "positions_count": sum(
-                len(exchanges) for exchanges in self.positions.values()
-            ),
+            "positions_count": sum(len(exchanges) for exchanges in self.positions.values()),
         }
 
     def is_safe_to_trade(self) -> Tuple[bool, str]:

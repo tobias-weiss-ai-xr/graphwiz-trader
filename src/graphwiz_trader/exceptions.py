@@ -24,11 +24,7 @@ class GraphWizError(Exception):
     """
 
     def __init__(
-        self,
-        message: str,
-        error_code: Optional[str] = None,
-        retryable: bool = False,
-        **context
+        self, message: str, error_code: Optional[str] = None, retryable: bool = False, **context
     ):
         self.message = message
         self.error_code = error_code or self.__class__.__name__
@@ -43,7 +39,7 @@ class GraphWizError(Exception):
             "error_code": self.error_code,
             "message": self.message,
             "retryable": self.retryable,
-            "context": self.context
+            "context": self.context,
         }
 
     def __str__(self) -> str:
@@ -55,8 +51,10 @@ class GraphWizError(Exception):
 # Trading & Exchange Errors
 # ============================================================================
 
+
 class TradingError(GraphWizError):
     """Base exception for trading-related errors."""
+
     pass
 
 
@@ -77,7 +75,7 @@ class InsufficientFundsError(TradingError):
             retryable=False,
             required=required,
             available=available,
-            symbol=symbol
+            symbol=symbol,
         )
 
 
@@ -96,7 +94,7 @@ class OrderExecutionError(TradingError):
             error_code="ORDER_EXECUTION_FAILED",
             retryable=retryable,
             order_id=order_id,
-            reason=reason
+            reason=reason,
         )
 
 
@@ -113,7 +111,7 @@ class ExchangeConnectionError(TradingError):
             error_code="EXCHANGE_CONNECTION",
             retryable=True,
             exchange=exchange,
-            reason=reason
+            reason=reason,
         )
 
 
@@ -127,15 +125,16 @@ class ExchangeAPIError(TradingError):
         response: API response details
     """
 
-    def __init__(self, exchange: str, status_code: Optional[int] = None,
-                 response: Optional[str] = None):
+    def __init__(
+        self, exchange: str, status_code: Optional[int] = None, response: Optional[str] = None
+    ):
         super().__init__(
             message=f"Exchange API error from {exchange}: {response}",
             error_code="EXCHANGE_API_ERROR",
             retryable=status_code is not None and 500 <= status_code < 600,
             exchange=exchange,
             status_code=status_code,
-            response=response
+            response=response,
         )
 
 
@@ -154,7 +153,7 @@ class RateLimitError(TradingError):
             error_code="RATE_LIMIT_EXCEEDED",
             retryable=True,
             exchange=exchange,
-            retry_after=retry_after
+            retry_after=retry_after,
         )
 
 
@@ -172,7 +171,7 @@ class InvalidOrderError(TradingError):
             error_code="INVALID_ORDER",
             retryable=False,
             reason=reason,
-            params=params
+            params=params,
         )
 
 
@@ -180,8 +179,10 @@ class InvalidOrderError(TradingError):
 # Risk Management Errors
 # ============================================================================
 
+
 class RiskError(GraphWizError):
     """Base exception for risk management errors."""
+
     pass
 
 
@@ -202,7 +203,7 @@ class RiskLimitExceededError(RiskError):
             retryable=False,
             limit_type=limit_type,
             limit_value=limit_value,
-            attempted_value=attempted_value
+            attempted_value=attempted_value,
         )
 
 
@@ -219,7 +220,7 @@ class PositionSizeError(RiskError):
             message=f"Position size error: {reason}",
             error_code="POSITION_SIZE_ERROR",
             retryable=False,
-            reason=reason
+            reason=reason,
         )
 
 
@@ -236,7 +237,7 @@ class DrawdownExceededError(RiskError):
             error_code="DRAWDOWN_EXCEEDED",
             retryable=False,
             current_drawdown=current_drawdown,
-            max_allowed=max_allowed
+            max_allowed=max_allowed,
         )
 
 
@@ -244,8 +245,10 @@ class DrawdownExceededError(RiskError):
 # Knowledge Graph Errors
 # ============================================================================
 
+
 class KnowledgeGraphError(GraphWizError):
     """Base exception for knowledge graph operations."""
+
     pass
 
 
@@ -264,7 +267,7 @@ class GraphConnectionError(KnowledgeGraphError):
             error_code="GRAPH_CONNECTION",
             retryable=True,
             uri=uri,
-            reason=reason
+            reason=reason,
         )
 
 
@@ -283,7 +286,7 @@ class GraphQueryError(KnowledgeGraphError):
             error_code="GRAPH_QUERY",
             retryable=False,
             query=query,
-            reason=reason
+            reason=reason,
         )
 
 
@@ -301,7 +304,7 @@ class GraphValidationError(KnowledgeGraphError):
             error_code="GRAPH_VALIDATION",
             retryable=False,
             reason=reason,
-            data=data
+            data=data,
         )
 
 
@@ -309,8 +312,10 @@ class GraphValidationError(KnowledgeGraphError):
 # Configuration Errors
 # ============================================================================
 
+
 class ConfigurationError(GraphWizError):
     """Base exception for configuration errors."""
+
     pass
 
 
@@ -329,7 +334,7 @@ class InvalidConfigurationError(ConfigurationError):
             error_code="INVALID_CONFIGURATION",
             retryable=False,
             config_path=config_path,
-            errors=errors
+            errors=errors,
         )
 
 
@@ -346,7 +351,7 @@ class MissingConfigurationError(ConfigurationError):
             message=f"Missing required configuration: {', '.join(missing_keys)}",
             error_code="MISSING_CONFIGURATION",
             retryable=False,
-            missing_keys=missing_keys
+            missing_keys=missing_keys,
         )
 
 
@@ -354,8 +359,10 @@ class MissingConfigurationError(ConfigurationError):
 # Agent Errors
 # ============================================================================
 
+
 class AgentError(GraphWizError):
     """Base exception for agent-related errors."""
+
     pass
 
 
@@ -374,7 +381,7 @@ class AgentInitializationError(AgentError):
             error_code="AGENT_INITIALIZATION",
             retryable=False,
             agent_type=agent_type,
-            reason=reason
+            reason=reason,
         )
 
 
@@ -394,7 +401,7 @@ class AgentExecutionError(AgentError):
             retryable=True,
             agent_type=agent_type,
             stage=stage,
-            reason=reason
+            reason=reason,
         )
 
 
@@ -402,8 +409,10 @@ class AgentExecutionError(AgentError):
 # Data Errors
 # ============================================================================
 
+
 class DataError(GraphWizError):
     """Base exception for data-related errors."""
+
     pass
 
 
@@ -423,7 +432,7 @@ class DataValidationError(DataError):
             retryable=False,
             field=field,
             reason=reason,
-            value=value
+            value=value,
         )
 
 
@@ -444,7 +453,7 @@ class MarketDataError(DataError):
             retryable=True,
             symbol=symbol,
             source=source,
-            reason=reason
+            reason=reason,
         )
 
 
@@ -452,8 +461,10 @@ class MarketDataError(DataError):
 # Backtesting Errors
 # ============================================================================
 
+
 class BacktestError(GraphWizError):
     """Base exception for backtesting errors."""
+
     pass
 
 
@@ -472,7 +483,7 @@ class BacktestValidationError(BacktestError):
             error_code="BACKTEST_VALIDATION",
             retryable=False,
             parameter=parameter,
-            reason=reason
+            reason=reason,
         )
 
 
@@ -491,13 +502,14 @@ class BacktestExecutionError(BacktestError):
             error_code="BACKTEST_EXECUTION",
             retryable=False,
             stage=stage,
-            reason=reason
+            reason=reason,
         )
 
 
 # ============================================================================
 # Utility Functions
 # ============================================================================
+
 
 def handle_error(error: Exception, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
@@ -518,7 +530,7 @@ def handle_error(error: Exception, context: Optional[Dict[str, Any]] = None) -> 
             "error_code": "UNKNOWN_ERROR",
             "message": str(error),
             "retryable": False,
-            "context": {}
+            "context": {},
         }
 
     if context:

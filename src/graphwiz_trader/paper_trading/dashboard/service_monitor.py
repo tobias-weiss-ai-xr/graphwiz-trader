@@ -40,7 +40,9 @@ def get_service_status() -> dict[str, dict]:
     status = {}
 
     # Find all paper trading processes
-    for proc in psutil.process_iter(["pid", "name", "cmdline", "create_time", "memory_info", "cpu_percent"]):
+    for proc in psutil.process_iter(
+        ["pid", "name", "cmdline", "create_time", "memory_info", "cpu_percent"]
+    ):
         try:
             cmdline = proc.info["cmdline"]
             if not cmdline:

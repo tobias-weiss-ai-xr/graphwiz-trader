@@ -30,7 +30,7 @@ class TradingModeManager:
         self,
         knowledge_graph,
         config: Optional[Dict[str, Any]] = None,
-        approval_callback: Optional[Callable] = None
+        approval_callback: Optional[Callable] = None,
     ):
         """Initialize trading mode manager.
 
@@ -55,21 +55,21 @@ class TradingModeManager:
                 "execution_delay": 0.0,
                 "slippage_model": "realistic",
                 "fee_rate": 0.001,
-                "requires_approval": False
+                "requires_approval": False,
             },
             TradingMode.SIMULATED: {
                 "enabled": True,
                 "data_source": "historical",
                 "time_multiplier": 1.0,
-                "requires_approval": False
+                "requires_approval": False,
             },
             TradingMode.LIVE: {
                 "enabled": False,  # Must be explicitly enabled
                 "requires_approval": True,
                 "emergency_stop": True,
                 "max_drawdown_pct": 10.0,
-                "daily_loss_limit_pct": 5.0
-            }
+                "daily_loss_limit_pct": 5.0,
+            },
         }
 
         # Override with config
@@ -83,7 +83,7 @@ class TradingModeManager:
                 "min_trades": 100,
                 "max_drawdown_pct": 10.0,
                 "min_win_rate": 55.0,
-                "min_sharpe_ratio": 1.5
+                "min_sharpe_ratio": 1.5,
             }
         }
 
@@ -157,10 +157,7 @@ class TradingModeManager:
         )
 
     async def switch_mode(
-        self,
-        new_mode: Union[TradingMode, str],
-        force: bool = False,
-        reason: Optional[str] = None
+        self, new_mode: Union[TradingMode, str], force: bool = False, reason: Optional[str] = None
     ) -> bool:
         """Switch to a different trading mode.
 
@@ -228,7 +225,7 @@ class TradingModeManager:
             "previous_mode": previous_mode.value,
             "new_mode": new_mode.value,
             "reason": reason or "Manual mode switch",
-            "forced": force
+            "forced": force,
         }
         self.mode_history.append(mode_change)
 
@@ -240,7 +237,7 @@ class TradingModeManager:
             "TRADING MODE CHANGED: {} -> {} (reason: {})",
             previous_mode.value.upper(),
             new_mode.value.upper(),
-            reason or "manual switch"
+            reason or "manual switch",
         )
 
         if new_mode == TradingMode.LIVE:
@@ -274,7 +271,9 @@ class TradingModeManager:
                     errors.extend(validation["errors"])
 
             if errors:
-                error_msg = "Live trading validation failed:\n" + "\n".join(f"  - {e}" for e in errors)
+                error_msg = "Live trading validation failed:\n" + "\n".join(
+                    f"  - {e}" for e in errors
+                )
                 raise ModeTransitionError(error_msg)
 
             logger.info("Live trading validation passed")
@@ -287,11 +286,7 @@ class TradingModeManager:
         """
         # This will be called with paper trading statistics
         # For now, return placeholder - will be implemented in transition manager
-        return {
-            "passed": True,
-            "errors": [],
-            "warnings": []
-        }
+        return {"passed": True, "errors": [], "warnings": []}
 
     async def _get_approval(self, reason: Optional[str]) -> bool:
         """Get approval for live trading mode.
@@ -305,9 +300,7 @@ class TradingModeManager:
         if self.approval_callback:
             try:
                 result = await self.approval_callback(
-                    current_mode=self.current_mode.value,
-                    target_mode="live",
-                    reason=reason
+                    current_mode=self.current_mode.value, target_mode="live", reason=reason
                 )
                 return result
             except Exception as e:
@@ -394,7 +387,7 @@ class TradingModeManager:
                     })
                     RETURN mc
                     """,
-                    **mode_change
+                    **mode_change,
                 )
                 logger.debug("Logged mode change to knowledge graph")
         except Exception as e:
@@ -423,7 +416,7 @@ class TradingModeManager:
                     event_id=str(uuid4()),
                     timestamp=datetime.now(timezone.utc).isoformat(),
                     mode=self.current_mode.value,
-                    reason=reason or "Manual emergency stop"
+                    reason=reason or "Manual emergency stop",
                 )
                 logger.debug("Logged emergency stop to knowledge graph")
         except Exception as e:
@@ -448,7 +441,7 @@ class TradingModeManager:
                     RETURN es
                     """,
                     timestamp=datetime.now(timezone.utc).isoformat(),
-                    reason=reason or "Manual clear"
+                    reason=reason or "Manual clear",
                 )
                 logger.debug("Logged emergency stop clear to knowledge graph")
         except Exception as e:
@@ -466,10 +459,9 @@ class TradingModeManager:
             "can_execute_live": self.can_execute_live_trades(),
             "emergency_stop_active": self.emergency_stop,
             "mode_settings": {
-                mode.value: settings
-                for mode, settings in self.mode_settings.items()
+                mode.value: settings for mode, settings in self.mode_settings.items()
             },
-            "mode_changes_count": len(self.mode_history)
+            "mode_changes_count": len(self.mode_history),
         }
 
     def __repr__(self) -> str:

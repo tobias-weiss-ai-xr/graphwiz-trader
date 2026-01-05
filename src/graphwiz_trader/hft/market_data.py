@@ -68,9 +68,7 @@ class WebSocketMarketData:
             for symbol in symbols:
                 if symbol in exchange.markets:
                     # Start ticker stream
-                    ticker_task = asyncio.create_task(
-                        self._stream_ticker(exchange_id, symbol)
-                    )
+                    ticker_task = asyncio.create_task(self._stream_ticker(exchange_id, symbol))
                     self.tasks.append(ticker_task)
 
                     # Start order book stream
@@ -127,9 +125,7 @@ class WebSocketMarketData:
                 logger.error(f"Error streaming orderbook for {symbol} on {exchange_id}: {e}")
                 await asyncio.sleep(1)
 
-    async def _process_ticker(
-        self, exchange_id: str, symbol: str, ticker: Dict[str, Any]
-    ) -> None:
+    async def _process_ticker(self, exchange_id: str, symbol: str, ticker: Dict[str, Any]) -> None:
         """
         Process ticker update.
 

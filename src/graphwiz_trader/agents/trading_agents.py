@@ -12,6 +12,7 @@ import numpy as np
 
 class TradingSignal(Enum):
     """Trading signal types."""
+
     BUY = "BUY"
     SELL = "SELL"
     HOLD = "HOLD"
@@ -29,6 +30,7 @@ class AgentDecision:
         timestamp: When the decision was made
         agent_name: Name of the agent making the decision
     """
+
     signal: TradingSignal
     confidence: float
     reasoning: str
@@ -44,7 +46,7 @@ class AgentDecision:
             "reasoning": self.reasoning,
             "metadata": self.metadata,
             "timestamp": self.timestamp.isoformat(),
-            "agent_name": self.agent_name
+            "agent_name": self.agent_name,
         }
 
 
@@ -61,6 +63,7 @@ class AgentPerformance:
         recent_performance: Performance over last N decisions
         last_updated: Timestamp of last update
     """
+
     total_decisions: int = 0
     correct_decisions: int = 0
     accuracy: float = 0.0
@@ -81,16 +84,17 @@ class AgentPerformance:
         if was_correct:
             self.correct_decisions += 1
 
-        self.accuracy = self.correct_decisions / self.total_decisions if self.total_decisions > 0 else 0.0
+        self.accuracy = (
+            self.correct_decisions / self.total_decisions if self.total_decisions > 0 else 0.0
+        )
 
         # Update average confidence
         if self.total_decisions == 1:
             self.average_confidence = confidence
         else:
             self.average_confidence = (
-                (self.average_confidence * (self.total_decisions - 1) + confidence) /
-                self.total_decisions
-            )
+                self.average_confidence * (self.total_decisions - 1) + confidence
+            ) / self.total_decisions
 
         # Update profit factor (simplified - use cumulative PnL ratio)
         if profit_loss > 0:
@@ -128,12 +132,7 @@ class TradingAgent(ABC):
     the analyze method.
     """
 
-    def __init__(
-        self,
-        name: str,
-        config: Dict[str, Any],
-        knowledge_graph: Optional[Any] = None
-    ):
+    def __init__(self, name: str, config: Dict[str, Any], knowledge_graph: Optional[Any] = None):
         """Initialize trading agent.
 
         Args:
@@ -159,7 +158,7 @@ class TradingAgent(ABC):
         self,
         market_data: Dict[str, Any],
         indicators: Dict[str, Any],
-        context: Optional[Dict[str, Any]] = None
+        context: Optional[Dict[str, Any]] = None,
     ) -> AgentDecision:
         """Analyze market data and generate trading signal.
 
@@ -174,9 +173,7 @@ class TradingAgent(ABC):
         pass
 
     def _calculate_confidence(
-        self,
-        signal_strength: float,
-        volatility_adjustment: float = 0.0
+        self, signal_strength: float, volatility_adjustment: float = 0.0
     ) -> float:
         """Calculate confidence score with adjustments.
 
@@ -192,18 +189,15 @@ class TradingAgent(ABC):
         # Apply performance adjustment
         recent_acc = self.performance.get_recent_accuracy()
         if recent_acc > 0.6:
-            confidence *= (1 + self.learning_rate * (recent_acc - 0.5))
+            confidence *= 1 + self.learning_rate * (recent_acc - 0.5)
         elif recent_acc < 0.4:
-            confidence *= (1 - self.learning_rate * (0.5 - recent_acc))
+            confidence *= 1 - self.learning_rate * (0.5 - recent_acc)
 
         # Clamp to configured range
         return max(self.min_confidence, min(self.max_confidence, confidence))
 
     async def update_performance(
-        self,
-        decision: AgentDecision,
-        was_correct: bool,
-        profit_loss: float
+        self, decision: AgentDecision, was_correct: bool, profit_loss: float
     ) -> None:
         """Update agent performance metrics.
 
@@ -231,7 +225,7 @@ class TradingAgent(ABC):
             "recent_accuracy": self.performance.get_recent_accuracy(),
             "profit_factor": self.performance.profit_factor,
             "average_confidence": self.performance.average_confidence,
-            "last_updated": self.performance.last_updated.isoformat()
+            "last_updated": self.performance.last_updated.isoformat(),
         }
 
 
@@ -242,7 +236,7 @@ class TechnicalAnalysisAgent(TradingAgent):
         self,
         market_data: Dict[str, Any],
         indicators: Dict[str, Any],
-        context: Optional[Dict[str, Any]] = None
+        context: Optional[Dict[str, Any]] = None,
     ) -> AgentDecision:
         """Analyze technical indicators and generate signal.
 
@@ -298,9 +292,13 @@ class TechnicalAnalysisAgent(TradingAgent):
                 bb_position = (price - lower_band) / (upper_band - lower_band)
 
                 if bb_position < 0.1:
-                    signals.append(("BUY", 0.8, f"Price near lower Bollinger Band ({bb_position:.2f})"))
+                    signals.append(
+                        ("BUY", 0.8, f"Price near lower Bollinger Band ({bb_position:.2f})")
+                    )
                 elif bb_position > 0.9:
-                    signals.append(("SELL", 0.8, f"Price near upper Bollinger Band ({bb_position:.2f})"))
+                    signals.append(
+                        ("SELL", 0.8, f"Price near upper Bollinger Band ({bb_position:.2f})")
+                    )
                 elif bb_position < 0.3:
                     signals.append(("BUY", 0.4, f"Price in lower BB region ({bb_position:.2f})"))
                 elif bb_position > 0.7:
@@ -325,7 +323,7 @@ class TechnicalAnalysisAgent(TradingAgent):
                 confidence=0.5,
                 reasoning="No clear technical signals",
                 agent_name=self.name,
-                metadata={"method": "technical_analysis"}
+                metadata={"method": "technical_analysis"},
             )
 
         # Weight voting by confidence
@@ -355,8 +353,8 @@ class TechnicalAnalysisAgent(TradingAgent):
                 "method": "technical_analysis",
                 "buy_weight": buy_weight,
                 "sell_weight": sell_weight,
-                "signal_count": len(signals)
-            }
+                "signal_count": len(signals),
+            },
         )
 
 
@@ -367,7 +365,7 @@ class SentimentAnalysisAgent(TradingAgent):
         self,
         market_data: Dict[str, Any],
         indicators: Dict[str, Any],
-        context: Optional[Dict[str, Any]] = None
+        context: Optional[Dict[str, Any]] = None,
     ) -> AgentDecision:
         """Analyze market sentiment and generate signal.
 
@@ -399,9 +397,13 @@ class SentimentAnalysisAgent(TradingAgent):
             elif sentiment_score < -0.3 and sentiment_count >= 5:
                 signals.append(("SELL", 0.7, f"Negative news sentiment ({sentiment_score:.2f})"))
             elif sentiment_score > 0.1:
-                signals.append(("BUY", 0.4, f"Mildly positive news sentiment ({sentiment_score:.2f})"))
+                signals.append(
+                    ("BUY", 0.4, f"Mildly positive news sentiment ({sentiment_score:.2f})")
+                )
             elif sentiment_score < -0.1:
-                signals.append(("SELL", 0.4, f"Mildly negative news sentiment ({sentiment_score:.2f})"))
+                signals.append(
+                    ("SELL", 0.4, f"Mildly negative news sentiment ({sentiment_score:.2f})")
+                )
 
         # Social media sentiment
         if social_sentiment:
@@ -411,16 +413,24 @@ class SentimentAnalysisAgent(TradingAgent):
 
             if volume > 100:  # High volume
                 if sentiment_score > 0.4 and trend == "rising":
-                    signals.append(("BUY", 0.6, f"Strong positive social sentiment ({sentiment_score:.2f})"))
+                    signals.append(
+                        ("BUY", 0.6, f"Strong positive social sentiment ({sentiment_score:.2f})")
+                    )
                 elif sentiment_score < -0.4 and trend == "falling":
-                    signals.append(("SELL", 0.6, f"Strong negative social sentiment ({sentiment_score:.2f})"))
+                    signals.append(
+                        ("SELL", 0.6, f"Strong negative social sentiment ({sentiment_score:.2f})")
+                    )
 
         # Overall sentiment
         if abs(overall_sentiment) > 0.2:
             if overall_sentiment > 0.5:
-                signals.append(("BUY", 0.5, f"Strong overall bullish sentiment ({overall_sentiment:.2f})"))
+                signals.append(
+                    ("BUY", 0.5, f"Strong overall bullish sentiment ({overall_sentiment:.2f})")
+                )
             elif overall_sentiment < -0.5:
-                signals.append(("SELL", 0.5, f"Strong overall bearish sentiment ({overall_sentiment:.2f})"))
+                signals.append(
+                    ("SELL", 0.5, f"Strong overall bearish sentiment ({overall_sentiment:.2f})")
+                )
 
         # If no sentiment data available, hold
         if not signals:
@@ -429,7 +439,7 @@ class SentimentAnalysisAgent(TradingAgent):
                 confidence=0.5,
                 reasoning="Insufficient sentiment data for analysis",
                 agent_name=self.name,
-                metadata={"method": "sentiment_analysis"}
+                metadata={"method": "sentiment_analysis"},
             )
 
         # Aggregate signals
@@ -458,8 +468,8 @@ class SentimentAnalysisAgent(TradingAgent):
                 "method": "sentiment_analysis",
                 "buy_weight": buy_weight,
                 "sell_weight": sell_weight,
-                "overall_sentiment": overall_sentiment
-            }
+                "overall_sentiment": overall_sentiment,
+            },
         )
 
 
@@ -470,7 +480,7 @@ class RiskManagementAgent(TradingAgent):
         self,
         market_data: Dict[str, Any],
         indicators: Dict[str, Any],
-        context: Optional[Dict[str, Any]] = None
+        context: Optional[Dict[str, Any]] = None,
     ) -> AgentDecision:
         """Analyze risk factors and generate signal.
 
@@ -496,13 +506,21 @@ class RiskManagementAgent(TradingAgent):
 
         # Volatility check
         if volatility > 0.05:  # High volatility (>5%)
-            signals.append(("HOLD", 0.8, f"High volatility ({volatility:.2%}), reduce position sizes"))
+            signals.append(
+                ("HOLD", 0.8, f"High volatility ({volatility:.2%}), reduce position sizes")
+            )
         elif volatility < 0.01:  # Low volatility (<1%)
             signals.append(("BUY", 0.3, "Low volatility, good entry opportunity"))
 
         # Exposure check
         if current_exposure > 0.8:  # Too much exposure
-            signals.append(("SELL", 0.7, f"High portfolio exposure ({current_exposure:.1%}), consider reducing"))
+            signals.append(
+                (
+                    "SELL",
+                    0.7,
+                    f"High portfolio exposure ({current_exposure:.1%}), consider reducing",
+                )
+            )
 
         # Drawdown check
         drawdown = portfolio.get("drawdown", 0.0)
@@ -515,7 +533,9 @@ class RiskManagementAgent(TradingAgent):
         correlations = context.get("correlations", {})
         high_corr_count = sum(1 for corr in correlations.values() if abs(corr) > 0.7)
         if high_corr_count > 2:
-            signals.append(("HOLD", 0.5, f"High correlation ({high_corr_count} pairs), diversification risk"))
+            signals.append(
+                ("HOLD", 0.5, f"High correlation ({high_corr_count} pairs), diversification risk")
+            )
 
         # If no strong risk signals, allow trading with reduced size
         if not signals:
@@ -527,8 +547,8 @@ class RiskManagementAgent(TradingAgent):
                 metadata={
                     "method": "risk_management",
                     "volatility": volatility,
-                    "recommended_position_size": max_position_size
-                }
+                    "recommended_position_size": max_position_size,
+                },
             )
 
         # Aggregate risk signals
@@ -560,8 +580,8 @@ class RiskManagementAgent(TradingAgent):
                 "volatility": volatility,
                 "exposure": current_exposure,
                 "drawdown": drawdown,
-                "recommended_position_size": max_position_size * (1 - hold_weight)
-            }
+                "recommended_position_size": max_position_size * (1 - hold_weight),
+            },
         )
 
 
@@ -572,7 +592,7 @@ class MomentumAgent(TradingAgent):
         self,
         market_data: Dict[str, Any],
         indicators: Dict[str, Any],
-        context: Optional[Dict[str, Any]] = None
+        context: Optional[Dict[str, Any]] = None,
     ) -> AgentDecision:
         """Analyze momentum and generate signal.
 
@@ -607,9 +627,13 @@ class MomentumAgent(TradingAgent):
             price_change = (recent_prices[-1] - recent_prices[0]) / recent_prices[0] * 100
 
             if price_change > 2:
-                signals.append(("BUY", 0.6, f"Price trending up ({price_change:.1f}% over 10 periods)"))
+                signals.append(
+                    ("BUY", 0.6, f"Price trending up ({price_change:.1f}% over 10 periods)")
+                )
             elif price_change < -2:
-                signals.append(("SELL", 0.6, f"Price trending down ({price_change:.1f}% over 10 periods)"))
+                signals.append(
+                    ("SELL", 0.6, f"Price trending down ({price_change:.1f}% over 10 periods)")
+                )
 
         # Volume momentum
         volume = market_data.get("volume", 0)
@@ -628,11 +652,17 @@ class MomentumAgent(TradingAgent):
 
             if adx_value > 25:  # Strong trend
                 if di_plus > di_minus:
-                    signals.append(("BUY", 0.7, f"Strong uptrend (ADX={adx_value:.1f}, DI+={di_plus:.1f})"))
+                    signals.append(
+                        ("BUY", 0.7, f"Strong uptrend (ADX={adx_value:.1f}, DI+={di_plus:.1f})")
+                    )
                 else:
-                    signals.append(("SELL", 0.7, f"Strong downtrend (ADX={adx_value:.1f}, DI-={di_minus:.1f})"))
+                    signals.append(
+                        ("SELL", 0.7, f"Strong downtrend (ADX={adx_value:.1f}, DI-={di_minus:.1f})")
+                    )
             elif adx_value < 20:  # Weak trend
-                signals.append(("HOLD", 0.5, f"Weak trend (ADX={adx_value:.1f}), avoid momentum trades"))
+                signals.append(
+                    ("HOLD", 0.5, f"Weak trend (ADX={adx_value:.1f}), avoid momentum trades")
+                )
 
         # If no clear momentum signals
         if not signals:
@@ -641,7 +671,7 @@ class MomentumAgent(TradingAgent):
                 confidence=0.5,
                 reasoning="No clear momentum signals",
                 agent_name=self.name,
-                metadata={"method": "momentum"}
+                metadata={"method": "momentum"},
             )
 
         # Aggregate signals
@@ -666,11 +696,7 @@ class MomentumAgent(TradingAgent):
             confidence=confidence,
             reasoning=reasoning,
             agent_name=self.name,
-            metadata={
-                "method": "momentum",
-                "buy_weight": buy_weight,
-                "sell_weight": sell_weight
-            }
+            metadata={"method": "momentum", "buy_weight": buy_weight, "sell_weight": sell_weight},
         )
 
 
@@ -681,7 +707,7 @@ class MeanReversionAgent(TradingAgent):
         self,
         market_data: Dict[str, Any],
         indicators: Dict[str, Any],
-        context: Optional[Dict[str, Any]] = None
+        context: Optional[Dict[str, Any]] = None,
     ) -> AgentDecision:
         """Analyze mean reversion opportunities and generate signal.
 
@@ -701,9 +727,13 @@ class MeanReversionAgent(TradingAgent):
         if zscore:
             z_value = zscore.get("value", 0)
             if z_value > 2:  # More than 2 standard deviations above mean
-                signals.append(("SELL", 0.8, f"Price significantly overbought (z-score={z_value:.2f})"))
+                signals.append(
+                    ("SELL", 0.8, f"Price significantly overbought (z-score={z_value:.2f})")
+                )
             elif z_value < -2:  # More than 2 standard deviations below mean
-                signals.append(("BUY", 0.8, f"Price significantly oversold (z-score={z_value:.2f})"))
+                signals.append(
+                    ("BUY", 0.8, f"Price significantly oversold (z-score={z_value:.2f})")
+                )
             elif z_value > 1.5:
                 signals.append(("SELL", 0.5, f"Price above mean (z-score={z_value:.2f})"))
             elif z_value < -1.5:
@@ -723,9 +753,17 @@ class MeanReversionAgent(TradingAgent):
                     bb_position = (price - lower_band) / (upper_band - lower_band)
 
                     if bb_position > 0.9:
-                        signals.append(("SELL", 0.7, f"Price at upper BB, expect reversion ({bb_position:.2f})"))
+                        signals.append(
+                            (
+                                "SELL",
+                                0.7,
+                                f"Price at upper BB, expect reversion ({bb_position:.2f})",
+                            )
+                        )
                     elif bb_position < 0.1:
-                        signals.append(("BUY", 0.7, f"Price at lower BB, expect reversion ({bb_position:.2f})"))
+                        signals.append(
+                            ("BUY", 0.7, f"Price at lower BB, expect reversion ({bb_position:.2f})")
+                        )
 
         # Stochastic oscillator
         stoch = indicators.get("Stochastic", {})
@@ -734,9 +772,13 @@ class MeanReversionAgent(TradingAgent):
             d_value = stoch.get("d", 50)
 
             if k_value > 80 and d_value > 80:
-                signals.append(("SELL", 0.6, f"Stochastic overbought (K={k_value:.1f}, D={d_value:.1f})"))
+                signals.append(
+                    ("SELL", 0.6, f"Stochastic overbought (K={k_value:.1f}, D={d_value:.1f})")
+                )
             elif k_value < 20 and d_value < 20:
-                signals.append(("BUY", 0.6, f"Stochastic oversold (K={k_value:.1f}, D={d_value:.1f})"))
+                signals.append(
+                    ("BUY", 0.6, f"Stochastic oversold (K={k_value:.1f}, D={d_value:.1f})")
+                )
 
         # Price vs moving average
         sma = indicators.get("SMA", {})
@@ -757,7 +799,7 @@ class MeanReversionAgent(TradingAgent):
                 confidence=0.5,
                 reasoning="No mean reversion opportunities detected",
                 agent_name=self.name,
-                metadata={"method": "mean_reversion"}
+                metadata={"method": "mean_reversion"},
             )
 
         # Aggregate signals
@@ -785,6 +827,6 @@ class MeanReversionAgent(TradingAgent):
             metadata={
                 "method": "mean_reversion",
                 "buy_weight": buy_weight,
-                "sell_weight": sell_weight
-            }
+                "sell_weight": sell_weight,
+            },
         )

@@ -8,6 +8,7 @@ from enum import Enum
 
 class AssetType(str, Enum):
     """Asset type enumeration."""
+
     CRYPTOCURRENCY = "CRYPTOCURRENCY"
     STOCK = "STOCK"
     FOREX = "FOREX"
@@ -18,6 +19,7 @@ class AssetType(str, Enum):
 
 class RelationshipType(str, Enum):
     """Relationship type enumeration."""
+
     CORRELATED_WITH = "CORRELATED_WITH"
     ARBITRAGE_WITH = "ARBITRAGE_WITH"
     TRADED_ON = "TRADED_ON"
@@ -29,6 +31,7 @@ class RelationshipType(str, Enum):
 
 class SignalType(str, Enum):
     """Signal type enumeration."""
+
     BUY = "BUY"
     SELL = "SELL"
     HOLD = "HOLD"
@@ -38,6 +41,7 @@ class SignalType(str, Enum):
 
 class IndicatorType(str, Enum):
     """Indicator type enumeration."""
+
     RSI = "RSI"
     MACD = "MACD"
     SMA = "SMA"
@@ -63,6 +67,7 @@ class AssetNode:
         max_quantity: Maximum tradeable quantity
         metadata: Additional asset metadata
     """
+
     symbol: str
     name: str
     asset_type: AssetType
@@ -86,7 +91,7 @@ class AssetNode:
             "min_quantity": self.min_quantity,
             "max_quantity": self.max_quantity,
             "metadata": self.metadata,
-            "created_at": self.created_at.isoformat()
+            "created_at": self.created_at.isoformat(),
         }
 
 
@@ -109,6 +114,7 @@ class ExchangeNode:
         countries: Countries where exchange is available
         metadata: Additional exchange metadata
     """
+
     name: str
     display_name: str
     maker_fee: float = 0.001
@@ -140,7 +146,7 @@ class ExchangeNode:
             "api_rate_limit": self.api_rate_limit,
             "countries": self.countries,
             "metadata": self.metadata,
-            "created_at": self.created_at.isoformat()
+            "created_at": self.created_at.isoformat(),
         }
 
 
@@ -160,6 +166,7 @@ class OHLCVNode:
         volume: Trading volume
         trades_count: Number of trades in this candle
     """
+
     symbol: str
     exchange: str
     timestamp: datetime
@@ -183,7 +190,7 @@ class OHLCVNode:
             "low": self.low,
             "close": self.close,
             "volume": self.volume,
-            "trades_count": self.trades_count
+            "trades_count": self.trades_count,
         }
 
 
@@ -206,6 +213,7 @@ class TradeNode:
         is_maker: Whether trade was maker or taker
         metadata: Additional trade metadata
     """
+
     trade_id: str
     symbol: str
     exchange: str
@@ -235,7 +243,7 @@ class TradeNode:
             "fee_currency": self.fee_currency,
             "order_id": self.order_id,
             "is_maker": self.is_maker,
-            "metadata": self.metadata
+            "metadata": self.metadata,
         }
 
 
@@ -254,6 +262,7 @@ class OrderBookNode:
         spread: Bid-ask spread
         spread_percentage: Spread as percentage
     """
+
     symbol: str
     exchange: str
     timestamp: datetime
@@ -275,7 +284,7 @@ class OrderBookNode:
             "bid_depth": self.bid_depth,
             "ask_depth": self.ask_depth,
             "spread": self.spread,
-            "spread_percentage": self.spread_percentage
+            "spread_percentage": self.spread_percentage,
         }
 
 
@@ -293,6 +302,7 @@ class IndicatorNode:
         parameters: Indicator parameters (e.g., period for RSI)
         metadata: Additional indicator metadata
     """
+
     symbol: str
     exchange: str
     timestamp: datetime
@@ -312,7 +322,7 @@ class IndicatorNode:
             "indicator_type": self.indicator_type.value,
             "value": self.value if not isinstance(self.value, dict) else str(self.value),
             "parameters": self.parameters,
-            "metadata": self.metadata
+            "metadata": self.metadata,
         }
 
 
@@ -335,6 +345,7 @@ class SignalNode:
         indicators: List of indicators that contributed to the signal
         metadata: Additional signal metadata
     """
+
     signal_id: str
     symbol: str
     exchange: str
@@ -364,7 +375,7 @@ class SignalNode:
             "stop_loss": self.stop_loss,
             "take_profit": self.take_profit,
             "indicators": self.indicators,
-            "metadata": self.metadata
+            "metadata": self.metadata,
         }
 
 
@@ -380,6 +391,7 @@ class CorrelationRelationship:
         window: Time window used for calculation
         timestamp: Calculation timestamp
     """
+
     symbol1: str
     symbol2: str
     correlation_coefficient: float
@@ -395,7 +407,7 @@ class CorrelationRelationship:
             "correlation_coefficient": self.correlation_coefficient,
             "p_value": self.p_value,
             "window": self.window,
-            "timestamp": self.timestamp.isoformat()
+            "timestamp": self.timestamp.isoformat(),
         }
 
 
@@ -413,6 +425,7 @@ class ArbitrageRelationship:
         profit_potential: Estimated profit after fees
         timestamp: Detection timestamp
     """
+
     symbol: str
     exchange1: str
     exchange2: str
@@ -432,7 +445,7 @@ class ArbitrageRelationship:
             "price2": self.price2,
             "spread_percentage": self.spread_percentage,
             "profit_potential": self.profit_potential,
-            "timestamp": self.timestamp.isoformat()
+            "timestamp": self.timestamp.isoformat(),
         }
 
 
@@ -450,6 +463,7 @@ class SentimentNode:
         keywords: Key terms extracted
         metadata: Additional sentiment metadata
     """
+
     symbol: str
     timestamp: datetime
     source: str
@@ -469,5 +483,5 @@ class SentimentNode:
             "confidence": self.confidence,
             "volume": self.volume,
             "keywords": self.keywords,
-            "metadata": self.metadata
+            "metadata": self.metadata,
         }

@@ -136,9 +136,7 @@ class RiskLimits:
 
         # Check maximum percentage
         if position_pct > self.config.max_position_size:
-            msg = (
-                f"Position too large: {position_pct:.2%} > {self.config.max_position_size:.2%}"
-            )
+            msg = f"Position too large: {position_pct:.2%} > {self.config.max_position_size:.2%}"
             if hard_limit:
                 logger.error(msg)
                 self._record_violation("max_position_size", position_pct, symbol)
@@ -282,9 +280,7 @@ class RiskLimits:
                     )
                     if hard_limit:
                         logger.error(msg)
-                        self._record_violation(
-                            "max_correlation_exposure", exposure_pct, symbols
-                        )
+                        self._record_violation("max_correlation_exposure", exposure_pct, symbols)
                         return False, msg
                     else:
                         logger.warning(msg)
@@ -428,9 +424,7 @@ class RiskLimits:
             Tuple of (is_allowed, message)
         """
         if num_trades_today > self.config.max_trades_per_day:
-            msg = (
-                f"Trade limit exceeded: {num_trades_today} > {self.config.max_trades_per_day}"
-            )
+            msg = f"Trade limit exceeded: {num_trades_today} > {self.config.max_trades_per_day}"
             if hard_limit:
                 logger.error(msg)
                 self._record_violation("max_trades_per_day", num_trades_today)

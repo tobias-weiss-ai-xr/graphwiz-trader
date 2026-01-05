@@ -61,62 +61,53 @@ from .execution_strategies import (
 
 __all__ = [
     # Configuration
-    'QlibConfig',
-    'default_config',
-
+    "QlibConfig",
+    "default_config",
     # Data adapter
-    'QlibDataAdapter',
-
+    "QlibDataAdapter",
     # Feature extraction
-    'AlphaFeatureExtractor',
-    'extract_features',
-
+    "AlphaFeatureExtractor",
+    "extract_features",
     # Signal generation
-    'QlibSignalGenerator',
-    'EnsembleSignalGenerator',
-    'create_signal_generator',
-
+    "QlibSignalGenerator",
+    "EnsembleSignalGenerator",
+    "create_signal_generator",
     # Portfolio optimization
-    'PortfolioOptimizer',
-    'DynamicPositionSizer',
-    'PortfolioConstraints',
-    'OptimizerConfig',
-    'create_portfolio_optimizer',
-
+    "PortfolioOptimizer",
+    "DynamicPositionSizer",
+    "PortfolioConstraints",
+    "OptimizerConfig",
+    "create_portfolio_optimizer",
     # Backtesting
-    'BacktestEngine',
-    'BacktestResult',
-    'BacktestConfig',
-    'ModelValidator',
-    'create_backtest_engine',
-
+    "BacktestEngine",
+    "BacktestResult",
+    "BacktestConfig",
+    "ModelValidator",
+    "create_backtest_engine",
     # Graph features
-    'GraphFeatureExtractor',
-    'populate_sample_graph_data',
-    'create_graph_feature_extractor',
-
+    "GraphFeatureExtractor",
+    "populate_sample_graph_data",
+    "create_graph_feature_extractor",
     # Hybrid models
-    'HybridFeatureGenerator',
-    'HybridSignalGenerator',
-    'EnsembleHybridModel',
-    'create_hybrid_signal_generator',
-
+    "HybridFeatureGenerator",
+    "HybridSignalGenerator",
+    "EnsembleHybridModel",
+    "create_hybrid_signal_generator",
     # RL execution
-    'ExecutionEnvironment',
-    'ExecutionAction',
-    'OrderBook',
-    'ExecutionState',
-    'TWAPExecutor',
-    'SmartOrderRouter',
-    'ExecutionAnalyzer',
-    'create_execution_environment',
-
+    "ExecutionEnvironment",
+    "ExecutionAction",
+    "OrderBook",
+    "ExecutionState",
+    "TWAPExecutor",
+    "SmartOrderRouter",
+    "ExecutionAnalyzer",
+    "create_execution_environment",
     # Execution strategies
-    'ExecutionStrategy',
-    'ExecutionPlan',
-    'OptimalExecutionEngine',
-    'SlippageMinimizer',
-    'create_optimal_execution_engine',
+    "ExecutionStrategy",
+    "ExecutionPlan",
+    "OptimalExecutionEngine",
+    "SlippageMinimizer",
+    "create_optimal_execution_engine",
 ]
 
-__version__ = '0.4.0'
+__version__ = "0.4.0"

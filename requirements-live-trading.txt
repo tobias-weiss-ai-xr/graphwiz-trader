@@ -1,3 +1,4 @@
+# Core dependencies
 pandas>=2.0.0
 numpy>=1.24.0
 ccxt>=4.0.0
@@ -6,3 +7,10 @@ pyyaml>=6.0
 python-dotenv>=1.0.0
 pytz>=2020.1
 python-dateutil>=2.8.2
+
+# Graph database (for GoEmotions sentiment analysis)
+neo4j>=5.0.0
+
+# Transformers (for GoEmotions model)
+transformers>=4.30.0
+torch>=2.0.0

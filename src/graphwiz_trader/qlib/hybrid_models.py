@@ -20,6 +20,7 @@ try:
     from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
     from sklearn.linear_model import LogisticRegression
     from sklearn.model_selection import cross_val_score
+
     LIGHTGBM_AVAILABLE = True
     SKLEARN_AVAILABLE = True
 except ImportError:
@@ -107,8 +108,10 @@ class HybridFeatureGenerator:
         self.alpha_feature_names = [col for col in alpha_features.columns]
         self.graph_feature_names = list(graph_features.keys())
 
-        logger.info(f"Generated {len(hybrid_features.columns)} hybrid features "
-                   f"({len(self.alpha_feature_names)} Alpha + {len(self.graph_feature_names)} Graph)")
+        logger.info(
+            f"Generated {len(hybrid_features.columns)} hybrid features "
+            f"({len(self.alpha_feature_names)} Alpha + {len(self.graph_feature_names)} Graph)"
+        )
 
         return hybrid_features
 
@@ -125,31 +128,33 @@ class HybridFeatureGenerator:
         Returns:
             Tuple of (alpha_importance, graph_importance) DataFrames
         """
-        if not hasattr(model, 'feature_importances_') and not hasattr(model, 'feature_importance'):
+        if not hasattr(model, "feature_importances_") and not hasattr(model, "feature_importance"):
             logger.warning("Model doesn't have feature importances")
             return pd.DataFrame(), pd.DataFrame()
 
         # Get importances
-        if hasattr(model, 'feature_importance'):
-            importances = model.feature_importance(importance_type='gain')
+        if hasattr(model, "feature_importance"):
+            importances = model.feature_importance(importance_type="gain")
             feature_names = model.feature_name()
         else:
             importances = model.feature_importances_
             feature_names = self.alpha_feature_names + self.graph_feature_names
 
         # Create DataFrame
-        importance_df = pd.DataFrame({
-            'feature': feature_names,
-            'importance': importances,
-        }).sort_values('importance', ascending=False)
+        importance_df = pd.DataFrame(
+            {
+                "feature": feature_names,
+                "importance": importances,
+            }
+        ).sort_values("importance", ascending=False)
 
         # Split by type
         alpha_importance = importance_df[
-            importance_df['feature'].isin(self.alpha_feature_names)
+            importance_df["feature"].isin(self.alpha_feature_names)
         ].copy()
 
         graph_importance = importance_df[
-            importance_df['feature'].isin(self.graph_feature_names)
+            importance_df["feature"].isin(self.graph_feature_names)
         ].copy()
 
         return alpha_importance, graph_importance
@@ -224,9 +229,9 @@ class HybridSignalGenerator(QlibSignalGenerator):
         labels = self.prepare_labels(df)
 
         # Align features and labels
-        aligned_data = pd.concat([features_df, labels.rename('label')], axis=1).dropna()
-        X = aligned_data.drop('label', axis=1)
-        y = aligned_data['label']
+        aligned_data = pd.concat([features_df, labels.rename("label")], axis=1).dropna()
+        X = aligned_data.drop("label", axis=1)
+        y = aligned_data["label"]
 
         # Split into train and validation
         split_idx = int(len(X) * (1 - validation_split))
@@ -235,16 +240,16 @@ class HybridSignalGenerator(QlibSignalGenerator):
 
         # Default model parameters
         default_params = {
-            'objective': 'binary',
-            'metric': ['binary_logloss', 'auc'],
-            'boosting_type': 'gbdt',
-            'num_leaves': 31,
-            'learning_rate': 0.05,
-            'feature_fraction': 0.9,
-            'bagging_fraction': 0.8,
-            'bagging_freq': 5,
-            'verbose': -1,
-            'random_state': 42,
+            "objective": "binary",
+            "metric": ["binary_logloss", "auc"],
+            "boosting_type": "gbdt",
+            "num_leaves": 31,
+            "learning_rate": 0.05,
+            "feature_fraction": 0.9,
+            "bagging_fraction": 0.8,
+            "bagging_freq": 5,
+            "verbose": -1,
+            "random_state": 42,
         }
         default_params.update(model_params)
 
@@ -259,7 +264,7 @@ class HybridSignalGenerator(QlibSignalGenerator):
             train_data,
             num_boost_round=1000,
             valid_sets=[train_data, val_data],
-            valid_names=['train', 'valid'],
+            valid_names=["train", "valid"],
             callbacks=[
                 lgb.early_stopping(stopping_rounds=50),
                 lgb.log_evaluation(period=100),
@@ -279,19 +284,22 @@ class HybridSignalGenerator(QlibSignalGenerator):
         )
 
         results = {
-            'train_accuracy': train_accuracy,
-            'val_accuracy': val_accuracy,
-            'train_samples': len(X_train),
-            'val_samples': len(X_val),
-            'num_features': len(X.columns),
-            'num_alpha_features': len(self.hybrid_generator.alpha_feature_names),
-            'num_graph_features': len(self.hybrid_generator.graph_feature_names),
-            'alpha_feature_importance': alpha_importance.to_dict('records') if len(alpha_importance) > 0 else [],
-            'graph_feature_importance': graph_importance.to_dict('records') if len(graph_importance) > 0 else [],
-            'feature_importance': dict(zip(
-                X.columns,
-                self.model.feature_importance(importance_type='gain')
-            )),
+            "train_accuracy": train_accuracy,
+            "val_accuracy": val_accuracy,
+            "train_samples": len(X_train),
+            "val_samples": len(X_val),
+            "num_features": len(X.columns),
+            "num_alpha_features": len(self.hybrid_generator.alpha_feature_names),
+            "num_graph_features": len(self.hybrid_generator.graph_feature_names),
+            "alpha_feature_importance": (
+                alpha_importance.to_dict("records") if len(alpha_importance) > 0 else []
+            ),
+            "graph_feature_importance": (
+                graph_importance.to_dict("records") if len(graph_importance) > 0 else []
+            ),
+            "feature_importance": dict(
+                zip(X.columns, self.model.feature_importance(importance_type="gain"))
+            ),
         }
 
         logger.info(f"Hybrid model training complete:")
@@ -322,25 +330,25 @@ class HybridSignalGenerator(QlibSignalGenerator):
         # Train hybrid model
         logger.info("Training hybrid model...")
         hybrid_results = self.train(df, symbol, validation_split=0.2)
-        hybrid_accuracy = hybrid_results['val_accuracy']
+        hybrid_accuracy = hybrid_results["val_accuracy"]
 
         # Train baseline (Alpha-only) model
         logger.info("Training Alpha-only baseline...")
         baseline_generator = QlibSignalGenerator(config=self.config)
         baseline_results = baseline_generator.train(df, symbol, validation_split=0.2)
-        baseline_accuracy = baseline_results['val_accuracy']
+        baseline_accuracy = baseline_results["val_accuracy"]
 
         # Calculate improvement
         improvement = (hybrid_accuracy - baseline_accuracy) / baseline_accuracy * 100
 
         comparison = {
-            'baseline_accuracy': baseline_accuracy,
-            'hybrid_accuracy': hybrid_accuracy,
-            'accuracy_improvement_pct': improvement,
-            'baseline_features': baseline_results['num_features'],
-            'hybrid_features': hybrid_results['num_features'],
-            'graph_features_added': hybrid_results['num_graph_features'],
-            'hygraph_better': hybrid_accuracy > baseline_accuracy,
+            "baseline_accuracy": baseline_accuracy,
+            "hybrid_accuracy": hybrid_accuracy,
+            "accuracy_improvement_pct": improvement,
+            "baseline_features": baseline_results["num_features"],
+            "hybrid_features": hybrid_results["num_features"],
+            "graph_features_added": hybrid_results["num_graph_features"],
+            "hygraph_better": hybrid_accuracy > baseline_accuracy,
         }
 
         logger.info(f"\nComparison Results:")
@@ -407,10 +415,7 @@ class EnsembleHybridModel:
         pred_hybrid = self.hybrid_model.predict(X_hybrid)
 
         # Weighted average
-        ensemble_pred = (
-            self.weights[0] * pred_alpha +
-            self.weights[1] * pred_hybrid
-        )
+        ensemble_pred = self.weights[0] * pred_alpha + self.weights[1] * pred_hybrid
 
         return ensemble_pred
 

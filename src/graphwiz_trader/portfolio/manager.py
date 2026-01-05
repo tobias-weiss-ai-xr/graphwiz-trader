@@ -11,6 +11,7 @@ import numpy as np
 @dataclass
 class Asset:
     """Represents an asset in the portfolio."""
+
     symbol: str
     quantity: float
     entry_price: float
@@ -28,12 +29,15 @@ class Asset:
         self.value = self.quantity * self.current_price
         if self.quantity > 0 and self.entry_price > 0:
             self.unrealized_pnl = (self.current_price - self.entry_price) * self.quantity
-            self.unrealized_pnl_pct = ((self.current_price - self.entry_price) / self.entry_price) * 100
+            self.unrealized_pnl_pct = (
+                (self.current_price - self.entry_price) / self.entry_price
+            ) * 100
 
 
 @dataclass
 class PortfolioSnapshot:
     """Snapshot of portfolio state at a point in time."""
+
     timestamp: datetime
     total_value: float
     cash: float
@@ -52,7 +56,7 @@ class PortfolioManager:
         initial_capital: float = 100000.0,
         max_positions: int = 10,
         max_position_size: float = 0.2,  # 20% of portfolio
-        rebalance_threshold: float = 0.05  # 5% deviation triggers rebalance
+        rebalance_threshold: float = 0.05,  # 5% deviation triggers rebalance
     ):
         """Initialize portfolio manager.
 
@@ -73,11 +77,7 @@ class PortfolioManager:
         self.target_weights: Dict[str, float] = {}
 
     def add_position(
-        self,
-        symbol: str,
-        quantity: float,
-        price: float,
-        timestamp: Optional[datetime] = None
+        self, symbol: str, quantity: float, price: float, timestamp: Optional[datetime] = None
     ) -> bool:
         """Add a position to the portfolio.
 
@@ -107,7 +107,11 @@ class PortfolioManager:
         # Check position size
         portfolio_value = self.get_total_value()
         if portfolio_value > 0 and cost / portfolio_value > self.max_position_size:
-            logger.warning("Position size exceeds maximum: {} / {}", cost, portfolio_value * self.max_position_size)
+            logger.warning(
+                "Position size exceeds maximum: {} / {}",
+                cost,
+                portfolio_value * self.max_position_size,
+            )
             return False
 
         # Update or create position
@@ -121,10 +125,7 @@ class PortfolioManager:
             asset._update_value()
         else:
             self.assets[symbol] = Asset(
-                symbol=symbol,
-                quantity=quantity,
-                entry_price=price,
-                current_price=price
+                symbol=symbol, quantity=quantity, entry_price=price, current_price=price
             )
 
         self.cash -= cost
@@ -137,11 +138,7 @@ class PortfolioManager:
         return True
 
     def remove_position(
-        self,
-        symbol: str,
-        quantity: float,
-        price: float,
-        timestamp: Optional[datetime] = None
+        self, symbol: str, quantity: float, price: float, timestamp: Optional[datetime] = None
     ) -> bool:
         """Remove (reduce) a position from the portfolio.
 
@@ -226,7 +223,7 @@ class PortfolioManager:
                 "value": asset.value,
                 "weight": asset.weight,
                 "unrealized_pnl": asset.unrealized_pnl,
-                "unrealized_pnl_pct": asset.unrealized_pnl_pct
+                "unrealized_pnl_pct": asset.unrealized_pnl_pct,
             }
             for asset in self.assets.values()
         ]
@@ -240,7 +237,11 @@ class PortfolioManager:
         total_value = self.get_total_value()
         invested_value = self.get_invested_value()
         total_pnl = sum(asset.unrealized_pnl for asset in self.assets.values())
-        total_pnl_pct = (total_pnl / (invested_value - total_pnl)) * 100 if (invested_value - total_pnl) > 0 else 0.0
+        total_pnl_pct = (
+            (total_pnl / (invested_value - total_pnl)) * 100
+            if (invested_value - total_pnl) > 0
+            else 0.0
+        )
 
         return {
             "total_value": total_value,
@@ -252,7 +253,7 @@ class PortfolioManager:
             "position_count": len(self.assets),
             "initial_capital": self.initial_capital,
             "total_return": total_value - self.initial_capital,
-            "total_return_pct": ((total_value - self.initial_capital) / self.initial_capital) * 100
+            "total_return_pct": ((total_value - self.initial_capital) / self.initial_capital) * 100,
         }
 
     def set_target_weights(self, weights: Dict[str, float]) -> None:
@@ -295,41 +296,49 @@ class PortfolioManager:
                     # Buy more
                     buy_value = target_value - current_value
                     quantity = buy_value / asset.current_price
-                    trades.append({
-                        "symbol": symbol,
-                        "action": "buy",
-                        "quantity": quantity,
-                        "value": buy_value,
-                        "reason": f"Rebalance: current weight {asset.weight:.2%}, target {target_weight:.2%}"
-                    })
+                    trades.append(
+                        {
+                            "symbol": symbol,
+                            "action": "buy",
+                            "quantity": quantity,
+                            "value": buy_value,
+                            "reason": f"Rebalance: current weight {asset.weight:.2%}, target {target_weight:.2%}",
+                        }
+                    )
                 else:
                     # Sell some
                     sell_value = current_value - target_value
                     quantity = sell_value / asset.current_price
-                    trades.append({
-                        "symbol": symbol,
-                        "action": "sell",
-                        "quantity": quantity,
-                        "value": sell_value,
-                        "reason": f"Rebalance: current weight {asset.weight:.2%}, target {target_weight:.2%}"
-                    })
+                    trades.append(
+                        {
+                            "symbol": symbol,
+                            "action": "sell",
+                            "quantity": quantity,
+                            "value": sell_value,
+                            "reason": f"Rebalance: current weight {asset.weight:.2%}, target {target_weight:.2%}",
+                        }
+                    )
 
         # Check for missing positions
         for symbol, target_weight in self.target_weights.items():
             if symbol not in self.assets:
                 target_value = total_value * target_weight
                 # Need to add position (estimate price)
-                trades.append({
-                    "symbol": symbol,
-                    "action": "buy",
-                    "quantity": 0,  # Will be calculated with actual price
-                    "value": target_value,
-                    "reason": f"New position: target weight {target_weight:.2%}"
-                })
+                trades.append(
+                    {
+                        "symbol": symbol,
+                        "action": "buy",
+                        "quantity": 0,  # Will be calculated with actual price
+                        "value": target_value,
+                        "reason": f"New position: target weight {target_weight:.2%}",
+                    }
+                )
 
         return trades
 
-    def calculate_portfolio_metrics(self, snapshot_history: Optional[List[PortfolioSnapshot]] = None) -> Dict[str, Any]:
+    def calculate_portfolio_metrics(
+        self, snapshot_history: Optional[List[PortfolioSnapshot]] = None
+    ) -> Dict[str, Any]:
         """Calculate portfolio performance metrics.
 
         Args:
@@ -379,7 +388,7 @@ class PortfolioManager:
             "max_drawdown": max_drawdown * 100,
             "current_value": values[-1],
             "peak_value": peak,
-            "snapshot_count": len(snapshots)
+            "snapshot_count": len(snapshots),
         }
 
     def _update_weights(self) -> None:
@@ -398,7 +407,11 @@ class PortfolioManager:
         total_value = self.get_total_value()
         invested_value = self.get_invested_value()
         total_pnl = sum(asset.unrealized_pnl for asset in self.assets.values())
-        total_pnl_pct = (total_pnl / (invested_value - total_pnl)) * 100 if (invested_value - total_pnl) > 0 else 0.0
+        total_pnl_pct = (
+            (total_pnl / (invested_value - total_pnl)) * 100
+            if (invested_value - total_pnl) > 0
+            else 0.0
+        )
 
         snapshot = PortfolioSnapshot(
             timestamp=timestamp,
@@ -408,7 +421,7 @@ class PortfolioManager:
             total_pnl=total_pnl,
             total_pnl_pct=total_pnl_pct,
             asset_count=len(self.assets),
-            weights={symbol: asset.weight for symbol, asset in self.assets.items()}
+            weights={symbol: asset.weight for symbol, asset in self.assets.items()},
         )
 
         self.snapshots.append(snapshot)
@@ -426,7 +439,9 @@ class PortfolioManager:
         Returns:
             List of snapshot dictionaries
         """
-        recent_snapshots = self.snapshots[-limit:] if len(self.snapshots) > limit else self.snapshots
+        recent_snapshots = (
+            self.snapshots[-limit:] if len(self.snapshots) > limit else self.snapshots
+        )
 
         return [
             {
@@ -436,7 +451,7 @@ class PortfolioManager:
                 "invested_value": s.invested_value,
                 "total_pnl": s.total_pnl,
                 "total_pnl_pct": s.total_pnl_pct,
-                "asset_count": s.asset_count
+                "asset_count": s.asset_count,
             }
             for s in recent_snapshots
         ]

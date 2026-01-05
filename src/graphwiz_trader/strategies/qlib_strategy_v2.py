@@ -27,6 +27,7 @@ try:
         BacktestEngine,
         BacktestConfig,
     )
+
     QLIB_AVAILABLE = True
 except ImportError:
     QLIB_AVAILABLE = False
@@ -129,7 +130,9 @@ class QlibStrategyV2:
         self.portfolio_value = self.config.get("initial_capital", 100000.0)
 
         logger.info(f"QlibStrategyV2 initialized for symbols: {symbols}")
-        logger.info(f"Portfolio optimization: {'enabled' if self.enable_portfolio_opt else 'disabled'}")
+        logger.info(
+            f"Portfolio optimization: {'enabled' if self.enable_portfolio_opt else 'disabled'}"
+        )
 
     async def start(self) -> None:
         """Start the strategy."""
@@ -186,9 +189,11 @@ class QlibStrategyV2:
 
                 training_results[symbol] = results
 
-                logger.info(f"Training complete for {symbol}: "
-                           f"Train Acc={results['train_accuracy']:.4f}, "
-                           f"Val Acc={results['val_accuracy']:.4f}")
+                logger.info(
+                    f"Training complete for {symbol}: "
+                    f"Train Acc={results['train_accuracy']:.4f}, "
+                    f"Val Acc={results['val_accuracy']:.4f}"
+                )
 
             except Exception as e:
                 logger.error(f"Error training model for {symbol}: {e}")
@@ -232,9 +237,11 @@ class QlibStrategyV2:
 
                 signals[symbol] = prediction
 
-                logger.info(f"Generated signal for {symbol}: "
-                           f"{prediction['signal']} (prob={prediction['probability']:.4f}, "
-                           f"confidence={prediction['confidence']})")
+                logger.info(
+                    f"Generated signal for {symbol}: "
+                    f"{prediction['signal']} (prob={prediction['probability']:.4f}, "
+                    f"confidence={prediction['confidence']})"
+                )
 
             except Exception as e:
                 logger.error(f"Error generating signal for {symbol}: {e}")
@@ -268,7 +275,9 @@ class QlibStrategyV2:
 
             for symbol in self.symbols:
                 try:
-                    start_date = datetime.now() - timedelta(days=self.portfolio_optimizer.config.lookback_window)
+                    start_date = datetime.now() - timedelta(
+                        days=self.portfolio_optimizer.config.lookback_window
+                    )
                     df = await self.data_adapter.get_historical_data(
                         symbol=symbol,
                         start_date=start_date,
@@ -277,7 +286,7 @@ class QlibStrategyV2:
                     )
 
                     # Calculate returns
-                    returns = df['close'].pct_change().dropna()
+                    returns = df["close"].pct_change().dropna()
                     returns_dict[symbol] = returns
 
                 except Exception as e:
@@ -299,7 +308,7 @@ class QlibStrategyV2:
                 if symbol in signals:
                     # Use signal probability as expected return
                     # Convert probability to expected return
-                    prob = signals[symbol]['probability']
+                    prob = signals[symbol]["probability"]
                     # Map 0-1 probability to -10% to +10% expected return
                     expected_returns[symbol] = (prob - 0.5) * 0.2
                 else:
@@ -345,8 +354,10 @@ class QlibStrategyV2:
 
         # Calculate current position values
         for pos in current_positions:
-            symbol_key = pos['symbol'].replace('/', '')
-            position_values[symbol_key] = pos.get('amount', 0) * pos.get('current_price', pos.get('entry_price', 1))
+            symbol_key = pos["symbol"].replace("/", "")
+            position_values[symbol_key] = pos.get("amount", 0) * pos.get(
+                "current_price", pos.get("entry_price", 1)
+            )
 
         # Calculate target position values
         target_values = {}
@@ -357,10 +368,10 @@ class QlibStrategyV2:
         for symbol in self.symbols:
             try:
                 signal = signals.get(symbol, {})
-                signal_type = signal.get('signal', 'HOLD')
+                signal_type = signal.get("signal", "HOLD")
 
                 # Only trade if signal is BUY
-                if signal_type != 'BUY':
+                if signal_type != "BUY":
                     # If we have a position and signal is not BUY, consider closing
                     current_value = position_values.get(symbol, 0)
                     target_value = target_values.get(symbol, 0)
@@ -393,11 +404,7 @@ class QlibStrategyV2:
 
             except Exception as e:
                 logger.error(f"Error executing trade for {symbol}: {e}")
-                results.append({
-                    'symbol': symbol,
-                    'status': 'error',
-                    'error': str(e)
-                })
+                results.append({"symbol": symbol, "status": "error", "error": str(e)})
 
         # Update current weights
         self.current_weights = optimal_weights
@@ -421,12 +428,14 @@ class QlibStrategyV2:
                 current_price = ticker["last"]
             else:
                 logger.error(f"Exchange {exchange} not available")
-                return {'symbol': symbol, 'status': 'error', 'error': 'Exchange not available'}
+                return {"symbol": symbol, "status": "error", "error": "Exchange not available"}
 
             # Calculate quantity
             quantity = trade_value / current_price
 
-            logger.info(f"Executing BUY for {symbol}: ${trade_value:.2f} ({quantity:.4f} @ ${current_price:.2f})")
+            logger.info(
+                f"Executing BUY for {symbol}: ${trade_value:.2f} ({quantity:.4f} @ ${current_price:.2f})"
+            )
 
             result = self.trading_engine.execute_trade(
                 symbol=symbol,
@@ -440,7 +449,7 @@ class QlibStrategyV2:
 
         except Exception as e:
             logger.error(f"Error executing buy for {symbol}: {e}")
-            return {'symbol': symbol, 'status': 'error', 'error': str(e)}
+            return {"symbol": symbol, "status": "error", "error": str(e)}
 
     async def _execute_sell(
         self,
@@ -455,29 +464,30 @@ class QlibStrategyV2:
             # Get current position
             positions = self.trading_engine.get_positions()
             symbol_positions = [
-                pos for pos in positions
-                if symbol in pos['symbol'] and pos['side'] == 'buy'
+                pos for pos in positions if symbol in pos["symbol"] and pos["side"] == "buy"
             ]
 
             if not symbol_positions:
                 logger.info(f"No long position to sell for {symbol}")
-                return {'symbol': symbol, 'status': 'skipped', 'reason': 'No position'}
+                return {"symbol": symbol, "status": "skipped", "reason": "No position"}
 
             # Get current price
             if self.trading_engine.exchanges:
                 ticker = self.trading_engine.exchanges[exchange].fetch_ticker(symbol)
                 current_price = ticker["last"]
             else:
-                return {'symbol': symbol, 'status': 'error', 'error': 'Exchange not available'}
+                return {"symbol": symbol, "status": "error", "error": "Exchange not available"}
 
             # Calculate quantity to sell
             quantity = trade_value / current_price
 
             # Don't sell more than we have
-            max_quantity = symbol_positions[0]['amount']
+            max_quantity = symbol_positions[0]["amount"]
             quantity = min(quantity, max_quantity)
 
-            logger.info(f"Executing SELL for {symbol}: ${trade_value:.2f} ({quantity:.4f} @ ${current_price:.2f})")
+            logger.info(
+                f"Executing SELL for {symbol}: ${trade_value:.2f} ({quantity:.4f} @ ${current_price:.2f})"
+            )
 
             result = self.trading_engine.execute_trade(
                 symbol=symbol,
@@ -491,7 +501,7 @@ class QlibStrategyV2:
 
         except Exception as e:
             logger.error(f"Error executing sell for {symbol}: {e}")
-            return {'symbol': symbol, 'status': 'error', 'error': str(e)}
+            return {"symbol": symbol, "status": "error", "error": str(e)}
 
     async def _close_position(self, symbol: str) -> Dict[str, Any]:
         """Close entire position for a symbol."""
@@ -501,14 +511,13 @@ class QlibStrategyV2:
             # Get current position
             positions = self.trading_engine.get_positions()
             symbol_positions = [
-                pos for pos in positions
-                if symbol in pos['symbol'] and pos['side'] == 'buy'
+                pos for pos in positions if symbol in pos["symbol"] and pos["side"] == "buy"
             ]
 
             if not symbol_positions:
-                return {'symbol': symbol, 'status': 'skipped', 'reason': 'No position'}
+                return {"symbol": symbol, "status": "skipped", "reason": "No position"}
 
-            quantity = symbol_positions[0]['amount']
+            quantity = symbol_positions[0]["amount"]
 
             logger.info(f"Closing position for {symbol}: {quantity}")
 
@@ -524,7 +533,7 @@ class QlibStrategyV2:
 
         except Exception as e:
             logger.error(f"Error closing position for {symbol}: {e}")
-            return {'symbol': symbol, 'status': 'error', 'error': str(e)}
+            return {"symbol": symbol, "status": "error", "error": str(e)}
 
     async def run_cycle(self) -> Dict[str, Any]:
         """Run one complete strategy cycle."""
@@ -553,12 +562,12 @@ class QlibStrategyV2:
         execution_results = await self.execute_signals(signals, optimal_weights)
 
         cycle_results = {
-            'timestamp': datetime.now().isoformat(),
-            'signals_generated': len(signals),
-            'portfolio_optimization': self.enable_portfolio_opt,
-            'optimal_weights': optimal_weights.to_dict(),
-            'trades_executed': len(execution_results),
-            'executions': execution_results,
+            "timestamp": datetime.now().isoformat(),
+            "signals_generated": len(signals),
+            "portfolio_optimization": self.enable_portfolio_opt,
+            "optimal_weights": optimal_weights.to_dict(),
+            "trades_executed": len(execution_results),
+            "executions": execution_results,
         }
 
         logger.info(f"Cycle complete: {len(signals)} signals, {len(execution_results)} trades")
@@ -568,18 +577,22 @@ class QlibStrategyV2:
     def get_strategy_info(self) -> Dict[str, Any]:
         """Get information about the strategy state."""
         return {
-            'strategy_type': 'qlib_ml_v2',
-            'version': '2.0',
-            'symbols': self.symbols,
-            'running': self._running,
-            'signal_threshold': self.signal_threshold,
-            'portfolio_optimization_enabled': self.enable_portfolio_opt,
-            'optimization_method': self.portfolio_optimizer.config.optimization_method,
-            'current_weights': self.current_weights.to_dict(),
-            'last_retrain_time': self.last_retrain_time.isoformat() if self.last_retrain_time else None,
-            'last_rebalance_time': self.last_rebalance_time.isoformat() if self.last_rebalance_time else None,
-            'model_loaded': self.signal_generator.model is not None,
-            'config': self.config,
+            "strategy_type": "qlib_ml_v2",
+            "version": "2.0",
+            "symbols": self.symbols,
+            "running": self._running,
+            "signal_threshold": self.signal_threshold,
+            "portfolio_optimization_enabled": self.enable_portfolio_opt,
+            "optimization_method": self.portfolio_optimizer.config.optimization_method,
+            "current_weights": self.current_weights.to_dict(),
+            "last_retrain_time": (
+                self.last_retrain_time.isoformat() if self.last_retrain_time else None
+            ),
+            "last_rebalance_time": (
+                self.last_rebalance_time.isoformat() if self.last_rebalance_time else None
+            ),
+            "model_loaded": self.signal_generator.model is not None,
+            "config": self.config,
         }
 
 

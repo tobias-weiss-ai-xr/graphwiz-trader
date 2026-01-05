@@ -10,6 +10,7 @@ from loguru import logger
 
 try:
     import lightgbm as lgb
+
     LIGHTGBM_AVAILABLE = True
 except ImportError:
     LIGHTGBM_AVAILABLE = False
@@ -69,7 +70,9 @@ class QlibSignalGenerator:
             Series with forward returns as labels
         """
         # Calculate forward returns
-        forward_returns = df['close'].pct_change(forward_return_period).shift(-forward_return_period)
+        forward_returns = (
+            df["close"].pct_change(forward_return_period).shift(-forward_return_period)
+        )
 
         # Convert to binary classification (1 = up, 0 = down)
         labels = (forward_returns > 0).astype(int)
@@ -112,9 +115,9 @@ class QlibSignalGenerator:
         labels = self.prepare_labels(df)
 
         # Align features and labels
-        aligned_data = pd.concat([features_df, labels.rename('label')], axis=1).dropna()
-        X = aligned_data.drop('label', axis=1)
-        y = aligned_data['label']
+        aligned_data = pd.concat([features_df, labels.rename("label")], axis=1).dropna()
+        X = aligned_data.drop("label", axis=1)
+        y = aligned_data["label"]
 
         # Split into train and validation
         split_idx = int(len(X) * (1 - validation_split))
@@ -123,16 +126,16 @@ class QlibSignalGenerator:
 
         # Default model parameters
         default_params = {
-            'objective': 'binary',
-            'metric': ['binary_logloss', 'auc'],
-            'boosting_type': 'gbdt',
-            'num_leaves': 31,
-            'learning_rate': 0.05,
-            'feature_fraction': 0.9,
-            'bagging_fraction': 0.8,
-            'bagging_freq': 5,
-            'verbose': -1,
-            'random_state': 42,
+            "objective": "binary",
+            "metric": ["binary_logloss", "auc"],
+            "boosting_type": "gbdt",
+            "num_leaves": 31,
+            "learning_rate": 0.05,
+            "feature_fraction": 0.9,
+            "bagging_fraction": 0.8,
+            "bagging_freq": 5,
+            "verbose": -1,
+            "random_state": 42,
         }
         default_params.update(model_params)
 
@@ -147,7 +150,7 @@ class QlibSignalGenerator:
             train_data,
             num_boost_round=1000,
             valid_sets=[train_data, val_data],
-            valid_names=['train', 'valid'],
+            valid_names=["train", "valid"],
             callbacks=[
                 lgb.early_stopping(stopping_rounds=50),
                 lgb.log_evaluation(period=100),
@@ -162,19 +165,20 @@ class QlibSignalGenerator:
         val_accuracy = np.mean((val_pred > 0.5).astype(int) == y_val)
 
         results = {
-            'train_accuracy': train_accuracy,
-            'val_accuracy': val_accuracy,
-            'train_samples': len(X_train),
-            'val_samples': len(X_val),
-            'num_features': len(X.columns),
-            'feature_importance': dict(zip(
-                X.columns,
-                self.model.feature_importance(importance_type='gain')
-            )),
+            "train_accuracy": train_accuracy,
+            "val_accuracy": val_accuracy,
+            "train_samples": len(X_train),
+            "val_samples": len(X_val),
+            "num_features": len(X.columns),
+            "feature_importance": dict(
+                zip(X.columns, self.model.feature_importance(importance_type="gain"))
+            ),
         }
 
-        logger.info(f"Training complete. Train accuracy: {train_accuracy:.4f}, "
-                   f"Val accuracy: {val_accuracy:.4f}")
+        logger.info(
+            f"Training complete. Train accuracy: {train_accuracy:.4f}, "
+            f"Val accuracy: {val_accuracy:.4f}"
+        )
 
         return results
 
@@ -210,9 +214,9 @@ class QlibSignalGenerator:
 
         # Create signals DataFrame
         signals = pd.DataFrame(index=features_df.index)
-        signals['probability'] = predictions
-        signals['signal'] = (predictions > threshold).astype(int)
-        signals['signal_type'] = signals['signal'].map({1: 'BUY', 0: 'HOLD/SELL'})
+        signals["probability"] = predictions
+        signals["signal"] = (predictions > threshold).astype(int)
+        signals["signal_type"] = signals["signal"].map({1: "BUY", 0: "HOLD/SELL"})
 
         logger.info(f"Generated {len(signals)} predictions for {symbol}")
 
@@ -239,22 +243,26 @@ class QlibSignalGenerator:
 
         if len(signals) == 0:
             return {
-                'symbol': symbol,
-                'timestamp': datetime.now(),
-                'probability': 0.0,
-                'signal': 'HOLD',
-                'error': 'No predictions generated',
+                "symbol": symbol,
+                "timestamp": datetime.now(),
+                "probability": 0.0,
+                "signal": "HOLD",
+                "error": "No predictions generated",
             }
 
         # Get the latest prediction
         latest = signals.iloc[-1]
 
         return {
-            'symbol': symbol,
-            'timestamp': latest.name,
-            'probability': float(latest['probability']),
-            'signal': latest['signal_type'],
-            'confidence': 'HIGH' if abs(latest['probability'] - 0.5) > 0.3 else 'MEDIUM' if abs(latest['probability'] - 0.5) > 0.1 else 'LOW',
+            "symbol": symbol,
+            "timestamp": latest.name,
+            "probability": float(latest["probability"]),
+            "signal": latest["signal_type"],
+            "confidence": (
+                "HIGH"
+                if abs(latest["probability"] - 0.5) > 0.3
+                else "MEDIUM" if abs(latest["probability"] - 0.5) > 0.1 else "LOW"
+            ),
         }
 
     def save_model(self, path: Path):
@@ -269,7 +277,7 @@ class QlibSignalGenerator:
 
         path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(path, 'wb') as f:
+        with open(path, "wb") as f:
             pickle.dump(self.model, f)
 
         logger.info(f"Model saved to {path}")
@@ -284,7 +292,7 @@ class QlibSignalGenerator:
         if not path.exists():
             raise FileNotFoundError(f"Model file not found: {path}")
 
-        with open(path, 'rb') as f:
+        with open(path, "rb") as f:
             self.model = pickle.load(f)
 
         logger.info(f"Model loaded from {path}")
@@ -302,13 +310,19 @@ class QlibSignalGenerator:
         if self.model is None:
             raise RuntimeError("Model not trained. Call train() first.")
 
-        importance = self.model.feature_importance(importance_type='gain')
+        importance = self.model.feature_importance(importance_type="gain")
         feature_names = self.model.feature_name()
 
-        importance_df = pd.DataFrame({
-            'feature': feature_names,
-            'importance': importance,
-        }).sort_values('importance', ascending=False).head(top_n)
+        importance_df = (
+            pd.DataFrame(
+                {
+                    "feature": feature_names,
+                    "importance": importance,
+                }
+            )
+            .sort_values("importance", ascending=False)
+            .head(top_n)
+        )
 
         return importance_df
 
@@ -369,7 +383,7 @@ class EnsembleSignalGenerator:
         for generator in self.generators:
             try:
                 pred = generator.predict(df, symbol, threshold)
-                all_predictions.append(pred['probability'])
+                all_predictions.append(pred["probability"])
             except Exception as e:
                 logger.warning(f"Generator failed: {e}")
                 continue
@@ -383,9 +397,9 @@ class EnsembleSignalGenerator:
 
         # Create signals DataFrame
         signals = pd.DataFrame(index=all_predictions[0].index)
-        signals['probability'] = combined_prob
-        signals['signal'] = (combined_prob > threshold).astype(int)
-        signals['signal_type'] = signals['signal'].map({1: 'BUY', 0: 'HOLD/SELL'})
+        signals["probability"] = combined_prob
+        signals["signal"] = (combined_prob > threshold).astype(int)
+        signals["signal_type"] = signals["signal"].map({1: "BUY", 0: "HOLD/SELL"})
 
         logger.info(f"Generated ensemble predictions for {symbol}")
 

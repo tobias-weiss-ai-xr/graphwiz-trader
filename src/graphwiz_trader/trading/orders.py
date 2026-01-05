@@ -12,6 +12,7 @@ from loguru import logger
 
 class OrderType(Enum):
     """Order types supported by the trading system."""
+
     MARKET = "market"
     LIMIT = "limit"
     STOP_LOSS = "stop_loss"
@@ -22,29 +23,33 @@ class OrderType(Enum):
 
 class OrderSide(Enum):
     """Order sides."""
+
     BUY = "buy"
     SELL = "sell"
 
 
 class OrderStatus(Enum):
     """Order lifecycle statuses."""
-    PENDING = "pending"           # Order created, not yet submitted to exchange
-    OPEN = "open"                 # Order submitted and active on exchange
+
+    PENDING = "pending"  # Order created, not yet submitted to exchange
+    OPEN = "open"  # Order submitted and active on exchange
     PARTIALLY_FILLED = "partially_filled"  # Order partially filled
-    FILLED = "filled"             # Order completely filled
-    CANCELLED = "cancelled"       # Order cancelled
-    REJECTED = "rejected"         # Order rejected by exchange
-    EXPIRED = "expired"           # Order expired
-    FAILED = "failed"             # Order failed due to system error
+    FILLED = "filled"  # Order completely filled
+    CANCELLED = "cancelled"  # Order cancelled
+    REJECTED = "rejected"  # Order rejected by exchange
+    EXPIRED = "expired"  # Order expired
+    FAILED = "failed"  # Order failed due to system error
 
 
 class OrderValidationError(Exception):
     """Raised when order validation fails."""
+
     pass
 
 
 class OrderExecutionError(Exception):
     """Raised when order execution fails."""
+
     pass
 
 
@@ -61,7 +66,7 @@ class Order:
         stop_price: Optional[float] = None,
         exchange: Optional[str] = None,
         client_order_id: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ):
         """Initialize an order.
 
@@ -124,7 +129,7 @@ class Order:
             "exchange_order_id": self.exchange_order_id,
             "metadata": self.metadata,
             "error_message": self.error_message,
-            "retry_count": self.retry_count
+            "retry_count": self.retry_count,
         }
 
     @classmethod
@@ -139,11 +144,13 @@ class Order:
             stop_price=data.get("stop_price"),
             exchange=data.get("exchange"),
             client_order_id=data["order_id"],
-            metadata=data.get("metadata", {})
+            metadata=data.get("metadata", {}),
         )
         order.status = OrderStatus(data["status"])
         order.filled_amount = Decimal(str(data["filled_amount"]))
-        order.avg_fill_price = Decimal(str(data["avg_fill_price"])) if data.get("avg_fill_price") else None
+        order.avg_fill_price = (
+            Decimal(str(data["avg_fill_price"])) if data.get("avg_fill_price") else None
+        )
         order.fees = {k: Decimal(str(v)) for k, v in data.get("fees", {}).items()}
         order.timestamp = datetime.fromisoformat(data["timestamp"])
         order.updated_timestamp = datetime.fromisoformat(data["updated_timestamp"])
@@ -153,8 +160,10 @@ class Order:
         return order
 
     def __repr__(self) -> str:
-        return (f"Order(id={self.order_id}, symbol={self.symbol}, side={self.side.value}, "
-                f"type={self.order_type.value}, amount={self.amount}, status={self.status.value})")
+        return (
+            f"Order(id={self.order_id}, symbol={self.symbol}, side={self.side.value}, "
+            f"type={self.order_type.value}, amount={self.amount}, status={self.status.value})"
+        )
 
 
 class OrderManager:
@@ -166,7 +175,7 @@ class OrderManager:
         max_order_amount: float = 1000000,
         max_price_deviation: float = 0.5,  # 50% max deviation from current price
         price_precision: int = 8,
-        amount_precision: int = 8
+        amount_precision: int = 8,
     ):
         """Initialize OrderManager.
 
@@ -195,7 +204,7 @@ class OrderManager:
         stop_price: Optional[float] = None,
         exchange: Optional[str] = None,
         validate: bool = True,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> Order:
         """Create a new order.
 
@@ -225,7 +234,7 @@ class OrderManager:
                 price=price,
                 stop_price=stop_price,
                 exchange=exchange,
-                metadata=metadata
+                metadata=metadata,
             )
 
             if validate:
@@ -234,9 +243,11 @@ class OrderManager:
             self.orders[order.order_id] = order
             logger.info(
                 "Created order: {} {} {} {} @ {}",
-                order.side.value, order.amount, order.symbol,
+                order.side.value,
+                order.amount,
+                order.symbol,
                 order.order_type.value,
-                order.price if order.price else "market"
+                order.price if order.price else "market",
             )
 
             return order
@@ -245,11 +256,7 @@ class OrderManager:
             logger.error("Failed to create order: {}", str(e))
             raise OrderValidationError(f"Invalid order parameters: {str(e)}")
 
-    def validate_order(
-        self,
-        order: Order,
-        current_price: Optional[float] = None
-    ) -> bool:
+    def validate_order(self, order: Order, current_price: Optional[float] = None) -> bool:
         """Validate an order.
 
         Args:
@@ -277,12 +284,13 @@ class OrderManager:
             )
 
         # Check price requirements based on order type
-        if order.order_type in [OrderType.LIMIT, OrderType.STOP_LOSS_LIMIT,
-                                OrderType.TAKE_PROFIT_LIMIT]:
+        if order.order_type in [
+            OrderType.LIMIT,
+            OrderType.STOP_LOSS_LIMIT,
+            OrderType.TAKE_PROFIT_LIMIT,
+        ]:
             if order.price is None or order.price <= 0:
-                raise OrderValidationError(
-                    f"{order.order_type.value} orders require a valid price"
-                )
+                raise OrderValidationError(f"{order.order_type.value} orders require a valid price")
 
         if order.order_type in [OrderType.STOP_LOSS, OrderType.STOP_LOSS_LIMIT]:
             if order.stop_price is None or order.stop_price <= 0:
@@ -325,7 +333,7 @@ class OrderManager:
         order_id: str,
         amount: Optional[float] = None,
         price: Optional[float] = None,
-        stop_price: Optional[float] = None
+        stop_price: Optional[float] = None,
     ) -> Order:
         """Modify an existing order.
 
@@ -348,9 +356,7 @@ class OrderManager:
 
         # Only pending orders can be modified
         if order.status != OrderStatus.PENDING:
-            raise OrderValidationError(
-                f"Cannot modify order with status {order.status.value}"
-            )
+            raise OrderValidationError(f"Cannot modify order with status {order.status.value}")
 
         # Update fields
         if amount is not None:
@@ -370,11 +376,7 @@ class OrderManager:
         logger.info("Modified order: {}", order_id)
         return order
 
-    async def cancel_order(
-        self,
-        order_id: str,
-        exchange_order_id: Optional[str] = None
-    ) -> bool:
+    async def cancel_order(self, order_id: str, exchange_order_id: Optional[str] = None) -> bool:
         """Cancel an order.
 
         Args:
@@ -394,11 +396,13 @@ class OrderManager:
         order = self.orders[order_id]
 
         # Can only cancel open or pending orders
-        if order.status in [OrderStatus.FILLED, OrderStatus.CANCELLED,
-                           OrderStatus.REJECTED, OrderStatus.EXPIRED]:
-            logger.warning(
-                "Cannot cancel order with status: {}", order.status.value
-            )
+        if order.status in [
+            OrderStatus.FILLED,
+            OrderStatus.CANCELLED,
+            OrderStatus.REJECTED,
+            OrderStatus.EXPIRED,
+        ]:
+            logger.warning("Cannot cancel order with status: {}", order.status.value)
             return False
 
         order.status = OrderStatus.CANCELLED
@@ -415,7 +419,7 @@ class OrderManager:
         avg_fill_price: Optional[float] = None,
         fees: Optional[Dict[str, float]] = None,
         exchange_order_id: Optional[str] = None,
-        error_message: Optional[str] = None
+        error_message: Optional[str] = None,
     ) -> None:
         """Update order status from exchange response.
 
@@ -457,12 +461,20 @@ class OrderManager:
 
         logger.debug(
             "Updated order {}: status={}, filled={}/{}",
-            order_id, status.value, order.filled_amount, order.amount
+            order_id,
+            status.value,
+            order.filled_amount,
+            order.amount,
         )
 
         # Move to history if terminal state
-        if status in [OrderStatus.FILLED, OrderStatus.CANCELLED,
-                     OrderStatus.REJECTED, OrderStatus.EXPIRED, OrderStatus.FAILED]:
+        if status in [
+            OrderStatus.FILLED,
+            OrderStatus.CANCELLED,
+            OrderStatus.REJECTED,
+            OrderStatus.EXPIRED,
+            OrderStatus.FAILED,
+        ]:
             self._archive_order(order_id)
 
     def _archive_order(self, order_id: str) -> None:
@@ -486,18 +498,10 @@ class OrderManager:
 
     def get_active_orders(self) -> List[Order]:
         """Get all active orders (pending, open, partially filled)."""
-        active_statuses = [
-            OrderStatus.PENDING,
-            OrderStatus.OPEN,
-            OrderStatus.PARTIALLY_FILLED
-        ]
+        active_statuses = [OrderStatus.PENDING, OrderStatus.OPEN, OrderStatus.PARTIALLY_FILLED]
         return [o for o in self.orders.values() if o.status in active_statuses]
 
-    def get_order_history(
-        self,
-        symbol: Optional[str] = None,
-        limit: int = 100
-    ) -> List[Order]:
+    def get_order_history(self, symbol: Optional[str] = None, limit: int = 100) -> List[Order]:
         """Get order history.
 
         Args:
@@ -574,5 +578,5 @@ class OrderManager:
             "total_orders": total_orders,
             "active_orders": active_count,
             "archived_orders": len(self.order_history),
-            "status_breakdown": status_counts
+            "status_breakdown": status_counts,
         }

@@ -344,6 +344,7 @@ def plot_candlestick_with_rsi(
     # Calculate RSI if not provided
     if rsi_series is None:
         from .live_data import calculate_rsi
+
         rsi_series = calculate_rsi(ohlcv_df["close"])
 
     # Create subplot with 2 rows

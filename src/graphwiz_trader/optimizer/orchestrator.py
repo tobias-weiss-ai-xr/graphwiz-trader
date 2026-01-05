@@ -29,6 +29,7 @@ from .looper_integration import (
 
 class OrchestratorState(Enum):
     """States of the optimization orchestrator."""
+
     STOPPED = "stopped"
     STARTING = "starting"
     RUNNING = "running"
@@ -39,6 +40,7 @@ class OrchestratorState(Enum):
 
 class CircuitBreakerState(Enum):
     """States of the circuit breaker."""
+
     CLOSED = "closed"  # Normal operation
     OPEN = "open"  # Circuit tripped, blocking operations
     HALF_OPEN = "half_open"  # Testing if safe to resume
@@ -47,6 +49,7 @@ class CircuitBreakerState(Enum):
 @dataclass
 class OptimizationLoop:
     """Configuration for an optimization loop."""
+
     name: str
     optimization_type: OptimizationType
     frequency_minutes: int
@@ -62,6 +65,7 @@ class OptimizationLoop:
 @dataclass
 class SafetyCheckResult:
     """Result of a safety check."""
+
     passed: bool
     reason: str
     metrics: Dict[str, Any] = field(default_factory=dict)
@@ -258,9 +262,13 @@ class OptimizationOrchestrator:
 
             # Reset circuit breaker if it was open
             if self.circuit_breaker_state == CircuitBreakerState.OPEN:
-                cooldown_minutes = self.config.get("circuit_breaker", {}).get("cooldown_minutes", 60)
+                cooldown_minutes = self.config.get("circuit_breaker", {}).get(
+                    "cooldown_minutes", 60
+                )
                 if self.circuit_breaker_tripped_at:
-                    cooldown_end = self.circuit_breaker_tripped_at + timedelta(minutes=cooldown_minutes)
+                    cooldown_end = self.circuit_breaker_tripped_at + timedelta(
+                        minutes=cooldown_minutes
+                    )
                     if datetime.utcnow() >= cooldown_end:
                         logger.info("Circuit breaker cooldown period elapsed, moving to HALF_OPEN")
                         self.circuit_breaker_state = CircuitBreakerState.HALF_OPEN
@@ -299,7 +307,9 @@ class OptimizationOrchestrator:
             await asyncio.sleep(1)
 
         if self.active_optimizations:
-            logger.warning(f"{len(self.active_optimizations)} optimizations still active during stop")
+            logger.warning(
+                f"{len(self.active_optimizations)} optimizations still active during stop"
+            )
 
         self.state = OrchestratorState.STOPPED
         logger.info("OptimizationOrchestrator stopped")
@@ -421,7 +431,9 @@ class OptimizationOrchestrator:
                 validation = self._validate_paper_trading_results(paper_result)
 
                 if not validation["passed"]:
-                    logger.warning(f"Paper trading validation failed for {loop.name}: {validation['reason']}")
+                    logger.warning(
+                        f"Paper trading validation failed for {loop.name}: {validation['reason']}"
+                    )
                     result.status = OptimizationStatus.REJECTED
                     self.active_optimizations.pop(opt_id, None)
                     return
@@ -462,12 +474,14 @@ class OptimizationOrchestrator:
                     await self._log_optimization_to_kg(result)
 
                 # Update performance tracking
-                self.performance_history.append({
-                    "optimization_id": opt_id,
-                    "type": loop.optimization_type.value,
-                    "timestamp": datetime.utcnow().isoformat(),
-                    "expected_improvement": result.expected_improvement,
-                })
+                self.performance_history.append(
+                    {
+                        "optimization_id": opt_id,
+                        "type": loop.optimization_type.value,
+                        "timestamp": datetime.utcnow().isoformat(),
+                        "expected_improvement": result.expected_improvement,
+                    }
+                )
 
             else:
                 logger.error(f"Failed to apply optimization {loop.name}")
@@ -566,7 +580,9 @@ class OptimizationOrchestrator:
         concentration = performance_data.get("max_position_concentration", 0)
         if concentration > max_concentration:
             checks_passed = False
-            reasons.append(f"Position concentration too high: {concentration:.2%} > {max_concentration:.2%}")
+            reasons.append(
+                f"Position concentration too high: {concentration:.2%} > {max_concentration:.2%}"
+            )
 
         result = SafetyCheckResult(
             passed=checks_passed,
@@ -745,7 +761,8 @@ class OptimizationOrchestrator:
 
         # Increment failure counter
         failure_count = sum(
-            1 for opt in self.optimizer.get_optimization_history()
+            1
+            for opt in self.optimizer.get_optimization_history()
             if opt.status == OptimizationStatus.FAILED
         )
 

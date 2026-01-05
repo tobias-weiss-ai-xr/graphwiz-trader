@@ -20,6 +20,7 @@ from loguru import logger
 
 try:
     from neo4j import GraphDatabase
+
     NEO4J_AVAILABLE = True
 except ImportError:
     NEO4J_AVAILABLE = False
@@ -145,9 +146,9 @@ class GraphFeatureExtractor:
                 result = session.run(query, symbol=symbol)
                 single_result = result.single()
                 if single_result:
-                    features['graph_degree_centrality'] = single_result['degree']
+                    features["graph_degree_centrality"] = single_result["degree"]
                 else:
-                    features['graph_degree_centrality'] = 0.0
+                    features["graph_degree_centrality"] = 0.0
 
                 # Betweenness centrality (how often on shortest paths)
                 # Simplified version - count bridges between high-correlation pairs
@@ -166,9 +167,9 @@ class GraphFeatureExtractor:
                 result = session.run(query, symbol=symbol)
                 single_result = result.single()
                 if single_result:
-                    features['graph_betweenness'] = single_result['bridge_count']
+                    features["graph_betweenness"] = single_result["bridge_count"]
                 else:
-                    features['graph_betweenness'] = 0.0
+                    features["graph_betweenness"] = 0.0
 
                 # Clustering coefficient (how interconnected are neighbors)
                 query = """
@@ -188,9 +189,9 @@ class GraphFeatureExtractor:
                 result = session.run(query, symbol=symbol)
                 single_result = result.single()
                 if single_result:
-                    features['graph_clustering_coefficient'] = single_result['clustering']
+                    features["graph_clustering_coefficient"] = single_result["clustering"]
                 else:
-                    features['graph_clustering_coefficient'] = 0.0
+                    features["graph_clustering_coefficient"] = 0.0
 
         except Exception as e:
             logger.error(f"Error extracting network features: {e}")
@@ -224,15 +225,15 @@ class GraphFeatureExtractor:
                 result = session.run(query, symbol=symbol)
                 single_result = result.single()
                 if single_result:
-                    features['graph_avg_correlation'] = single_result['avg_corr'] or 0.0
-                    features['graph_max_correlation'] = single_result['max_corr'] or 0.0
-                    features['graph_min_correlation'] = single_result['min_corr'] or 0.0
-                    features['graph_std_correlation'] = single_result['std_corr'] or 0.0
+                    features["graph_avg_correlation"] = single_result["avg_corr"] or 0.0
+                    features["graph_max_correlation"] = single_result["max_corr"] or 0.0
+                    features["graph_min_correlation"] = single_result["min_corr"] or 0.0
+                    features["graph_std_correlation"] = single_result["std_corr"] or 0.0
                 else:
-                    features['graph_avg_correlation'] = 0.0
-                    features['graph_max_correlation'] = 0.0
-                    features['graph_min_correlation'] = 0.0
-                    features['graph_std_correlation'] = 0.0
+                    features["graph_avg_correlation"] = 0.0
+                    features["graph_max_correlation"] = 0.0
+                    features["graph_min_correlation"] = 0.0
+                    features["graph_std_correlation"] = 0.0
 
                 # Number of highly correlated symbols
                 query = """
@@ -244,9 +245,11 @@ class GraphFeatureExtractor:
                 result = session.run(query, symbol=symbol)
                 single_result = result.single()
                 if single_result:
-                    features['graph_highly_correlated_count'] = single_result['highly_correlated_count']
+                    features["graph_highly_correlated_count"] = single_result[
+                        "highly_correlated_count"
+                    ]
                 else:
-                    features['graph_highly_correlated_count'] = 0
+                    features["graph_highly_correlated_count"] = 0
 
         except Exception as e:
             logger.error(f"Error extracting correlation features: {e}")
@@ -282,13 +285,13 @@ class GraphFeatureExtractor:
                 result = session.run(query, symbol=symbol, since=since)
                 single_result = result.single()
                 if single_result:
-                    features['graph_recent_trades_7d'] = single_result['recent_trades']
-                    features['graph_avg_profit_loss_7d'] = single_result['avg_profit_loss']
-                    features['graph_win_rate_7d'] = single_result['win_rate']
+                    features["graph_recent_trades_7d"] = single_result["recent_trades"]
+                    features["graph_avg_profit_loss_7d"] = single_result["avg_profit_loss"]
+                    features["graph_win_rate_7d"] = single_result["win_rate"]
                 else:
-                    features['graph_recent_trades_7d'] = 0
-                    features['graph_avg_profit_loss_7d'] = 0.0
-                    features['graph_win_rate_7d'] = 0.5
+                    features["graph_recent_trades_7d"] = 0
+                    features["graph_avg_profit_loss_7d"] = 0.0
+                    features["graph_win_rate_7d"] = 0.5
 
                 # Trading pattern cluster
                 query = """
@@ -303,12 +306,12 @@ class GraphFeatureExtractor:
                 single_result = result.single()
                 if single_result:
                     # Convert pattern name to numeric (hash of first char for simplicity)
-                    pattern_code = hash(single_result['pattern_name']) % 1000 / 1000.0
-                    features['graph_dominant_pattern'] = pattern_code
-                    features['graph_pattern_frequency'] = single_result['frequency']
+                    pattern_code = hash(single_result["pattern_name"]) % 1000 / 1000.0
+                    features["graph_dominant_pattern"] = pattern_code
+                    features["graph_pattern_frequency"] = single_result["frequency"]
                 else:
-                    features['graph_dominant_pattern'] = 0.0
-                    features['graph_pattern_frequency'] = 0.0
+                    features["graph_dominant_pattern"] = 0.0
+                    features["graph_pattern_frequency"] = 0.0
 
         except Exception as e:
             logger.error(f"Error extracting trading pattern features: {e}")
@@ -340,22 +343,21 @@ class GraphFeatureExtractor:
                 if single_result:
                     # Encode regime as numeric
                     regime_encoding = {
-                        'BULL': 1.0,
-                        'BEAR': -1.0,
-                        'SIDEWAYS': 0.0,
-                        'HIGH_VOLATILITY': 0.5,
-                        'LOW_VOLATILITY': -0.5,
+                        "BULL": 1.0,
+                        "BEAR": -1.0,
+                        "SIDEWAYS": 0.0,
+                        "HIGH_VOLATILITY": 0.5,
+                        "LOW_VOLATILITY": -0.5,
                     }
-                    features['graph_market_regime'] = regime_encoding.get(
-                        single_result['regime_name'],
-                        0.0
+                    features["graph_market_regime"] = regime_encoding.get(
+                        single_result["regime_name"], 0.0
                     )
-                    features['graph_regime_volatility'] = single_result['volatility'] or 0.0
-                    features['graph_regime_trend'] = single_result['trend'] or 0.0
+                    features["graph_regime_volatility"] = single_result["volatility"] or 0.0
+                    features["graph_regime_trend"] = single_result["trend"] or 0.0
                 else:
-                    features['graph_market_regime'] = 0.0
-                    features['graph_regime_volatility'] = 0.0
-                    features['graph_regime_trend'] = 0.0
+                    features["graph_market_regime"] = 0.0
+                    features["graph_regime_volatility"] = 0.0
+                    features["graph_regime_trend"] = 0.0
 
         except Exception as e:
             logger.error(f"Error extracting market regime features: {e}")
@@ -400,11 +402,11 @@ class GraphFeatureExtractor:
             Dictionary with graph statistics
         """
         stats = {
-            'total_symbols': 0,
-            'total_correlations': 0,
-            'total_trades': 0,
-            'total_patterns': 0,
-            'avg_correlation': 0.0,
+            "total_symbols": 0,
+            "total_correlations": 0,
+            "total_trades": 0,
+            "total_patterns": 0,
+            "avg_correlation": 0.0,
         }
 
         if not self.driver:
@@ -414,30 +416,34 @@ class GraphFeatureExtractor:
             with self.driver.session() as session:
                 # Count symbols
                 result = session.run("MATCH (s:Symbol) RETURN COUNT(s) as count")
-                stats['total_symbols'] = result.single()['count']
+                stats["total_symbols"] = result.single()["count"]
 
                 # Count correlations
-                result = session.run("""
+                result = session.run(
+                    """
                     MATCH (:Symbol)-[r:CORRELATES_WITH]-(:Symbol)
                     RETURN COUNT(r) as count
-                """)
-                stats['total_correlations'] = result.single()['count']
+                """
+                )
+                stats["total_correlations"] = result.single()["count"]
 
                 # Count trades
                 result = session.run("MATCH (t:Trade) RETURN COUNT(t) as count")
-                stats['total_trades'] = result.single()['count']
+                stats["total_trades"] = result.single()["count"]
 
                 # Count patterns
                 result = session.run("MATCH (p:Pattern) RETURN COUNT(p) as count")
-                stats['total_patterns'] = result.single()['count']
+                stats["total_patterns"] = result.single()["count"]
 
                 # Average correlation
-                result = session.run("""
+                result = session.run(
+                    """
                     MATCH (:Symbol)-[r:CORRELATES_WITH]-(:Symbol)
                     RETURN AVG(r.correlation) as avg_corr
-                """)
+                """
+                )
                 single_result = result.single()
-                stats['avg_correlation'] = single_result['avg_corr'] if single_result else 0.0
+                stats["avg_correlation"] = single_result["avg_corr"] if single_result else 0.0
 
         except Exception as e:
             logger.error(f"Error getting graph stats: {e}")
@@ -468,7 +474,7 @@ async def populate_sample_graph_data(
         symbols: List of symbols to create
     """
     if symbols is None:
-        symbols = ['BTC/USDT', 'ETH/USDT', 'BNB/USDT', 'SOL/USDT', 'ADA/USDT']
+        symbols = ["BTC/USDT", "ETH/USDT", "BNB/USDT", "SOL/USDT", "ADA/USDT"]
 
     if not NEO4J_AVAILABLE:
         logger.warning("Neo4j not available. Cannot populate sample data.")
@@ -487,56 +493,74 @@ async def populate_sample_graph_data(
 
             # Create symbol nodes
             for symbol in symbols:
-                session.run("""
+                session.run(
+                    """
                     MERGE (s:Symbol {name: $symbol})
                     SET s.created = datetime()
-                """, symbol=symbol)
+                """,
+                    symbol=symbol,
+                )
             logger.info(f"Created {len(symbols)} symbol nodes")
 
             # Create correlation relationships (random for demo)
             np.random.seed(42)
             for i, symbol1 in enumerate(symbols):
-                for symbol2 in symbols[i+1:]:
+                for symbol2 in symbols[i + 1 :]:
                     correlation = np.random.uniform(-0.8, 0.9)
-                    session.run("""
+                    session.run(
+                        """
                         MATCH (s1:Symbol {name: $symbol1})
                         MATCH (s2:Symbol {name: $symbol2})
                         MERGE (s1)-[r:CORRELATES_WITH]-(s2)
                         SET r.correlation = $correlation,
                             r.updated = datetime()
-                    """, symbol1=symbol1, symbol2=symbol2, correlation=correlation)
+                    """,
+                        symbol1=symbol1,
+                        symbol2=symbol2,
+                        correlation=correlation,
+                    )
             logger.info("Created correlation relationships")
 
             # Create regime nodes
             regimes = [
-                ('BULL', 0.15, 1.0),
-                ('BEAR', 0.25, -1.0),
-                ('SIDEWAYS', 0.10, 0.0),
+                ("BULL", 0.15, 1.0),
+                ("BEAR", 0.25, -1.0),
+                ("SIDEWAYS", 0.10, 0.0),
             ]
 
             for regime_name, volatility, trend in regimes:
-                session.run("""
+                session.run(
+                    """
                     CREATE (r:Regime {
                         name: $name,
                         volatility: $volatility,
                         trend: $trend,
                         active: false
                     })
-                """, name=regime_name, volatility=volatility, trend=trend)
+                """,
+                    name=regime_name,
+                    volatility=volatility,
+                    trend=trend,
+                )
 
             # Set one regime as active
-            session.run("""
+            session.run(
+                """
                 MATCH (r:Regime {name: 'BULL'})
                 SET r.active = true
-            """)
+            """
+            )
 
             # Link symbols to regime
             for symbol in symbols:
-                session.run("""
+                session.run(
+                    """
                     MATCH (s:Symbol {name: $symbol})
                     MATCH (r:Regime {active: true})
                     MERGE (s)-[:IN_REGIME]->(r)
-                """, symbol=symbol)
+                """,
+                    symbol=symbol,
+                )
 
             logger.info("Created regime nodes")
 
@@ -544,7 +568,8 @@ async def populate_sample_graph_data(
             for symbol in symbols[:3]:  # Create trades for first 3 symbols
                 for _ in range(10):
                     profit_loss = np.random.uniform(-100, 200)
-                    session.run("""
+                    session.run(
+                        """
                         MATCH (s:Symbol {name: $symbol})
                         CREATE (t:Trade {
                             symbol: $symbol,
@@ -552,29 +577,40 @@ async def populate_sample_graph_data(
                             timestamp: datetime() - duration('P' + toString(rand() * 30) + 'D')
                         })
                         CREATE (s)<-[:TRADED]-(t)
-                    """, symbol=symbol, profit_loss=profit_loss)
+                    """,
+                        symbol=symbol,
+                        profit_loss=profit_loss,
+                    )
 
             logger.info("Created sample trades")
 
             # Create pattern nodes
-            patterns = ['MOMENTUM', 'MEAN_REVERSION', 'BREAKOUT', 'REVERSAL']
+            patterns = ["MOMENTUM", "MEAN_REVERSION", "BREAKOUT", "REVERSAL"]
             for pattern_name in patterns:
                 frequency = np.random.uniform(0.1, 0.5)
-                session.run("""
+                session.run(
+                    """
                     CREATE (p:Pattern {
                         name: $name,
                         frequency: $frequency
                     })
-                """, name=pattern_name, frequency=frequency)
+                """,
+                    name=pattern_name,
+                    frequency=frequency,
+                )
 
                 # Link some symbols to patterns
                 for symbol in symbols[:2]:
                     if np.random.random() > 0.5:
-                        session.run("""
+                        session.run(
+                            """
                             MATCH (s:Symbol {name: $symbol})
                             MATCH (p:Pattern {name: $pattern_name})
                             MERGE (s)-[:IN_PATTERN]->(p)
-                        """, symbol=symbol, pattern_name=pattern_name)
+                        """,
+                            symbol=symbol,
+                            pattern_name=pattern_name,
+                        )
 
             logger.info("Created pattern nodes")
 

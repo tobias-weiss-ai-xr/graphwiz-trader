@@ -182,11 +182,13 @@ class DiscordNotifier(Notifier):
             # Add metadata as fields
             if alert.metadata:
                 for key, value in alert.metadata.items():
-                    embed["fields"].append({
-                        "name": key,
-                        "value": str(value),
-                        "inline": True,
-                    })
+                    embed["fields"].append(
+                        {
+                            "name": key,
+                            "value": str(value),
+                            "inline": True,
+                        }
+                    )
 
             # Send webhook
             data = {"embeds": [embed]}
@@ -211,13 +213,13 @@ class DiscordNotifier(Notifier):
             Color integer (decimal)
         """
         colors = {
-            AlertLevel.INFO: 0x3498db,  # Blue
-            AlertLevel.SUCCESS: 0x2ecc71,  # Green
-            AlertLevel.WARNING: 0xf39c12,  # Orange
-            AlertLevel.ERROR: 0xe74c3c,  # Red
-            AlertLevel.CRITICAL: 0x8e44ad,  # Purple
+            AlertLevel.INFO: 0x3498DB,  # Blue
+            AlertLevel.SUCCESS: 0x2ECC71,  # Green
+            AlertLevel.WARNING: 0xF39C12,  # Orange
+            AlertLevel.ERROR: 0xE74C3C,  # Red
+            AlertLevel.CRITICAL: 0x8E44AD,  # Purple
         }
-        return colors.get(level, 0x95a5a6)
+        return colors.get(level, 0x95A5A6)
 
 
 class AlertManager:
@@ -328,10 +330,7 @@ class AlertManager:
 
         title = f"{emoji} Position Closed: {symbol}"
         pnl_pct = ((exit_price - entry_price) / entry_price) * 100
-        message = (
-            f"Closed {quantity:.4f} {symbol}\n"
-            f"P&L: ${pnl:+,.2f} ({pnl_pct:+.2f}%)"
-        )
+        message = f"Closed {quantity:.4f} {symbol}\n" f"P&L: ${pnl:+,.2f} ({pnl_pct:+.2f}%)"
 
         self.send_alert(
             level=level,

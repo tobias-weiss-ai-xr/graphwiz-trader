@@ -9,6 +9,7 @@ from loguru import logger
 @dataclass
 class IndicatorResult:
     """Result of an indicator calculation."""
+
     name: str
     values: List[float]
     signals: List[str] = None  # "buy", "sell", "neutral"
@@ -43,7 +44,7 @@ class TechnicalIndicators:
             if i < period - 1:
                 sma_values.append(None)
             else:
-                avg = sum(prices[i - period + 1:i + 1]) / period
+                avg = sum(prices[i - period + 1 : i + 1]) / period
                 sma_values.append(avg)
 
         return sma_values
@@ -92,7 +93,7 @@ class TechnicalIndicators:
                 name="RSI",
                 values=[None] * len(prices),
                 signals=["neutral"] * len(prices),
-                metadata={"period": period}
+                metadata={"period": period},
             )
 
         # Calculate price changes
@@ -134,19 +135,18 @@ class TechnicalIndicators:
             if rsi >= 70:
                 signals.append("sell")  # Overbought
             elif rsi <= 30:
-                signals.append("buy")   # Oversold
+                signals.append("buy")  # Oversold
             else:
                 signals.append("neutral")
 
         return IndicatorResult(
-            name="RSI",
-            values=rsi_values,
-            signals=signals,
-            metadata={"period": period}
+            name="RSI", values=rsi_values, signals=signals, metadata={"period": period}
         )
 
     @staticmethod
-    def macd(prices: List[float], fast_period: int = 12, slow_period: int = 26, signal_period: int = 9) -> IndicatorResult:
+    def macd(
+        prices: List[float], fast_period: int = 12, slow_period: int = 26, signal_period: int = 9
+    ) -> IndicatorResult:
         """Calculate Moving Average Convergence Divergence.
 
         Args:
@@ -162,7 +162,11 @@ class TechnicalIndicators:
             return IndicatorResult(
                 name="MACD",
                 values=[None] * len(prices),
-                metadata={"fast_period": fast_period, "slow_period": slow_period, "signal_period": signal_period}
+                metadata={
+                    "fast_period": fast_period,
+                    "slow_period": slow_period,
+                    "signal_period": signal_period,
+                },
             )
 
         # Calculate EMAs
@@ -213,7 +217,7 @@ class TechnicalIndicators:
                 # Generate signals based on histogram crossover
                 if i > 0 and histogram[i - 1] is not None:
                     if histogram[i - 1] < 0 and histogram[i] > 0:
-                        signals.append("buy")   # Bullish crossover
+                        signals.append("buy")  # Bullish crossover
                     elif histogram[i - 1] > 0 and histogram[i] < 0:
                         signals.append("sell")  # Bearish crossover
                     else:
@@ -223,11 +227,7 @@ class TechnicalIndicators:
 
         # Store values as dict for each point
         values = [
-            {
-                "macd": macd_line[i],
-                "signal": signal_line[i],
-                "histogram": histogram[i]
-            }
+            {"macd": macd_line[i], "signal": signal_line[i], "histogram": histogram[i]}
             for i in range(len(prices))
         ]
 
@@ -238,12 +238,14 @@ class TechnicalIndicators:
             metadata={
                 "fast_period": fast_period,
                 "slow_period": slow_period,
-                "signal_period": signal_period
-            }
+                "signal_period": signal_period,
+            },
         )
 
     @staticmethod
-    def bollinger_bands(prices: List[float], period: int = 20, std_dev: float = 2.0) -> IndicatorResult:
+    def bollinger_bands(
+        prices: List[float], period: int = 20, std_dev: float = 2.0
+    ) -> IndicatorResult:
         """Calculate Bollinger Bands.
 
         Args:
@@ -259,7 +261,7 @@ class TechnicalIndicators:
                 name="BB",
                 values=[None] * len(prices),
                 signals=["neutral"] * len(prices),
-                metadata={"period": period, "std_dev": std_dev}
+                metadata={"period": period, "std_dev": std_dev},
             )
 
         # Calculate middle band (SMA)
@@ -276,7 +278,7 @@ class TechnicalIndicators:
                 lower_band.append(None)
                 signals.append("neutral")
             else:
-                window = prices[i - period + 1:i + 1]
+                window = prices[i - period + 1 : i + 1]
                 std = np.std(window)
                 middle = sma[i]
 
@@ -289,7 +291,7 @@ class TechnicalIndicators:
                 # Generate signals based on price position
                 price = prices[i]
                 if price <= lower:
-                    signals.append("buy")   # Price at lower band (oversold)
+                    signals.append("buy")  # Price at lower band (oversold)
                 elif price >= upper:
                     signals.append("sell")  # Price at upper band (overbought)
                 else:
@@ -297,11 +299,7 @@ class TechnicalIndicators:
 
         # Store values as dict
         values = [
-            {
-                "upper": upper_band[i],
-                "middle": sma[i],
-                "lower": lower_band[i]
-            }
+            {"upper": upper_band[i], "middle": sma[i], "lower": lower_band[i]}
             for i in range(len(prices))
         ]
 
@@ -309,7 +307,7 @@ class TechnicalIndicators:
             name="BB",
             values=values,
             signals=signals,
-            metadata={"period": period, "std_dev": std_dev}
+            metadata={"period": period, "std_dev": std_dev},
         )
 
     @staticmethod
@@ -347,7 +345,9 @@ class TechnicalIndicators:
         return vwap_values
 
     @staticmethod
-    def atr(high: List[float], low: List[float], close: List[float], period: int = 14) -> List[float]:
+    def atr(
+        high: List[float], low: List[float], close: List[float], period: int = 14
+    ) -> List[float]:
         """Calculate Average True Range.
 
         Args:
@@ -380,7 +380,7 @@ class TechnicalIndicators:
 
         # Calculate ATR using RMA method
         atr_values = [None] * period
-        atr_values.append(sum(tr_values[:period + 1]) / (period + 1))
+        atr_values.append(sum(tr_values[: period + 1]) / (period + 1))
 
         for i in range(period + 1, len(tr_values)):
             atr = (atr_values[-1] * period + tr_values[i]) / (period + 1)
@@ -402,7 +402,7 @@ class TechnicalAnalysis:
         volumes: List[float] = None,
         high: List[float] = None,
         low: List[float] = None,
-        close: List[float] = None
+        close: List[float] = None,
     ) -> Dict[str, Any]:
         """Perform comprehensive technical analysis.
 
@@ -423,7 +423,7 @@ class TechnicalAnalysis:
         results["rsi"] = {
             "values": rsi_result.values,
             "latest": rsi_result.values[-1] if rsi_result.values else None,
-            "signal": rsi_result.signals[-1] if rsi_result.signals else "neutral"
+            "signal": rsi_result.signals[-1] if rsi_result.signals else "neutral",
         }
 
         # MACD
@@ -431,7 +431,7 @@ class TechnicalAnalysis:
         results["macd"] = {
             "values": macd_result.values,
             "latest": macd_result.values[-1] if macd_result.values else None,
-            "signal": macd_result.signals[-1] if macd_result.signals else "neutral"
+            "signal": macd_result.signals[-1] if macd_result.signals else "neutral",
         }
 
         # Bollinger Bands
@@ -439,7 +439,7 @@ class TechnicalAnalysis:
         results["bollinger_bands"] = {
             "values": bb_result.values,
             "latest": bb_result.values[-1] if bb_result.values else None,
-            "signal": bb_result.signals[-1] if bb_result.signals else "neutral"
+            "signal": bb_result.signals[-1] if bb_result.signals else "neutral",
         }
 
         # EMA
@@ -457,7 +457,7 @@ class TechnicalAnalysis:
             vwap_values = self.indicators.vwap(prices, volumes)
             results["vwap"] = {
                 "values": vwap_values,
-                "latest": vwap_values[-1] if vwap_values else None
+                "latest": vwap_values[-1] if vwap_values else None,
             }
 
         # ATR (if OHLC provided)
@@ -465,7 +465,7 @@ class TechnicalAnalysis:
             atr_values = self.indicators.atr(high, low, close)
             results["atr"] = {
                 "values": atr_values,
-                "latest": atr_values[-1] if atr_values else None
+                "latest": atr_values[-1] if atr_values else None,
             }
 
         # Calculate overall signal
@@ -530,5 +530,5 @@ class TechnicalAnalysis:
             "confidence": round(confidence, 2),
             "buy_count": buy_signals,
             "sell_count": sell_signals,
-            "total_indicators": total_signals
+            "total_indicators": total_signals,
         }

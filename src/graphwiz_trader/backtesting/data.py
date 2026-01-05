@@ -51,16 +51,18 @@ class DataManager:
         # Initialize exchange
         try:
             exchange_class = getattr(ccxt, exchange_name)
-            self.exchange = exchange_class({
-                'enableRateLimit': True,
-                'options': {'defaultType': 'spot'},
-            })
+            self.exchange = exchange_class(
+                {
+                    "enableRateLimit": True,
+                    "options": {"defaultType": "spot"},
+                }
+            )
             logger.info(f"Initialized {exchange_name} exchange")
         except AttributeError:
             raise ValueError(f"Unsupported exchange: {exchange_name}")
 
         # Supported timeframes
-        self.timeframes = ['1m', '5m', '15m', '30m', '1h', '4h', '1d', '1w']
+        self.timeframes = ["1m", "5m", "15m", "30m", "1h", "4h", "1d", "1w"]
 
     def _get_cache_path(
         self,
@@ -101,8 +103,7 @@ class DataManager:
         """
         if timeframe not in self.timeframes:
             raise ValueError(
-                f"Unsupported timeframe: {timeframe}. "
-                f"Supported: {', '.join(self.timeframes)}"
+                f"Unsupported timeframe: {timeframe}. " f"Supported: {', '.join(self.timeframes)}"
             )
 
         # Default dates if not provided
@@ -119,9 +120,7 @@ class DataManager:
                 return pickle.load(f)
 
         # Fetch data from exchange
-        logger.info(
-            f"Fetching {symbol} {timeframe} data from {start_date} to {end_date}"
-        )
+        logger.info(f"Fetching {symbol} {timeframe} data from {start_date} to {end_date}")
 
         all_candles = []
         current_date = start_date
@@ -132,9 +131,7 @@ class DataManager:
                 # Convert to milliseconds for CCXT
                 since = int(current_date.timestamp() * 1000)
 
-                candles = self.exchange.fetch_ohlcv(
-                    symbol, timeframe, since=since, limit=limit
-                )
+                candles = self.exchange.fetch_ohlcv(symbol, timeframe, since=since, limit=limit)
 
                 if not candles:
                     logger.warning(f"No candles returned for {current_date}")
@@ -224,22 +221,18 @@ class DataManager:
             logger.warning("Found inconsistent OHLC values, fixing...")
 
             # Fix high values
-            df.loc[invalid_high, "high"] = df.loc[invalid_high, [
-                "open", "low", "close"
-            ]].max(axis=1)
+            df.loc[invalid_high, "high"] = df.loc[invalid_high, ["open", "low", "close"]].max(
+                axis=1
+            )
 
             # Fix low values
-            df.loc[invalid_low, "low"] = df.loc[invalid_low, [
-                "open", "high", "close"
-            ]].min(axis=1)
+            df.loc[invalid_low, "low"] = df.loc[invalid_low, ["open", "high", "close"]].min(axis=1)
 
         # Detect and handle outliers (price changes > 50% in single candle)
         price_change = df["close"].pct_change().abs()
         outliers = price_change > 0.5
         if outliers.any():
-            logger.warning(
-                f"Found {outliers.sum()} potential outliers (>50% price change)"
-            )
+            logger.warning(f"Found {outliers.sum()} potential outliers (>50% price change)")
 
         return df
 
@@ -265,9 +258,7 @@ class DataManager:
         data = {}
         for symbol in symbols:
             try:
-                df = self.fetch_ohlcv(
-                    symbol, timeframe, start_date, end_date, use_cache=True
-                )
+                df = self.fetch_ohlcv(symbol, timeframe, start_date, end_date, use_cache=True)
                 data[symbol] = df
                 logger.info(f"Successfully fetched {symbol}")
             except Exception as e:
@@ -292,8 +283,14 @@ class DataManager:
         """
         # Map timeframe to pandas offset alias
         timeframe_map = {
-            "1m": "1T", "5m": "5T", "15m": "15T", "30m": "30T",
-            "1h": "1H", "4h": "4H", "1d": "1D", "1w": "1W",
+            "1m": "1T",
+            "5m": "5T",
+            "15m": "15T",
+            "30m": "30T",
+            "1h": "1H",
+            "4h": "4H",
+            "1d": "1D",
+            "1w": "1W",
         }
 
         if target_timeframe not in timeframe_map:
@@ -301,13 +298,15 @@ class DataManager:
 
         offset = timeframe_map[target_timeframe]
 
-        resampled = df.resample(offset).agg({
-            "open": "first",
-            "high": "max",
-            "low": "min",
-            "close": "last",
-            "volume": "sum",
-        })
+        resampled = df.resample(offset).agg(
+            {
+                "open": "first",
+                "high": "max",
+                "low": "min",
+                "close": "last",
+                "volume": "sum",
+            }
+        )
 
         # Remove any rows with NaN
         resampled = resampled.dropna()
@@ -319,7 +318,8 @@ class DataManager:
         try:
             markets = self.exchange.load_markets()
             symbols = [
-                symbol for symbol, market in markets.items()
+                symbol
+                for symbol, market in markets.items()
                 if market.get("active", True) and market.get("type") == "spot"
             ]
             logger.info(f"Found {len(symbols)} active symbols")

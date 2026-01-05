@@ -65,7 +65,8 @@ st.set_page_config(
 )
 
 # Custom CSS
-st.markdown("""
+st.markdown(
+    """
 <style>
     .main-header {
         font-size: 2.5rem;
@@ -88,7 +89,9 @@ st.markdown("""
         font-weight: bold;
     }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 # Initialize session state
 if "selected_symbols" not in st.session_state:
@@ -146,12 +149,14 @@ def render_overview_page(data: dict):
         status = data["service_status"].get(symbol, {})
         is_running = symbol in data["service_status"]
 
-        status_data.append({
-            "Symbol": symbol,
-            "Status": "🟢 Running" if is_running else "🔴 Stopped",
-            "Uptime": status.get("uptime_str", "-"),
-            "Memory": f"{status.get('memory_mb', 0):.1f} MB" if is_running else "-",
-        })
+        status_data.append(
+            {
+                "Symbol": symbol,
+                "Status": "🟢 Running" if is_running else "🔴 Stopped",
+                "Uptime": status.get("uptime_str", "-"),
+                "Memory": f"{status.get('memory_mb', 0):.1f} MB" if is_running else "-",
+            }
+        )
 
     st.dataframe(
         pd.DataFrame(status_data),
@@ -169,14 +174,16 @@ def render_overview_page(data: dict):
     if market_summary:
         price_data = []
         for symbol, stats in market_summary.items():
-            price_data.append({
-                "Symbol": symbol,
-                "Price": f"${stats['price']:,.2f}",
-                "24h Change": f"{stats['change_24h_pct']:+.2f}%",
-                "24h High": f"${stats['high_24h']:,.2f}",
-                "24h Low": f"${stats['low_24h']:,.2f}",
-                "Volume": f"${stats['volume_24h']:,.0f}",
-            })
+            price_data.append(
+                {
+                    "Symbol": symbol,
+                    "Price": f"${stats['price']:,.2f}",
+                    "24h Change": f"{stats['change_24h_pct']:+.2f}%",
+                    "24h High": f"${stats['high_24h']:,.2f}",
+                    "24h Low": f"${stats['low_24h']:,.2f}",
+                    "Volume": f"${stats['volume_24h']:,.0f}",
+                }
+            )
 
         st.dataframe(
             pd.DataFrame(price_data),
@@ -271,7 +278,7 @@ def render_symbol_detail_page(data: dict):
             "Total Return",
             f"${format_metric_value(metrics['total_return'])}",
             delta=delta,
-            delta_color="normal" if metrics['total_return'] >= 0 else "inverse",
+            delta_color="normal" if metrics["total_return"] >= 0 else "inverse",
         )
 
     with col2:
@@ -322,13 +329,13 @@ def render_symbol_detail_page(data: dict):
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.metric("Data Points", metrics['data_points'])
+        st.metric("Data Points", metrics["data_points"])
         st.metric("Initial Capital", f"${format_metric_value(metrics['initial_capital'])}")
 
     with col2:
         st.metric("Volatility", f"{metrics['volatility']:.2f}%")
         if "total_trades" in metrics:
-            st.metric("Total Trades", metrics['total_trades'])
+            st.metric("Total Trades", metrics["total_trades"])
 
     with col3:
         st.metric("Current Position", f"{metrics['current_position']:.4f}")
@@ -340,7 +347,7 @@ def render_symbol_detail_page(data: dict):
     st.subheader("Recent Activity")
 
     log_summary = get_log_summary(selected_symbol)
-    if log_summary['latest_entry']:
+    if log_summary["latest_entry"]:
         st.info(f"**Latest Log Entry:** {log_summary['latest_entry']}")
     else:
         st.caption("No recent log entries")
@@ -357,7 +364,7 @@ def render_comparison_page(data: dict):
         return
 
     # Multi-select symbols
-    default_symbols = available_symbols[:min(4, len(available_symbols))]
+    default_symbols = available_symbols[: min(4, len(available_symbols))]
 
     selected_symbols = st.multiselect(
         "Select Symbols to Compare",
@@ -403,14 +410,16 @@ def render_comparison_page(data: dict):
         if df is not None:
             summary = load_summary(symbol)
             metrics = get_latest_metrics(symbol, df, summary)
-            metrics_data.append({
-                "Symbol": symbol,
-                "Total Return %": f"{metrics['total_return_pct']:.2f}",
-                "Sharpe Ratio": f"{metrics['sharpe_ratio']:.2f}",
-                "Max Drawdown %": f"{metrics['max_drawdown']:.2f}",
-                "Volatility %": f"{metrics['volatility']:.2f}",
-                "Trades": metrics.get('total_trades', 0),
-            })
+            metrics_data.append(
+                {
+                    "Symbol": symbol,
+                    "Total Return %": f"{metrics['total_return_pct']:.2f}",
+                    "Sharpe Ratio": f"{metrics['sharpe_ratio']:.2f}",
+                    "Max Drawdown %": f"{metrics['max_drawdown']:.2f}",
+                    "Volatility %": f"{metrics['volatility']:.2f}",
+                    "Trades": metrics.get("total_trades", 0),
+                }
+            )
 
     if metrics_data:
         st.dataframe(
@@ -556,7 +565,7 @@ def render_market_data_page(data: dict):
                 st.metric("24h Volume", f"${stats['quote_volume']:,.0f}")
 
             with col4:
-                change_color = "normal" if stats['change_pct'] >= 0 else "inverse"
+                change_color = "normal" if stats["change_pct"] >= 0 else "inverse"
                 st.metric("24h Change", f"{stats['change_pct']:+.2f}%", delta_color=change_color)
 
     else:
@@ -582,16 +591,18 @@ def render_performance_ranking(data: dict):
 
         if equity_df is not None:
             metrics = get_latest_metrics(symbol, equity_df, summary)
-            rankings.append({
-                "Symbol": symbol,
-                "Total Return %": metrics['total_return_pct'],
-                "Sharpe Ratio": metrics['sharpe_ratio'],
-                "Max Drawdown %": metrics['max_drawdown'],
-                "Volatility %": metrics['volatility'],
-                "Trades": metrics.get('total_trades', 0),
-                "Win Rate %": metrics.get('win_rate', 0),
-                "Final Value": metrics['final_value'],
-            })
+            rankings.append(
+                {
+                    "Symbol": symbol,
+                    "Total Return %": metrics["total_return_pct"],
+                    "Sharpe Ratio": metrics["sharpe_ratio"],
+                    "Max Drawdown %": metrics["max_drawdown"],
+                    "Volatility %": metrics["volatility"],
+                    "Trades": metrics.get("total_trades", 0),
+                    "Win Rate %": metrics.get("win_rate", 0),
+                    "Final Value": metrics["final_value"],
+                }
+            )
 
     if not rankings:
         st.warning("No ranking data available.")
@@ -665,24 +676,28 @@ def render_settings_page(data: dict):
     # Service configuration info
     st.subheader("Service Configuration")
 
-    st.info("""
+    st.info(
+        """
     **Service Management:**
     - Start/Stop: `python scripts/paper_trading_service.py start|stop`
     - Status: `python scripts/paper_trading_service.py status`
     - Add Symbol: `python scripts/paper_trading_service.py add SYMBOL --capital 10000`
     - Remove Symbol: `python scripts/paper_trading_service.py remove SYMBOL`
-    """)
+    """
+    )
 
     st.markdown("---")
 
     # Data location
     st.subheader("Data Locations")
 
-    st.json({
-        "data_directory": str(Path("data/paper_trading").absolute()),
-        "log_directory": str(Path("logs").absolute()),
-        "config_file": str(Path("config/paper_trading.json").absolute()),
-    })
+    st.json(
+        {
+            "data_directory": str(Path("data/paper_trading").absolute()),
+            "log_directory": str(Path("logs").absolute()),
+            "config_file": str(Path("config/paper_trading.json").absolute()),
+        }
+    )
 
 
 def main():

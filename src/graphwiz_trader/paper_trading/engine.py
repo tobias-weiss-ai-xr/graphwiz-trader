@@ -112,7 +112,9 @@ class PaperTradingEngine:
 
         return signal
 
-    def execute_virtual_trade(self, signal: str, price: float, timestamp: datetime) -> Optional[Dict]:
+    def execute_virtual_trade(
+        self, signal: str, price: float, timestamp: datetime
+    ) -> Optional[Dict]:
         """Execute a virtual trade (no real money).
 
         Args:
@@ -149,7 +151,9 @@ class PaperTradingEngine:
             # Update average price (for P&L calculation)
             total_value = (position * self.portfolio["avg_price"]) + (quantity * price)
             total_quantity = position + quantity
-            self.portfolio["avg_price"] = total_value / total_quantity if total_quantity > 0 else price
+            self.portfolio["avg_price"] = (
+                total_value / total_quantity if total_quantity > 0 else price
+            )
 
             trade = {
                 "timestamp": timestamp,
@@ -236,13 +240,15 @@ class PaperTradingEngine:
         """
         total_value = self.calculate_portfolio_value(current_price)
 
-        self.equity_curve.append({
-            "timestamp": timestamp,
-            "capital": self.portfolio["capital"],
-            "position": self.portfolio["position"],
-            "position_value": self.portfolio["position"] * current_price,
-            "total_value": total_value,
-        })
+        self.equity_curve.append(
+            {
+                "timestamp": timestamp,
+                "capital": self.portfolio["capital"],
+                "position": self.portfolio["position"],
+                "position_value": self.portfolio["position"] * current_price,
+                "total_value": total_value,
+            }
+        )
 
     def get_performance_metrics(self) -> Dict[str, Any]:
         """Calculate performance metrics.
@@ -340,11 +346,15 @@ class PaperTradingEngine:
         print("=" * 80)
         print(f"Symbol:         {self.symbol}")
         print(f"Strategy:       RSI({self.strategy.oversold}/{self.strategy.overbought})")
-        print(f"Period:         {self.equity_curve[0]['timestamp']} to {self.equity_curve[-1]['timestamp']}")
+        print(
+            f"Period:         {self.equity_curve[0]['timestamp']} to {self.equity_curve[-1]['timestamp']}"
+        )
         print("-" * 80)
         print(f"Initial Capital:  ${metrics['initial_capital']:,.2f}")
         print(f"Final Value:      ${metrics['final_value']:,.2f}")
-        print(f"Total Return:     ${metrics['total_return']:,.2f} ({metrics['total_return_pct']:+.2f}%)")
+        print(
+            f"Total Return:     ${metrics['total_return']:,.2f} ({metrics['total_return_pct']:+.2f}%)"
+        )
         print(f"Total P&L:        ${metrics['total_pnl']:,.2f}")
         print("-" * 80)
         print(f"Total Trades:     {metrics['total_trades']}")
@@ -413,7 +423,9 @@ class PaperTradingEngine:
         iteration = 0
 
         logger.info(f"Starting paper trading for {self.symbol}")
-        logger.info(f"Interval: {interval_seconds}s, Max iterations: {max_iterations or 'infinite'}")
+        logger.info(
+            f"Interval: {interval_seconds}s, Max iterations: {max_iterations or 'infinite'}"
+        )
 
         try:
             while self.is_running:
@@ -444,7 +456,7 @@ class PaperTradingEngine:
                     self.save_results()
 
                 # Wait for next iteration
-                if iteration < (max_iterations or float('inf')):
+                if iteration < (max_iterations or float("inf")):
                     logger.info(f"Waiting {interval_seconds}s until next iteration...")
                     time.sleep(interval_seconds)
 

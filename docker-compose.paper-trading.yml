@@ -12,7 +12,11 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - LOG_LEVEL=INFO
-      - TZ=UTC
+      - TZ=Europe/Berlin
+      - DURATION=${DURATION:-72}
+      - SYMBOLS=${SYMBOLS:-BTC/EUR}
+      - CAPITAL=${CAPITAL:-10000}
+      - INTERVAL=${INTERVAL:-30}
 
     # Mount volumes for persistence
     volumes:
@@ -37,12 +41,16 @@ services:
         max-file: "3"
 
     # Command-line arguments (can be overridden)
-    # --duration: Duration in hours (default: 168 = 1 week)
+    # --duration: Duration in hours (default: 72 = 3 days)
+    # --symbols: Trading pairs (default: BTC/EUR)
+    # --capital: Initial capital in EUR (default: 10000)
     # --interval: Analysis interval in minutes (default: 30)
     command: >
-      python run_extended_paper_trading.py
-      --duration 168
-      --interval 30
+      python run_extended_paper_trading_goemotions.py
+      --duration ${DURATION}
+      --symbols ${SYMBOLS}
+      --capital ${CAPITAL}
+      --interval ${INTERVAL}
 
   # Optional: Monitoring dashboard
   dashboard:

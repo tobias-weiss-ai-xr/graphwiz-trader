@@ -79,7 +79,9 @@ class LiveTradingEngine:
         logger.warning("=" * 80)
         logger.warning(f"Exchange: {exchange_name}")
         logger.warning(f"Symbol: {symbol}")
-        logger.warning(f"Strategy: RSI({strategy_config.get('oversold')}/{strategy_config.get('overbought')})")
+        logger.warning(
+            f"Strategy: RSI({strategy_config.get('oversold')}/{strategy_config.get('overbought')})"
+        )
         logger.warning("=" * 80)
 
     def get_account_balance(self) -> Dict[str, float]:
@@ -175,13 +177,15 @@ class LiveTradingEngine:
 
             logger.success(f"✅ BUY ORDER EXECUTED: {order}")
 
-            self.trade_history.append({
-                "timestamp": datetime.now(),
-                "action": "buy",
-                "symbol": self.symbol,
-                "quantity": quantity,
-                "order": order,
-            })
+            self.trade_history.append(
+                {
+                    "timestamp": datetime.now(),
+                    "action": "buy",
+                    "symbol": self.symbol,
+                    "quantity": quantity,
+                    "order": order,
+                }
+            )
 
             return order
 
@@ -208,13 +212,15 @@ class LiveTradingEngine:
 
             logger.success(f"✅ SELL ORDER EXECUTED: {order}")
 
-            self.trade_history.append({
-                "timestamp": datetime.now(),
-                "action": "sell",
-                "symbol": self.symbol,
-                "quantity": quantity,
-                "order": order,
-            })
+            self.trade_history.append(
+                {
+                    "timestamp": datetime.now(),
+                    "action": "sell",
+                    "symbol": self.symbol,
+                    "quantity": quantity,
+                    "order": order,
+                }
+            )
 
             return order
 

@@ -140,8 +140,7 @@ class PerformanceMonitor:
         # Order latency check
         if (
             "avg_order_latency_ms" in metrics
-            and metrics["avg_order_latency_ms"]
-            > self.thresholds["order_latency_ms"]
+            and metrics["avg_order_latency_ms"] > self.thresholds["order_latency_ms"]
         ):
             logger.warning(
                 f"High order latency: {metrics['avg_order_latency_ms']:.2f}ms "
@@ -151,8 +150,7 @@ class PerformanceMonitor:
         # Market data latency check
         if (
             "avg_market_data_latency_ms" in metrics
-            and metrics["avg_market_data_latency_ms"]
-            > self.thresholds["market_data_latency_ms"]
+            and metrics["avg_market_data_latency_ms"] > self.thresholds["market_data_latency_ms"]
         ):
             logger.warning(
                 f"High market data latency: {metrics['avg_market_data_latency_ms']:.2f}ms "
@@ -192,9 +190,7 @@ class PerformanceMonitor:
                 network_sent_mb=metrics.get("network_sent_mb"),
                 network_recv_mb=metrics.get("network_recv_mb"),
                 avg_order_latency_ms=metrics.get("avg_order_latency_ms", 0.0),
-                avg_market_data_latency_ms=metrics.get(
-                    "avg_market_data_latency_ms", 0.0
-                ),
+                avg_market_data_latency_ms=metrics.get("avg_market_data_latency_ms", 0.0),
                 avg_strategy_latency_ms=metrics.get("avg_strategy_latency_ms", 0.0),
             )
         except Exception as e:
@@ -224,9 +220,7 @@ class PerformanceMonitor:
 
         for operation, latencies in self.latencies.items():
             if latencies:
-                metrics[f"avg_{operation}_latency_ms"] = sum(latencies) / len(
-                    latencies
-                )
+                metrics[f"avg_{operation}_latency_ms"] = sum(latencies) / len(latencies)
                 metrics[f"max_{operation}_latency_ms"] = max(latencies)
                 metrics[f"min_{operation}_latency_ms"] = min(latencies)
                 metrics[f"{operation}_sample_count"] = len(latencies)
@@ -244,9 +238,7 @@ class PerformanceMonitor:
             return self.metrics_history[-1].copy()
         return None
 
-    def get_metrics_history(
-        self, duration_seconds: Optional[int] = None
-    ) -> List[Dict[str, Any]]:
+    def get_metrics_history(self, duration_seconds: Optional[int] = None) -> List[Dict[str, Any]]:
         """
         Get historical metrics.
 
@@ -278,8 +270,7 @@ class PerformanceMonitor:
             return {}
 
         return {
-            "avg_cpu_percent": sum(m["cpu_percent"] for m in recent_metrics)
-            / len(recent_metrics),
+            "avg_cpu_percent": sum(m["cpu_percent"] for m in recent_metrics) / len(recent_metrics),
             "max_cpu_percent": max(m["cpu_percent"] for m in recent_metrics),
             "avg_memory_percent": sum(m["memory_percent"] for m in recent_metrics)
             / len(recent_metrics),

@@ -12,12 +12,13 @@ from graphwiz_trader.agents.trading_agents import (
     AgentDecision,
     AgentPerformance,
     TradingAgent,
-    TradingSignal
+    TradingSignal,
 )
 
 
 class ConsensusMethod(Enum):
     """Methods for reaching consensus among agents."""
+
     MAJORITY_VOTE = "majority_vote"  # Simple majority
     WEIGHTED_VOTE = "weighted_vote"  # Weighted by agent performance
     CONFIDENCE_WEIGHTED = "confidence_weighted"  # Weighted by confidence
@@ -27,6 +28,7 @@ class ConsensusMethod(Enum):
 
 class ConflictResolution(Enum):
     """Methods for resolving conflicts between agents."""
+
     HIGH_CONFIDENCE_WINS = "high_confidence"  # Highest confidence wins
     BEST_PERFORMER_WINS = "best_performer"  # Best performing agent wins
     RISK_AVERSE = "risk_averse"  # Default to HOLD in conflicts
@@ -49,6 +51,7 @@ class DecisionResult:
         metadata: Additional decision metadata
         timestamp: When the decision was made
     """
+
     signal: TradingSignal
     confidence: float
     reasoning: str
@@ -67,13 +70,12 @@ class DecisionResult:
             "reasoning": self.reasoning,
             "participating_agents": self.participating_agents,
             "agent_signals": {
-                name: decision.to_dict()
-                for name, decision in self.agent_signals.items()
+                name: decision.to_dict() for name, decision in self.agent_signals.items()
             },
             "consensus_method": self.consensus_method.value,
             "conflict_score": self.conflict_score,
             "metadata": self.metadata,
-            "timestamp": self.timestamp.isoformat()
+            "timestamp": self.timestamp.isoformat(),
         }
 
 
@@ -92,7 +94,7 @@ class DecisionEngine:
         consensus_method: ConsensusMethod = ConsensusMethod.WEIGHTED_VOTE,
         conflict_resolution: ConflictResolution = ConflictResolution.HIGH_CONFIDENCE_WINS,
         min_confidence_threshold: float = 0.6,
-        enable_disagreement_tracking: bool = True
+        enable_disagreement_tracking: bool = True,
     ):
         """Initialize decision engine.
 
@@ -120,7 +122,7 @@ class DecisionEngine:
         self,
         agent_decisions: Dict[str, AgentDecision],
         agent_performances: Dict[str, AgentPerformance],
-        context: Optional[Dict[str, Any]] = None
+        context: Optional[Dict[str, Any]] = None,
     ) -> DecisionResult:
         """Make final trading decision from multiple agent signals.
 
@@ -145,8 +147,7 @@ class DecisionEngine:
 
         if not active_decisions:
             return self._create_hold_decision(
-                "All agents recommend HOLD or have low confidence",
-                agent_decisions
+                "All agents recommend HOLD or have low confidence", agent_decisions
             )
 
         # Calculate conflict score
@@ -156,32 +157,20 @@ class DecisionEngine:
         if self.consensus_method == ConsensusMethod.MAJORITY_VOTE:
             signal, confidence = self._majority_vote(active_decisions)
         elif self.consensus_method == ConsensusMethod.WEIGHTED_VOTE:
-            signal, confidence = self._weighted_vote(
-                active_decisions,
-                agent_performances
-            )
+            signal, confidence = self._weighted_vote(active_decisions, agent_performances)
         elif self.consensus_method == ConsensusMethod.CONFIDENCE_WEIGHTED:
             signal, confidence = self._confidence_weighted_vote(active_decisions)
         elif self.consensus_method == ConsensusMethod.BEST_PERFORMER:
-            signal, confidence = self._best_performer_vote(
-                active_decisions,
-                agent_performances
-            )
+            signal, confidence = self._best_performer_vote(active_decisions, agent_performances)
         elif self.consensus_method == ConsensusMethod.UNANIMOUS:
             signal, confidence = self._unanimous_vote(active_decisions)
         else:
-            signal, confidence = self._weighted_vote(
-                active_decisions,
-                agent_performances
-            )
+            signal, confidence = self._weighted_vote(active_decisions, agent_performances)
 
         # Apply conflict resolution if needed
         if conflict_score > 0.5:  # Significant conflict
             signal, confidence = self._resolve_conflict(
-                signal,
-                confidence,
-                active_decisions,
-                agent_performances
+                signal, confidence, active_decisions, agent_performances
             )
 
         # Apply minimum confidence threshold
@@ -190,12 +179,7 @@ class DecisionEngine:
             confidence = max(confidence, 0.5)
 
         # Build reasoning
-        reasoning = self._build_reasoning(
-            active_decisions,
-            signal,
-            confidence,
-            conflict_score
-        )
+        reasoning = self._build_reasoning(active_decisions, signal, confidence, conflict_score)
 
         # Create result
         result = DecisionResult(
@@ -209,8 +193,8 @@ class DecisionEngine:
             metadata={
                 "total_agents": len(agent_decisions),
                 "active_agents": len(active_decisions),
-                "conflict_resolution_applied": conflict_score > 0.5
-            }
+                "conflict_resolution_applied": conflict_score > 0.5,
+            },
         )
 
         # Track decision
@@ -253,11 +237,7 @@ class DecisionEngine:
             return 0.0
 
         # Calculate entropy-based conflict
-        proportions = [
-            buy_count / total,
-            sell_count / total,
-            hold_count / total
-        ]
+        proportions = [buy_count / total, sell_count / total, hold_count / total]
 
         # Remove zeros
         proportions = [p for p in proportions if p > 0]
@@ -268,10 +248,7 @@ class DecisionEngine:
 
         return entropy / max_entropy if max_entropy > 0 else 0.0
 
-    def _majority_vote(
-        self,
-        decisions: Dict[str, AgentDecision]
-    ) -> Tuple[TradingSignal, float]:
+    def _majority_vote(self, decisions: Dict[str, AgentDecision]) -> Tuple[TradingSignal, float]:
         """Simple majority vote.
 
         Args:
@@ -289,7 +266,7 @@ class DecisionEngine:
         counts = {
             TradingSignal.BUY: buy_count,
             TradingSignal.SELL: sell_count,
-            TradingSignal.HOLD: hold_count
+            TradingSignal.HOLD: hold_count,
         }
 
         max_signal = max(counts, key=counts.get)
@@ -302,9 +279,7 @@ class DecisionEngine:
         return max_signal, confidence
 
     def _weighted_vote(
-        self,
-        decisions: Dict[str, AgentDecision],
-        performances: Dict[str, AgentPerformance]
+        self, decisions: Dict[str, AgentDecision], performances: Dict[str, AgentPerformance]
     ) -> Tuple[TradingSignal, float]:
         """Weighted vote based on agent performance.
 
@@ -346,7 +321,7 @@ class DecisionEngine:
         weights_dict = {
             TradingSignal.BUY: buy_weight,
             TradingSignal.SELL: sell_weight,
-            TradingSignal.HOLD: hold_weight
+            TradingSignal.HOLD: hold_weight,
         }
 
         max_signal = max(weights_dict, key=weights_dict.get)
@@ -358,8 +333,7 @@ class DecisionEngine:
         return max_signal, confidence
 
     def _confidence_weighted_vote(
-        self,
-        decisions: Dict[str, AgentDecision]
+        self, decisions: Dict[str, AgentDecision]
     ) -> Tuple[TradingSignal, float]:
         """Vote weighted by agent confidence levels.
 
@@ -370,25 +344,19 @@ class DecisionEngine:
             Tuple of (signal, confidence)
         """
         buy_confidence = sum(
-            d.confidence
-            for d in decisions.values()
-            if d.signal == TradingSignal.BUY
+            d.confidence for d in decisions.values() if d.signal == TradingSignal.BUY
         )
         sell_confidence = sum(
-            d.confidence
-            for d in decisions.values()
-            if d.signal == TradingSignal.SELL
+            d.confidence for d in decisions.values() if d.signal == TradingSignal.SELL
         )
         hold_confidence = sum(
-            d.confidence
-            for d in decisions.values()
-            if d.signal == TradingSignal.HOLD
+            d.confidence for d in decisions.values() if d.signal == TradingSignal.HOLD
         )
 
         confidences = {
             TradingSignal.BUY: buy_confidence,
             TradingSignal.SELL: sell_confidence,
-            TradingSignal.HOLD: hold_confidence
+            TradingSignal.HOLD: hold_confidence,
         }
 
         max_signal = max(confidences, key=confidences.get)
@@ -400,9 +368,7 @@ class DecisionEngine:
         return max_signal, confidence
 
     def _best_performer_vote(
-        self,
-        decisions: Dict[str, AgentDecision],
-        performances: Dict[str, AgentPerformance]
+        self, decisions: Dict[str, AgentDecision], performances: Dict[str, AgentPerformance]
     ) -> Tuple[TradingSignal, float]:
         """Follow the best performing agent.
 
@@ -435,10 +401,7 @@ class DecisionEngine:
 
         return best_decision.signal, confidence
 
-    def _unanimous_vote(
-        self,
-        decisions: Dict[str, AgentDecision]
-    ) -> Tuple[TradingSignal, float]:
+    def _unanimous_vote(self, decisions: Dict[str, AgentDecision]) -> Tuple[TradingSignal, float]:
         """Only act if all agents agree.
 
         Args:
@@ -466,7 +429,7 @@ class DecisionEngine:
         initial_signal: TradingSignal,
         initial_confidence: float,
         decisions: Dict[str, AgentDecision],
-        performances: Dict[str, AgentPerformance]
+        performances: Dict[str, AgentPerformance],
     ) -> Tuple[TradingSignal, float]:
         """Resolve conflicts when agents disagree.
 
@@ -506,7 +469,7 @@ class DecisionEngine:
         decisions: Dict[str, AgentDecision],
         final_signal: TradingSignal,
         final_confidence: float,
-        conflict_score: float
+        conflict_score: float,
     ) -> str:
         """Build reasoning explanation for the decision.
 
@@ -530,10 +493,9 @@ class DecisionEngine:
         parts.append(f"Decision: {final_signal.value} (confidence: {final_confidence:.2f})")
 
         # Agent breakdown
-        agent_summary = ", ".join([
-            f"{name}:{dec.signal.value}({dec.confidence:.2f})"
-            for name, dec in decisions.items()
-        ])
+        agent_summary = ", ".join(
+            [f"{name}:{dec.signal.value}({dec.confidence:.2f})" for name, dec in decisions.items()]
+        )
         parts.append(f"Agents: {agent_summary}")
 
         # Conflict level
@@ -546,22 +508,18 @@ class DecisionEngine:
 
         # Top reasons from supporting agents
         supporting_agents = [
-            (name, dec)
-            for name, dec in decisions.items()
-            if dec.signal == final_signal
+            (name, dec) for name, dec in decisions.items() if dec.signal == final_signal
         ]
 
         if supporting_agents:
-            top_supporters = sorted(
-                supporting_agents,
-                key=lambda x: x[1].confidence,
-                reverse=True
-            )[:2]
+            top_supporters = sorted(supporting_agents, key=lambda x: x[1].confidence, reverse=True)[
+                :2
+            ]
 
             reasons = []
             for name, dec in top_supporters:
                 # Extract first sentence of reasoning
-                reason_first_line = dec.reasoning.split('.')[0]
+                reason_first_line = dec.reasoning.split(".")[0]
                 reasons.append(f"{name}: {reason_first_line}")
 
             if reasons:
@@ -570,9 +528,7 @@ class DecisionEngine:
         return " | ".join(parts)
 
     def _create_hold_decision(
-        self,
-        reason: str,
-        agent_decisions: Optional[Dict[str, AgentDecision]] = None
+        self, reason: str, agent_decisions: Optional[Dict[str, AgentDecision]] = None
     ) -> DecisionResult:
         """Create a HOLD decision.
 
@@ -590,7 +546,7 @@ class DecisionEngine:
             participating_agents=list(agent_decisions.keys()) if agent_decisions else [],
             agent_signals=agent_decisions or {},
             consensus_method=self.consensus_method,
-            conflict_score=0.0
+            conflict_score=0.0,
         )
 
     def _track_disagreements(self, decisions: Dict[str, AgentDecision]) -> None:
@@ -630,5 +586,5 @@ class DecisionEngine:
             "signal_distribution": signal_counts,
             "average_confidence": np.mean(confidences) if confidences else 0.0,
             "average_conflict": np.mean(conflict_scores) if conflict_scores else 0.0,
-            "agent_disagreements": self.agent_disagreements.copy()
+            "agent_disagreements": self.agent_disagreements.copy(),
         }

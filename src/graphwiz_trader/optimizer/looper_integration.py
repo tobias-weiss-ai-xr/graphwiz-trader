@@ -19,12 +19,14 @@ from loguru import logger
 
 # Import SAIA agent from agent-looper
 import sys
+
 sys.path.insert(0, str(Path("/opt/git/agent-looper/src")))
 from core.saia_agent import SAIAAgent
 
 
 class OptimizationType(Enum):
     """Types of trading optimizations."""
+
     STRATEGY_PARAMETERS = "strategy_parameters"
     RISK_LIMITS = "risk_limits"
     AGENT_WEIGHTS = "agent_weights"
@@ -34,6 +36,7 @@ class OptimizationType(Enum):
 
 class OptimizationStatus(Enum):
     """Status of an optimization."""
+
     PENDING = "pending"
     ANALYZING = "analyzing"
     PLANNING = "planning"
@@ -49,6 +52,7 @@ class OptimizationStatus(Enum):
 @dataclass
 class OptimizationConstraints:
     """Constraints for optimization."""
+
     max_drawdown_threshold: float = 0.10  # 10% max drawdown
     min_sharpe_ratio: float = 2.0
     min_win_rate: float = 0.60  # 60% win rate
@@ -63,6 +67,7 @@ class OptimizationConstraints:
 @dataclass
 class OptimizationResult:
     """Result of an optimization attempt."""
+
     optimization_id: str
     optimization_type: OptimizationType
     status: OptimizationStatus
@@ -79,6 +84,7 @@ class OptimizationResult:
 @dataclass
 class RollbackState:
     """State for rollback capability."""
+
     snapshot_id: str
     timestamp: datetime
     config_backup: Dict[str, Any]
@@ -121,7 +127,7 @@ class TradingOptimizer:
         self.agent = SAIAAgent(
             model=saia_model,
             max_tokens=8192,
-            temperature=0.3  # Lower temperature for more deterministic results
+            temperature=0.3,  # Lower temperature for more deterministic results
         )
 
         # State management
@@ -151,6 +157,7 @@ class TradingOptimizer:
             if config_path.exists():
                 try:
                     import yaml
+
                     with open(config_path) as f:
                         config_data = yaml.safe_load(f)
                         self.current_config.update(config_data)
@@ -172,7 +179,9 @@ class TradingOptimizer:
         Returns:
             OptimizationResult with proposed changes
         """
-        logger.info(f"Starting strategy parameter optimization for {strategy_name or 'all strategies'}")
+        logger.info(
+            f"Starting strategy parameter optimization for {strategy_name or 'all strategies'}"
+        )
 
         with self.optimization_lock:
             opt_id = f"strategy_{datetime.utcnow().timestamp()}"
@@ -183,8 +192,7 @@ class TradingOptimizer:
 
                 # Analyze current state
                 analysis = await self._analyze_strategy_performance(
-                    current_performance,
-                    strategy_name
+                    current_performance, strategy_name
                 )
 
                 # Generate optimization plan
@@ -203,7 +211,7 @@ class TradingOptimizer:
                         proposed_changes={},
                         expected_improvement=0.0,
                         confidence_score=0.0,
-                        reasoning=f"Constraint validation failed: {validation['reason']}"
+                        reasoning=f"Constraint validation failed: {validation['reason']}",
                     )
 
                 # Calculate expected improvement and confidence
@@ -216,7 +224,7 @@ class TradingOptimizer:
                     proposed_changes=proposed_changes,
                     expected_improvement=metrics["expected_improvement"],
                     confidence_score=metrics["confidence"],
-                    reasoning=plan
+                    reasoning=plan,
                 )
 
                 # Store optimization
@@ -236,7 +244,7 @@ class TradingOptimizer:
                     expected_improvement=0.0,
                     confidence_score=0.0,
                     reasoning="",
-                    error_message=str(e)
+                    error_message=str(e),
                 )
 
     async def optimize_risk_limits(
@@ -263,10 +271,7 @@ class TradingOptimizer:
                 snapshot = self._create_rollback_snapshot(opt_id)
 
                 # Prepare context for SAIA
-                context = self._prepare_risk_optimization_context(
-                    current_performance,
-                    risk_metrics
-                )
+                context = self._prepare_risk_optimization_context(current_performance, risk_metrics)
 
                 # Generate optimization using SAIA
                 prompt = f"""
@@ -312,13 +317,12 @@ Format your response as a JSON object with specific numeric values.
                         proposed_changes={},
                         expected_improvement=0.0,
                         confidence_score=0.0,
-                        reasoning=f"Risk constraint validation failed: {validation['reason']}"
+                        reasoning=f"Risk constraint validation failed: {validation['reason']}",
                     )
 
                 # Calculate expected improvement
                 expected_improvement = self._estimate_risk_improvement(
-                    proposed_changes,
-                    risk_metrics
+                    proposed_changes, risk_metrics
                 )
 
                 result = OptimizationResult(
@@ -328,7 +332,7 @@ Format your response as a JSON object with specific numeric values.
                     proposed_changes=proposed_changes,
                     expected_improvement=expected_improvement,
                     confidence_score=0.75,
-                    reasoning=response
+                    reasoning=response,
                 )
 
                 self.optimizations[opt_id] = result
@@ -347,7 +351,7 @@ Format your response as a JSON object with specific numeric values.
                     expected_improvement=0.0,
                     confidence_score=0.0,
                     reasoning="",
-                    error_message=str(e)
+                    error_message=str(e),
                 )
 
     async def optimize_agent_weights(
@@ -405,7 +409,7 @@ Format as JSON with agent names as keys and weights as values.
                         proposed_changes={},
                         expected_improvement=0.0,
                         confidence_score=0.0,
-                        reasoning=f"Weight validation failed: {validation['reason']}"
+                        reasoning=f"Weight validation failed: {validation['reason']}",
                     )
 
                 result = OptimizationResult(
@@ -415,7 +419,7 @@ Format as JSON with agent names as keys and weights as values.
                     proposed_changes=proposed_weights,
                     expected_improvement=0.15,  # Estimated 15% improvement
                     confidence_score=0.70,
-                    reasoning=response
+                    reasoning=response,
                 )
 
                 self.optimizations[opt_id] = result
@@ -434,7 +438,7 @@ Format as JSON with agent names as keys and weights as values.
                     expected_improvement=0.0,
                     confidence_score=0.0,
                     reasoning="",
-                    error_message=str(e)
+                    error_message=str(e),
                 )
 
     async def optimize_trading_pairs(
@@ -485,8 +489,7 @@ Recommend:
 
                 # Validate each recommended pair
                 validated_recommendations = self._validate_pair_recommendations(
-                    recommendations,
-                    market_data
+                    recommendations, market_data
                 )
 
                 result = OptimizationResult(
@@ -496,7 +499,7 @@ Recommend:
                     proposed_changes=validated_recommendations,
                     expected_improvement=0.10,
                     confidence_score=0.65,
-                    reasoning=response
+                    reasoning=response,
                 )
 
                 self.optimizations[opt_id] = result
@@ -515,7 +518,7 @@ Recommend:
                     expected_improvement=0.0,
                     confidence_score=0.0,
                     reasoning="",
-                    error_message=str(e)
+                    error_message=str(e),
                 )
 
     async def optimize_indicators(
@@ -570,7 +573,7 @@ Format as JSON with indicator names as keys and parameter objects as values.
                     proposed_changes=proposed_changes,
                     expected_improvement=0.08,
                     confidence_score=0.60,
-                    reasoning=response
+                    reasoning=response,
                 )
 
                 self.optimizations[opt_id] = result
@@ -589,7 +592,7 @@ Format as JSON with indicator names as keys and parameter objects as values.
                     expected_improvement=0.0,
                     confidence_score=0.0,
                     reasoning="",
-                    error_message=str(e)
+                    error_message=str(e),
                 )
 
     def approve_optimization(self, optimization_id: str) -> bool:
@@ -711,8 +714,10 @@ Format as JSON with indicator names as keys and parameter objects as values.
             snapshot_id=f"snapshot_{datetime.utcnow().timestamp()}",
             timestamp=datetime.utcnow(),
             config_backup=copy.deepcopy(self.current_config),
-            performance_snapshot=copy.deepcopy(self.performance_history[-10:] if self.performance_history else []),
-            optimization_id=optimization_id
+            performance_snapshot=copy.deepcopy(
+                self.performance_history[-10:] if self.performance_history else []
+            ),
+            optimization_id=optimization_id,
         )
 
     async def _analyze_strategy_performance(
@@ -735,7 +740,7 @@ Current Strategy Configuration:
         response = self.agent.analyze(
             project_context=context,
             goals=self._get_strategy_goals(),
-            current_state=json.dumps(performance, indent=2)
+            current_state=json.dumps(performance, indent=2),
         )
 
         return response
@@ -745,7 +750,7 @@ Current Strategy Configuration:
         issues = [
             "Suboptimal parameter tuning based on current market conditions",
             "Potential improvements in entry/exit logic",
-            "Risk-adjusted return optimization opportunities"
+            "Risk-adjusted return optimization opportunities",
         ]
 
         constraints = f"""
@@ -790,11 +795,14 @@ Constraints:
         risk_metrics: Dict[str, Any],
     ) -> str:
         """Prepare context for risk optimization."""
-        return json.dumps({
-            "performance": performance,
-            "risk_metrics": risk_metrics,
-            "current_config": self.current_config.get("trading", {})
-        }, indent=2)
+        return json.dumps(
+            {
+                "performance": performance,
+                "risk_metrics": risk_metrics,
+                "current_config": self.current_config.get("trading", {}),
+            },
+            indent=2,
+        )
 
     def _parse_risk_recommendations(self, response: str) -> Dict[str, Any]:
         """Parse risk limit recommendations from SAIA response."""
@@ -802,7 +810,8 @@ Constraints:
         try:
             # Look for JSON block in response
             import re
-            json_match = re.search(r'\{[\s\S]*\}', response)
+
+            json_match = re.search(r"\{[\s\S]*\}", response)
             if json_match:
                 return json.loads(json_match.group())
         except:
@@ -843,19 +852,15 @@ Constraints:
         """Parse agent weight recommendations."""
         try:
             import re
-            json_match = re.search(r'\{[\s\S]*\}', response)
+
+            json_match = re.search(r"\{[\s\S]*\}", response)
             if json_match:
                 return json.loads(json_match.group())
         except:
             pass
 
         # Return current weights as fallback
-        return {
-            "technical": 0.30,
-            "sentiment": 0.25,
-            "risk": 0.25,
-            "portfolio": 0.20
-        }
+        return {"technical": 0.30, "sentiment": 0.25, "risk": 0.25, "portfolio": 0.20}
 
     def _validate_agent_weights(self, weights: Dict[str, float]) -> Dict[str, Any]:
         """Validate agent weights."""
@@ -872,12 +877,7 @@ Constraints:
 
     def _parse_pair_recommendations(self, response: str) -> Dict[str, Any]:
         """Parse trading pair recommendations."""
-        return {
-            "add": [],
-            "remove": [],
-            "keep": [],
-            "reasoning": response
-        }
+        return {"add": [], "remove": [], "keep": [], "reasoning": response}
 
     def _validate_pair_recommendations(
         self,
@@ -889,10 +889,7 @@ Constraints:
 
     def _parse_indicator_recommendations(self, response: str) -> Dict[str, Any]:
         """Parse indicator recommendations."""
-        return {
-            "indicators": {},
-            "reasoning": response
-        }
+        return {"indicators": {}, "reasoning": response}
 
     def _apply_configuration_changes(self, changes: Dict[str, Any]) -> None:
         """Apply configuration changes."""
@@ -940,16 +937,19 @@ Optimization Goals:
                 opt.timestamp = $timestamp,
                 opt.reasoning = $reasoning
             """
-            self.kg.execute_query(query, {
-                "id": optimization.optimization_id,
-                "type": optimization.optimization_type.value,
-                "status": optimization.status.value,
-                "action": action,
-                "expected_improvement": optimization.expected_improvement,
-                "confidence": optimization.confidence_score,
-                "timestamp": optimization.timestamp.isoformat(),
-                "reasoning": optimization.reasoning[:1000]  # Truncate for Neo4j
-            })
+            self.kg.execute_query(
+                query,
+                {
+                    "id": optimization.optimization_id,
+                    "type": optimization.optimization_type.value,
+                    "status": optimization.status.value,
+                    "action": action,
+                    "expected_improvement": optimization.expected_improvement,
+                    "confidence": optimization.confidence_score,
+                    "timestamp": optimization.timestamp.isoformat(),
+                    "reasoning": optimization.reasoning[:1000],  # Truncate for Neo4j
+                },
+            )
 
             logger.debug(f"Logged optimization {optimization.optimization_id} to knowledge graph")
 
@@ -963,14 +963,14 @@ Optimization Goals:
     def get_pending_optimizations(self) -> List[OptimizationResult]:
         """Get all pending optimizations."""
         return [
-            opt for opt in self.optimizations.values()
-            if opt.status == OptimizationStatus.PENDING
+            opt for opt in self.optimizations.values() if opt.status == OptimizationStatus.PENDING
         ]
 
     def get_recent_performance(self, days: int = 7) -> List[Dict[str, Any]]:
         """Get recent performance history."""
         cutoff = datetime.utcnow() - timedelta(days=days)
         return [
-            perf for perf in self.performance_history
+            perf
+            for perf in self.performance_history
             if datetime.fromisoformat(perf["timestamp"]) >= cutoff
         ]

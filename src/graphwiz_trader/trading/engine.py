@@ -1,9 +1,7 @@
 """Trading engine for order execution with optimizations."""
 
 import ccxt
-import asyncio
-from decimal import Decimal
-from datetime import datetime, timedelta
+from datetime import datetime
 from loguru import logger
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, field
@@ -14,6 +12,7 @@ import threading
 
 # Import alert system
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from graphwiz_trader.alerts import AlertManager
 from graphwiz_trader.alerts.config import CONSOLE_ONLY
@@ -22,6 +21,7 @@ from graphwiz_trader.alerts.config import CONSOLE_ONLY
 @dataclass
 class Position:
     """Represents a trading position."""
+
     symbol: str
     side: str
     amount: float
@@ -36,6 +36,7 @@ class Position:
 @dataclass
 class Order:
     """Represents a trade order."""
+
     id: str
     symbol: str
     side: str
@@ -57,7 +58,7 @@ class TradingEngine:
         exchanges_config: Dict[str, Any],
         knowledge_graph,
         agent_orchestrator,
-        alert_manager: Optional[AlertManager] = None
+        alert_manager: Optional[AlertManager] = None,
     ):
         """Initialize trading engine.
 
@@ -128,12 +129,14 @@ class TradingEngine:
 
             try:
                 exchange_class = getattr(ccxt, exchange_name)
-                exchange = exchange_class({
-                    "apiKey": config.get("api_key"),
-                    "secret": config.get("api_secret"),
-                    "sandbox": config.get("sandbox", False),
-                    "enableRateLimit": True,
-                })
+                exchange = exchange_class(
+                    {
+                        "apiKey": config.get("api_key"),
+                        "secret": config.get("api_secret"),
+                        "sandbox": config.get("sandbox", False),
+                        "enableRateLimit": True,
+                    }
+                )
 
                 # Test connection
                 if config.get("test_mode", True):
@@ -144,10 +147,7 @@ class TradingEngine:
 
             except Exception as e:
                 logger.error("Failed to initialize exchange {}: {}", exchange_name, e)
-                self.alert_manager.exchange_disconnected(
-                    exchange=exchange_name,
-                    error=str(e)
-                )
+                self.alert_manager.exchange_disconnected(exchange=exchange_name, error=str(e))
 
     def _close_exchanges(self) -> None:
         """Close exchange connections."""
@@ -188,7 +188,9 @@ class TradingEngine:
 
         return ticker
 
-    def fetch_tickers_parallel(self, symbols: List[str], exchange_name: str = "binance") -> Dict[str, Dict[str, Any]]:
+    def fetch_tickers_parallel(
+        self, symbols: List[str], exchange_name: str = "binance"
+    ) -> Dict[str, Dict[str, Any]]:
         """Fetch multiple tickers in parallel using thread pool.
 
         Args:
@@ -224,14 +226,15 @@ class TradingEngine:
     def _log_performance_metrics(self) -> None:
         """Log performance metrics."""
         with self._metrics_lock:
-            avg_trade_time = (self._total_trade_time / self._trade_count
-                            if self._trade_count > 0 else 0)
+            avg_trade_time = (
+                self._total_trade_time / self._trade_count if self._trade_count > 0 else 0
+            )
 
             logger.info(
                 "📊 Trading Engine Performance: {} trades, {:.3f}s total, {:.3f}s avg/trade",
                 self._trade_count,
                 self._total_trade_time,
-                avg_trade_time
+                avg_trade_time,
             )
 
     def execute_trade(
@@ -241,7 +244,7 @@ class TradingEngine:
         amount: float,
         exchange_name: str = "binance",
         order_type: str = "market",
-        price: Optional[float] = None
+        price: Optional[float] = None,
     ) -> Dict[str, Any]:
         """Execute a trade.
 
@@ -281,7 +284,7 @@ class TradingEngine:
                     exchange=exchange_name,
                     symbol=symbol,
                     current_size=amount,
-                    max_size=self.config.get("max_position_size", 0.1)
+                    max_size=self.config.get("max_position_size", 0.1),
                 )
                 return {"status": "rejected", "reason": risk_check["reason"]}
 
@@ -290,7 +293,14 @@ class TradingEngine:
             current_price = ticker["last"]
 
             # Execute order on exchange
-            logger.info("Executing {} order: {} {} @ {} on {}", side, amount, symbol, current_price, exchange_name)
+            logger.info(
+                "Executing {} order: {} {} @ {} on {}",
+                side,
+                amount,
+                symbol,
+                current_price,
+                exchange_name,
+            )
 
             if order_type == "market":
                 order = exchange.create_market_order(symbol, side, amount)
@@ -308,7 +318,7 @@ class TradingEngine:
                 order_type=order_type,
                 status=order["status"],
                 exchange=exchange_name,
-                exchange_order_id=str(order.get("id", ""))
+                exchange_order_id=str(order.get("id", "")),
             )
             self.orders.append(order_record)
 
@@ -325,7 +335,7 @@ class TradingEngine:
                 side=side,
                 amount=amount,
                 price=order_record.price,
-                order_id=order_record.id
+                order_id=order_record.id,
             )
 
             # Update daily statistics
@@ -346,40 +356,28 @@ class TradingEngine:
                 "amount": amount,
                 "price": order_record.price,
                 "exchange": exchange_name,
-                "timestamp": order_record.timestamp.isoformat()
+                "timestamp": order_record.timestamp.isoformat(),
             }
 
         except ccxt.InsufficientFunds as e:
             logger.error("Insufficient funds for trade: {}", e)
             self.alert_manager.trade_failed(
-                exchange=exchange_name,
-                symbol=symbol,
-                side=side,
-                amount=amount,
-                error=str(e)
+                exchange=exchange_name, symbol=symbol, side=side, amount=amount, error=str(e)
             )
             return {"status": "error", "message": "Insufficient funds"}
         except ccxt.NetworkError as e:
             logger.error("Network error during trade: {}", e)
-            self.alert_manager.exchange_disconnected(
-                exchange=exchange_name,
-                error=str(e)
-            )
+            self.alert_manager.exchange_disconnected(exchange=exchange_name, error=str(e))
             return {"status": "error", "message": "Network error"}
         except Exception as e:
             logger.error("Error executing trade: {}", e)
             self.alert_manager.system_error(
-                component="TradingEngine",
-                error=f"Trade execution failed: {str(e)}"
+                component="TradingEngine", error=f"Trade execution failed: {str(e)}"
             )
             return {"status": "error", "message": str(e)}
 
     def _check_risk_limits(
-        self,
-        symbol: str,
-        side: str,
-        amount: float,
-        exchange_name: str
+        self, symbol: str, side: str, amount: float, exchange_name: str
     ) -> Dict[str, Any]:
         """Check if trade passes risk management rules.
 
@@ -400,7 +398,7 @@ class TradingEngine:
             if estimated_value < min_trade_amount:
                 return {
                     "allowed": False,
-                    "reason": f"Trade value ${estimated_value:.2f} below minimum ${min_trade_amount}"
+                    "reason": f"Trade value ${estimated_value:.2f} below minimum ${min_trade_amount}",
                 }
         except Exception:
             pass
@@ -413,7 +411,7 @@ class TradingEngine:
             if position_key not in self.positions or self.positions[position_key].side != side:
                 return {
                     "allowed": False,
-                    "reason": f"Maximum open positions ({max_open_positions}) reached"
+                    "reason": f"Maximum open positions ({max_open_positions}) reached",
                 }
 
         # Check position size
@@ -421,11 +419,17 @@ class TradingEngine:
         position_key = f"{symbol}_{exchange_name}"
         if position_key in self.positions:
             current_position = self.positions[position_key]
-            new_total = current_position.amount + amount if side == current_position.side else abs(current_position.amount - amount)
-            if new_total * current_position.entry_price > max_position_size * 100000:  # Assume $100k portfolio
+            new_total = (
+                current_position.amount + amount
+                if side == current_position.side
+                else abs(current_position.amount - amount)
+            )
+            if (
+                new_total * current_position.entry_price > max_position_size * 100000
+            ):  # Assume $100k portfolio
                 return {
                     "allowed": False,
-                    "reason": f"Position size exceeds maximum {max_position_size * 100}% of portfolio"
+                    "reason": f"Position size exceeds maximum {max_position_size * 100}% of portfolio",
                 }
 
         return {"allowed": True}
@@ -445,7 +449,9 @@ class TradingEngine:
             # Update existing position
             if position.side == order.side:
                 # Adding to position (average price calculation)
-                total_value = (position.amount * position.entry_price) + (order.amount * order.price)
+                total_value = (position.amount * position.entry_price) + (
+                    order.amount * order.price
+                )
                 total_amount = position.amount + order.amount
                 position.amount = total_amount
                 position.entry_price = total_value / total_amount if total_amount > 0 else 0
@@ -479,11 +485,25 @@ class TradingEngine:
                 amount=order.amount,
                 entry_price=order.price,
                 current_price=current_price,
-                stop_loss=order.price * (1 - stop_loss_pct) if order.side == "buy" else order.price * (1 + stop_loss_pct),
-                take_profit=order.price * (1 + take_profit_pct) if order.side == "buy" else order.price * (1 - take_profit_pct),
-                exchange=order.exchange
+                stop_loss=(
+                    order.price * (1 - stop_loss_pct)
+                    if order.side == "buy"
+                    else order.price * (1 + stop_loss_pct)
+                ),
+                take_profit=(
+                    order.price * (1 + take_profit_pct)
+                    if order.side == "buy"
+                    else order.price * (1 - take_profit_pct)
+                ),
+                exchange=order.exchange,
             )
-            logger.info("New position opened: {} - {} {} @ {}", position_key, order.side, order.amount, order.price)
+            logger.info(
+                "New position opened: {} - {} {} @ {}",
+                position_key,
+                order.side,
+                order.amount,
+                order.price,
+            )
 
     def _store_trade_in_kg(self, order: Order, exchange_order: Dict[str, Any]) -> None:
         """Store trade information in knowledge graph.
@@ -510,18 +530,21 @@ class TradingEngine:
                 t.timestamp = datetime($timestamp)
             """
 
-            self.kg.write(cypher, {
-                "order_id": order.id,
-                "symbol": order.symbol,
-                "side": order.side,
-                "amount": order.amount,
-                "price": order.price,
-                "order_type": order.order_type,
-                "status": order.status,
-                "exchange": order.exchange,
-                "exchange_order_id": order.exchange_order_id,
-                "timestamp": order.timestamp.isoformat()
-            })
+            self.kg.write(
+                cypher,
+                {
+                    "order_id": order.id,
+                    "symbol": order.symbol,
+                    "side": order.side,
+                    "amount": order.amount,
+                    "price": order.price,
+                    "order_type": order.order_type,
+                    "status": order.status,
+                    "exchange": order.exchange,
+                    "exchange_order_id": order.exchange_order_id,
+                    "timestamp": order.timestamp.isoformat(),
+                },
+            )
 
         except Exception as e:
             logger.warning("Failed to store trade in knowledge graph: {}", e)
@@ -539,12 +562,20 @@ class TradingEngine:
                 "amount": pos.amount,
                 "entry_price": pos.entry_price,
                 "current_price": pos.current_price,
-                "pnl": (pos.current_price - pos.entry_price) * pos.amount if pos.side == "buy" else (pos.entry_price - pos.current_price) * pos.amount,
-                "pnl_percent": ((pos.current_price - pos.entry_price) / pos.entry_price * 100) if pos.side == "buy" else ((pos.entry_price - pos.current_price) / pos.entry_price * 100),
+                "pnl": (
+                    (pos.current_price - pos.entry_price) * pos.amount
+                    if pos.side == "buy"
+                    else (pos.entry_price - pos.current_price) * pos.amount
+                ),
+                "pnl_percent": (
+                    ((pos.current_price - pos.entry_price) / pos.entry_price * 100)
+                    if pos.side == "buy"
+                    else ((pos.entry_price - pos.current_price) / pos.entry_price * 100)
+                ),
                 "stop_loss": pos.stop_loss,
                 "take_profit": pos.take_profit,
                 "exchange": pos.exchange,
-                "timestamp": pos.timestamp.isoformat()
+                "timestamp": pos.timestamp.isoformat(),
             }
             for pos in self.positions.values()
         ]
@@ -570,7 +601,7 @@ class TradingEngine:
                 "status": order.status,
                 "exchange": order.exchange,
                 "exchange_order_id": order.exchange_order_id,
-                "timestamp": order.timestamp.isoformat()
+                "timestamp": order.timestamp.isoformat(),
             }
             for order in recent_orders
         ]
@@ -614,41 +645,49 @@ class TradingEngine:
                 if should_close:
                     # Send alert before closing
                     if reason == "stop_loss":
-                        loss_pct = abs((current_price - position.entry_price) / position.entry_price * 100)
+                        loss_pct = abs(
+                            (current_price - position.entry_price) / position.entry_price * 100
+                        )
                         self.alert_manager.stop_loss_hit(
                             exchange=position.exchange,
                             symbol=position.symbol,
                             entry_price=position.entry_price,
                             current_price=current_price,
-                            loss_pct=loss_pct
+                            loss_pct=loss_pct,
                         )
                     elif reason == "take_profit":
-                        profit_pct = (current_price - position.entry_price) / position.entry_price * 100
+                        profit_pct = (
+                            (current_price - position.entry_price) / position.entry_price * 100
+                        )
                         self.alert_manager.profit_target(
                             exchange=position.exchange,
                             symbol=position.symbol,
                             entry_price=position.entry_price,
                             current_price=current_price,
-                            profit_pct=profit_pct
+                            profit_pct=profit_pct,
                         )
 
                     # Close position
                     close_side = "sell" if position.side == "buy" else "buy"
                     result = self.execute_trade(
-                        position.symbol,
-                        close_side,
-                        position.amount,
-                        position.exchange
+                        position.symbol, close_side, position.amount, position.exchange
                     )
 
-                    triggered_actions.append({
-                        "position": position_key,
-                        "action": "close",
-                        "reason": reason,
-                        "result": result
-                    })
+                    triggered_actions.append(
+                        {
+                            "position": position_key,
+                            "action": "close",
+                            "reason": reason,
+                            "result": result,
+                        }
+                    )
 
-                    logger.info("Closed position {} due to {}: {}", position_key, reason, result.get("order_id"))
+                    logger.info(
+                        "Closed position {} due to {}: {}",
+                        position_key,
+                        reason,
+                        result.get("order_id"),
+                    )
 
             except Exception as e:
                 logger.error("Error checking position {}: {}", position_key, e)
@@ -663,9 +702,13 @@ class TradingEngine:
         total_unrealized_pnl = 0.0
         for position in self.positions.values():
             if position.side == "buy":
-                total_unrealized_pnl += (position.current_price - position.entry_price) * position.amount
+                total_unrealized_pnl += (
+                    position.current_price - position.entry_price
+                ) * position.amount
             else:
-                total_unrealized_pnl += (position.entry_price - position.current_price) * position.amount
+                total_unrealized_pnl += (
+                    position.entry_price - position.current_price
+                ) * position.amount
 
         total_pnl = self.daily_pnl + total_unrealized_pnl
 
@@ -674,7 +717,7 @@ class TradingEngine:
             self.alert_manager.daily_loss_limit(
                 current_loss=abs(total_pnl),
                 limit=daily_loss_limit,
-                exchange=list(self.exchanges.keys())[0] if self.exchanges else "Unknown"
+                exchange=list(self.exchanges.keys())[0] if self.exchanges else "Unknown",
             )
 
     def send_daily_summary(self) -> None:
@@ -689,9 +732,13 @@ class TradingEngine:
         total_unrealized_pnl = 0.0
         for position in self.positions.values():
             if position.side == "buy":
-                total_unrealized_pnl += (position.current_price - position.entry_price) * position.amount
+                total_unrealized_pnl += (
+                    position.current_price - position.entry_price
+                ) * position.amount
             else:
-                total_unrealized_pnl += (position.entry_price - position.current_price) * position.amount
+                total_unrealized_pnl += (
+                    position.entry_price - position.current_price
+                ) * position.amount
 
         total_pnl = self.daily_pnl + total_unrealized_pnl
 
@@ -700,7 +747,7 @@ class TradingEngine:
             date=today.isoformat(),
             trades=self.daily_trades,
             pnl=total_pnl,
-            positions=len(self.positions)
+            positions=len(self.positions),
         )
 
         self._last_summary_date = today
@@ -720,4 +767,3 @@ class TradingEngine:
 
         # Check daily loss limit after each position close
         self.check_daily_loss_limit()
-

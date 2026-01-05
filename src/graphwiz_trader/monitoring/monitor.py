@@ -73,13 +73,16 @@ class TradingMonitor:
         if timestamp.date() != self.current_day:
             self._send_daily_summary()
 
-        self.equity_curve.append({
-            "timestamp": timestamp,
-            "portfolio_value": portfolio_value,
-            "price": price,
-            "position": position,
-            "return_pct": ((portfolio_value - self.initial_capital) / self.initial_capital) * 100,
-        })
+        self.equity_curve.append(
+            {
+                "timestamp": timestamp,
+                "portfolio_value": portfolio_value,
+                "price": price,
+                "position": position,
+                "return_pct": ((portfolio_value - self.initial_capital) / self.initial_capital)
+                * 100,
+            }
+        )
 
         self.last_price_update = timestamp
 
@@ -206,7 +209,9 @@ class TradingMonitor:
         if not self.daily_stats:
             return
 
-        portfolio_value = self.equity_curve[-1]["portfolio_value"] if self.equity_curve else self.initial_capital
+        portfolio_value = (
+            self.equity_curve[-1]["portfolio_value"] if self.equity_curve else self.initial_capital
+        )
         daily_pnl = self.daily_stats.get("daily_pnl", 0)
         trades_count = self.daily_stats.get("trades_count", 0)
 
@@ -296,7 +301,7 @@ class TradingMonitor:
         # Sharpe ratio (simplified)
         if len(self.equity_curve) > 1:
             returns = pd.Series(equity_values).pct_change().dropna()
-            sharpe_ratio = (returns.mean() / returns.std()) * (252 ** 0.5) if returns.std() > 0 else 0
+            sharpe_ratio = (returns.mean() / returns.std()) * (252**0.5) if returns.std() > 0 else 0
         else:
             sharpe_ratio = 0
 
@@ -369,7 +374,9 @@ class TradingMonitor:
         print("-" * 80)
         print(f"Initial Capital:  ${metrics['initial_capital']:,.2f}")
         print(f"Current Value:    ${metrics['current_value']:,.2f}")
-        print(f"Total Return:     ${metrics['total_return']:+,.2f} ({metrics['total_return_pct']:+.2f}%)")
+        print(
+            f"Total Return:     ${metrics['total_return']:+,.2f} ({metrics['total_return_pct']:+.2f}%)"
+        )
         print("-" * 80)
         print(f"Total Trades:     {metrics['total_trades']}")
         print(f"Win Rate:         {metrics['win_rate']:.2f}%")

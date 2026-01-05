@@ -15,7 +15,7 @@ from graphwiz_trader.trading.orders import (
     OrderSide,
     OrderStatus,
     OrderType,
-    OrderValidationError
+    OrderValidationError,
 )
 from graphwiz_trader.trading.portfolio import PortfolioManager
 
@@ -27,7 +27,7 @@ class PaperTradingEngine:
         self,
         initial_balance: Dict[str, float],
         knowledge_graph,
-        config: Optional[Dict[str, Any]] = None
+        config: Optional[Dict[str, Any]] = None,
     ):
         """Initialize paper trading engine.
 
@@ -45,7 +45,7 @@ class PaperTradingEngine:
             max_position_size=self.config.get("max_position_size", 0.3),
             max_portfolio_risk=self.config.get("max_portfolio_risk", 0.1),
             stop_loss_pct=self.config.get("stop_loss_pct", 0.05),
-            take_profit_pct=self.config.get("take_profit_pct", 0.15)
+            take_profit_pct=self.config.get("take_profit_pct", 0.15),
         )
 
         self.kg = knowledge_graph
@@ -74,11 +74,7 @@ class PaperTradingEngine:
 
         logger.info("Paper trading engine initialized with balance: {}", initial_balance)
 
-    async def execute_order(
-        self,
-        order: Order,
-        market_price: float
-    ) -> Dict[str, Any]:
+    async def execute_order(self, order: Order, market_price: float) -> Dict[str, Any]:
         """Execute an order in paper trading mode.
 
         Args:
@@ -132,7 +128,7 @@ class PaperTradingEngine:
                 "status": "filled",
                 "timestamp": order.updated_timestamp.isoformat(),
                 "execution_time": self.execution_delay,
-                "paper_trading": True
+                "paper_trading": True,
             }
 
             # Log to knowledge graph
@@ -140,8 +136,11 @@ class PaperTradingEngine:
 
             logger.info(
                 "Paper trade executed: {} {} {} @ {} (slippage: {:.4}%)",
-                order.side.value, order.amount, order.symbol,
-                fill_price, result["slippage_pct"]
+                order.side.value,
+                order.amount,
+                order.symbol,
+                fill_price,
+                result["slippage_pct"],
             )
 
             return result
@@ -152,11 +151,7 @@ class PaperTradingEngine:
             order.error_message = str(e)
             raise
 
-    async def _calculate_fill_price(
-        self,
-        order: Order,
-        market_price: float
-    ) -> float:
+    async def _calculate_fill_price(self, order: Order, market_price: float) -> float:
         """Calculate realistic fill price with slippage.
 
         Args:
@@ -189,11 +184,7 @@ class PaperTradingEngine:
 
         return float(fill_price)
 
-    async def _calculate_realistic_slippage(
-        self,
-        order: Order,
-        market_price: Decimal
-    ) -> Decimal:
+    async def _calculate_realistic_slippage(self, order: Order, market_price: Decimal) -> Decimal:
         """Calculate realistic variable slippage.
 
         Args:
@@ -229,11 +220,7 @@ class PaperTradingEngine:
 
         return min(slippage, Decimal("0.005"))  # Cap at 0.5%
 
-    async def _calculate_fees(
-        self,
-        order: Order,
-        fill_price: float
-    ) -> Decimal:
+    async def _calculate_fees(self, order: Order, fill_price: float) -> Decimal:
         """Calculate trading fees.
 
         Args:
@@ -254,12 +241,7 @@ class PaperTradingEngine:
 
         return trade_value * fee_rate
 
-    async def _update_portfolio(
-        self,
-        order: Order,
-        fill_price: float,
-        fee: float
-    ) -> None:
+    async def _update_portfolio(self, order: Order, fill_price: float, fee: float) -> None:
         """Update virtual portfolio with filled order.
 
         Args:
@@ -274,23 +256,22 @@ class PaperTradingEngine:
                 side=order.side.value,
                 amount=float(order.filled_amount),
                 price=fill_price,
-                fee=fee
+                fee=fee,
             )
 
             logger.debug(
                 "Virtual portfolio updated: {} {} {} @ {}",
-                order.side.value, order.filled_amount, order.symbol, fill_price
+                order.side.value,
+                order.filled_amount,
+                order.symbol,
+                fill_price,
             )
 
         except Exception as e:
             logger.error("Failed to update virtual portfolio: {}", e)
             raise
 
-    async def _log_paper_trade(
-        self,
-        order: Order,
-        result: Dict[str, Any]
-    ) -> None:
+    async def _log_paper_trade(self, order: Order, result: Dict[str, Any]) -> None:
         """Log paper trade to knowledge graph.
 
         Args:
@@ -320,14 +301,14 @@ class PaperTradingEngine:
                     trade_id=order.order_id,
                     timestamp=result["timestamp"],
                     symbol=order.symbol,
-                        side=order.side.value,
+                    side=order.side.value,
                     order_type=order.order_type.value,
                     amount=float(order.amount),
                     fill_price=result["fill_price"],
                     market_price=result["market_price"],
                     slippage_pct=result["slippage_pct"],
                     fee=float(result["fees"].get("USDT", 0)),
-                    portfolio_value=float(self.portfolio.get_total_portfolio_value())
+                    portfolio_value=float(self.portfolio.get_total_portfolio_value()),
                 )
                 logger.debug("Logged paper trade to knowledge graph")
         except Exception as e:
@@ -350,14 +331,15 @@ class PaperTradingEngine:
         stats = self.portfolio.get_portfolio_statistics()
 
         # Add paper trading specific stats
-        stats.update({
-            "paper_trading": True,
-            "trade_count": self.trade_count,
-            "start_time": self.start_time.isoformat(),
-            "runtime_hours": (
-                datetime.now(timezone.utc) - self.start_time
-            ).total_seconds() / 3600
-        })
+        stats.update(
+            {
+                "paper_trading": True,
+                "trade_count": self.trade_count,
+                "start_time": self.start_time.isoformat(),
+                "runtime_hours": (datetime.now(timezone.utc) - self.start_time).total_seconds()
+                / 3600,
+            }
+        )
 
         return stats
 
@@ -383,7 +365,8 @@ class PaperTradingEngine:
         # Win rate
         win_rate = (
             self.portfolio.winning_trades / self.portfolio.total_trades
-            if self.portfolio.total_trades > 0 else 0
+            if self.portfolio.total_trades > 0
+            else 0
         )
 
         # Average win/loss
@@ -428,7 +411,7 @@ class PaperTradingEngine:
             "profit_factor": float(profit_factor),
             "max_drawdown_pct": float(max_drawdown * 100),
             "sharpe_ratio": float(sharpe_ratio),
-            "total_fees_paid": float(self.portfolio.total_fees_paid)
+            "total_fees_paid": float(self.portfolio.total_fees_paid),
         }
 
     def _calculate_max_drawdown(self, current_prices: Dict[str, float]) -> Decimal:
@@ -463,9 +446,8 @@ class PaperTradingEngine:
         # Simplified Sharpe ratio calculation
         # In production, use proper time-series returns
         try:
-            total_return_pct = (
-                self.portfolio.total_realized_pnl /
-                sum(self.portfolio.initial_balances.values())
+            total_return_pct = self.portfolio.total_realized_pnl / sum(
+                self.portfolio.initial_balances.values()
             )
 
             # Assume 5% annual risk-free rate and scale by runtime
@@ -496,20 +478,14 @@ class PaperTradingEngine:
         orders = self.order_history[-limit:]
         return [order.to_dict() for order in orders]
 
-    def reset_portfolio(
-        self,
-        new_balance: Optional[Dict[str, float]] = None
-    ) -> None:
+    def reset_portfolio(self, new_balance: Optional[Dict[str, float]] = None) -> None:
         """Reset virtual portfolio to initial state.
 
         Args:
             new_balance: New initial balance (uses original if None)
         """
         if new_balance is None:
-            new_balance = {
-                k: float(v)
-                for k, v in self.portfolio.initial_balances.items()
-            }
+            new_balance = {k: float(v) for k, v in self.portfolio.initial_balances.items()}
 
         self.portfolio = PortfolioManager(
             initial_balance=new_balance,
@@ -517,7 +493,7 @@ class PaperTradingEngine:
             max_position_size=self.portfolio.max_position_size,
             max_portfolio_risk=self.portfolio.max_portfolio_risk,
             stop_loss_pct=self.portfolio.stop_loss_pct,
-            take_profit_pct=self.portfolio.take_profit_pct
+            take_profit_pct=self.portfolio.take_profit_pct,
         )
 
         self.orders.clear()
@@ -545,7 +521,7 @@ class PaperTradingEngine:
             "min_trades": self.config.get("min_trades", 100),
             "max_drawdown_pct": self.config.get("max_drawdown_pct", 10.0),
             "min_win_rate": self.config.get("min_win_rate", 55.0),
-            "min_sharpe_ratio": self.config.get("min_sharpe_ratio", 1.5)
+            "min_sharpe_ratio": self.config.get("min_sharpe_ratio", 1.5),
         }
 
         # Calculate runtime days
@@ -556,28 +532,28 @@ class PaperTradingEngine:
             "min_days": {
                 "required": requirements["min_days"],
                 "actual": runtime_days,
-                "passed": runtime_days >= requirements["min_days"]
+                "passed": runtime_days >= requirements["min_days"],
             },
             "min_trades": {
                 "required": requirements["min_trades"],
                 "actual": metrics["total_trades"],
-                "passed": metrics["total_trades"] >= requirements["min_trades"]
+                "passed": metrics["total_trades"] >= requirements["min_trades"],
             },
             "max_drawdown": {
                 "required": f"<={requirements['max_drawdown_pct']}%",
                 "actual": f"{metrics['max_drawdown_pct']:.2f}%",
-                "passed": metrics["max_drawdown_pct"] <= requirements["max_drawdown_pct"]
+                "passed": metrics["max_drawdown_pct"] <= requirements["max_drawdown_pct"],
             },
             "win_rate": {
                 "required": f">={requirements['min_win_rate']}%",
                 "actual": f"{metrics['win_rate']*100:.2f}%",
-                "passed": metrics["win_rate"] * 100 >= requirements["min_win_rate"]
+                "passed": metrics["win_rate"] * 100 >= requirements["min_win_rate"],
             },
             "sharpe_ratio": {
                 "required": f">={requirements['min_sharpe_ratio']}",
                 "actual": f"{metrics['sharpe_ratio']:.2f}",
-                "passed": metrics["sharpe_ratio"] >= requirements["min_sharpe_ratio"]
-            }
+                "passed": metrics["sharpe_ratio"] >= requirements["min_sharpe_ratio"],
+            },
         }
 
         # Overall passed status
@@ -604,7 +580,7 @@ class PaperTradingEngine:
             "ready_for_live_trading": all_passed,
             "checks": checks,
             "recommendations": recommendations,
-            "current_metrics": metrics
+            "current_metrics": metrics,
         }
 
     def __repr__(self) -> str:

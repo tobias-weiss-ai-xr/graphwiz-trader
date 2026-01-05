@@ -11,8 +11,14 @@ import threading
 
 from .neo4j_graph import KnowledgeGraph
 from .models import (
-    AssetNode, ExchangeNode, OHLCVNode, TradeNode,
-    OrderBookNode, IndicatorNode, SignalNode, SentimentNode
+    AssetNode,
+    ExchangeNode,
+    OHLCVNode,
+    TradeNode,
+    OrderBookNode,
+    IndicatorNode,
+    SignalNode,
+    SentimentNode,
 )
 
 
@@ -34,10 +40,7 @@ class GraphDataManager:
     # ========== BATCH INGESTION ==========
 
     def ingest_exchange_data(
-        self,
-        exchange_name: str,
-        assets_data: List[Dict[str, Any]],
-        batch_size: int = 100
+        self, exchange_name: str, assets_data: List[Dict[str, Any]], batch_size: int = 100
     ) -> Dict[str, int]:
         """Batch ingest exchange and asset data.
 
@@ -59,14 +62,14 @@ class GraphDataManager:
             taker_fee=assets_data[0].get("taker_fee", 0.001),
             supports_margin=assets_data[0].get("supports_margin", False),
             supports_futures=assets_data[0].get("supports_futures", False),
-            supports_spot=assets_data[0].get("supports_spot", True)
+            supports_spot=assets_data[0].get("supports_spot", True),
         )
         self.graph.create_exchange(exchange)
 
         # Create asset nodes in batches
         created_assets = 0
         for i in range(0, len(assets_data), batch_size):
-            batch = assets_data[i:i+batch_size]
+            batch = assets_data[i : i + batch_size]
             for asset_data in batch:
                 asset = AssetNode(
                     symbol=asset_data["symbol"],
@@ -77,7 +80,7 @@ class GraphDataManager:
                     decimals=asset_data.get("decimals", 8),
                     min_quantity=asset_data.get("min_quantity", 0.00000001),
                     max_quantity=asset_data.get("max_quantity", 1000000000),
-                    metadata=asset_data.get("metadata", {})
+                    metadata=asset_data.get("metadata", {}),
                 )
                 self.graph.create_asset(asset)
                 self.graph.link_asset_to_exchange(asset.symbol, exchange_name)
@@ -85,16 +88,9 @@ class GraphDataManager:
 
         logger.info("Ingested {} assets for exchange {}", created_assets, exchange_name)
 
-        return {
-            "exchange": 1,
-            "assets": created_assets
-        }
+        return {"exchange": 1, "assets": created_assets}
 
-    def ingest_ohlcv_data(
-        self,
-        ohlcv_data: List[Dict[str, Any]],
-        batch_size: int = 500
-    ) -> int:
+    def ingest_ohlcv_data(self, ohlcv_data: List[Dict[str, Any]], batch_size: int = 500) -> int:
         """Batch ingest OHLCV data.
 
         Args:
@@ -122,25 +118,21 @@ class GraphDataManager:
                 low=float(data["low"]),
                 close=float(data["close"]),
                 volume=float(data["volume"]),
-                trades_count=data.get("trades_count", 0)
+                trades_count=data.get("trades_count", 0),
             )
             ohlcv_nodes.append(node)
 
         # Process in batches
         total_ingested = 0
         for i in range(0, len(ohlcv_nodes), batch_size):
-            batch = ohlcv_nodes[i:i+batch_size]
+            batch = ohlcv_nodes[i : i + batch_size]
             self.graph.store_ohlcv_batch(batch)
             total_ingested += len(batch)
 
         logger.info("Ingested {} OHLCV records", total_ingested)
         return total_ingested
 
-    def ingest_trade_data(
-        self,
-        trade_data: List[Dict[str, Any]],
-        batch_size: int = 1000
-    ) -> int:
+    def ingest_trade_data(self, trade_data: List[Dict[str, Any]], batch_size: int = 1000) -> int:
         """Batch ingest trade data.
 
         Args:
@@ -171,14 +163,14 @@ class GraphDataManager:
                 fee_currency=data.get("fee_currency", "USD"),
                 order_id=data.get("order_id"),
                 is_maker=data.get("is_maker", False),
-                metadata=data.get("metadata", {})
+                metadata=data.get("metadata", {}),
             )
             trade_nodes.append(node)
 
         # Process in batches
         total_ingested = 0
         for i in range(0, len(trade_nodes), batch_size):
-            batch = trade_nodes[i:i+batch_size]
+            batch = trade_nodes[i : i + batch_size]
             self.graph.store_trade_batch(batch)
             total_ingested += len(batch)
 
@@ -186,9 +178,7 @@ class GraphDataManager:
         return total_ingested
 
     def ingest_indicator_data(
-        self,
-        indicator_data: List[Dict[str, Any]],
-        batch_size: int = 500
+        self, indicator_data: List[Dict[str, Any]], batch_size: int = 500
     ) -> int:
         """Batch ingest indicator data.
 
@@ -208,6 +198,7 @@ class GraphDataManager:
         indicator_nodes = []
         for data in indicator_data:
             from .models import IndicatorType
+
             node = IndicatorNode(
                 symbol=data["symbol"],
                 exchange=data["exchange"],
@@ -216,25 +207,21 @@ class GraphDataManager:
                 indicator_type=IndicatorType(data["indicator_type"]),
                 value=data["value"],
                 parameters=data.get("parameters", {}),
-                metadata=data.get("metadata", {})
+                metadata=data.get("metadata", {}),
             )
             indicator_nodes.append(node)
 
         # Process in batches
         total_ingested = 0
         for i in range(0, len(indicator_nodes), batch_size):
-            batch = indicator_nodes[i:i+batch_size]
+            batch = indicator_nodes[i : i + batch_size]
             self.graph.store_indicator_batch(batch)
             total_ingested += len(batch)
 
         logger.info("Ingested {} indicators", total_ingested)
         return total_ingested
 
-    def ingest_signal_data(
-        self,
-        signal_data: List[Dict[str, Any]],
-        batch_size: int = 100
-    ) -> int:
+    def ingest_signal_data(self, signal_data: List[Dict[str, Any]], batch_size: int = 100) -> int:
         """Batch ingest signal data.
 
         Args:
@@ -253,6 +240,7 @@ class GraphDataManager:
         signal_nodes = []
         for data in signal_data:
             from .models import SignalType
+
             node = SignalNode(
                 signal_id=data["signal_id"],
                 symbol=data["symbol"],
@@ -266,14 +254,14 @@ class GraphDataManager:
                 stop_loss=data.get("stop_loss"),
                 take_profit=data.get("take_profit"),
                 indicators=data.get("indicators", []),
-                metadata=data.get("metadata", {})
+                metadata=data.get("metadata", {}),
             )
             signal_nodes.append(node)
 
         # Process in batches
         total_ingested = 0
         for i in range(0, len(signal_nodes), batch_size):
-            batch = signal_nodes[i:i+batch_size]
+            batch = signal_nodes[i : i + batch_size]
             self.graph.store_signal_batch(batch)
             total_ingested += len(batch)
 
@@ -287,7 +275,7 @@ class GraphDataManager:
         queue_size: int = 10000,
         worker_count: int = 2,
         batch_size: int = 100,
-        batch_timeout_ms: int = 1000
+        batch_timeout_ms: int = 1000,
     ) -> None:
         """Start real-time data streaming to graph.
 
@@ -310,9 +298,7 @@ class GraphDataManager:
         self.stream_workers = []
         for i in range(worker_count):
             worker = threading.Thread(
-                target=self._stream_worker,
-                name=f"GraphStreamWorker-{i}",
-                daemon=True
+                target=self._stream_worker, name=f"GraphStreamWorker-{i}", daemon=True
             )
             worker.start()
             self.stream_workers.append(worker)
@@ -409,8 +395,8 @@ class GraphDataManager:
                 # Check if we should flush
                 time_since_flush = (datetime.utcnow() - last_flush).total_seconds() * 1000
                 should_flush = (
-                    time_since_flush >= self.batch_timeout_ms or
-                    sum(len(items) for items in batch_buffer.values()) >= self.batch_size
+                    time_since_flush >= self.batch_timeout_ms
+                    or sum(len(items) for items in batch_buffer.values()) >= self.batch_size
                 )
 
                 if should_flush:
@@ -446,6 +432,7 @@ class GraphDataManager:
                     self.graph.store_trade_batch(nodes)
                 elif data_type == "indicator":
                     from .models import IndicatorType
+
                     nodes = []
                     for item in items:
                         item["indicator_type"] = IndicatorType(item["indicator_type"])
@@ -453,6 +440,7 @@ class GraphDataManager:
                     self.graph.store_indicator_batch(nodes)
                 elif data_type == "signal":
                     from .models import SignalType
+
                     nodes = []
                     for item in items:
                         item["signal_type"] = SignalType(item["signal_type"])
@@ -490,9 +478,7 @@ class GraphDataManager:
     # ========== DATA RETENTION ==========
 
     def cleanup_old_data(
-        self,
-        retention_policies: Dict[str, int],
-        dry_run: bool = False
+        self, retention_policies: Dict[str, int], dry_run: bool = False
     ) -> Dict[str, int]:
         """Clean up old data based on retention policies.
 
@@ -522,9 +508,7 @@ class GraphDataManager:
             else:
                 # Actually delete
                 deleted = self.graph.cleanup_old_data(
-                    node_type=node_type,
-                    older_than_days=retention_days,
-                    batch_size=1000
+                    node_type=node_type, older_than_days=retention_days, batch_size=1000
                 )
                 results[node_type] = deleted
                 logger.info("Deleted {} {} nodes", deleted, node_type)
@@ -540,7 +524,16 @@ class GraphDataManager:
         stats = {}
 
         # Count nodes by type
-        node_types = ["Asset", "Exchange", "OHLCV", "Trade", "OrderBook", "Indicator", "Signal", "Sentiment"]
+        node_types = [
+            "Asset",
+            "Exchange",
+            "OHLCV",
+            "Trade",
+            "OrderBook",
+            "Indicator",
+            "Signal",
+            "Sentiment",
+        ]
 
         for node_type in node_types:
             cypher = f"MATCH (n:{node_type}) RETURN count(n) AS count"
@@ -578,7 +571,7 @@ class GraphDataManager:
         end_time: datetime,
         timeframe: str,
         data_provider: Callable,
-        batch_size: int = 500
+        batch_size: int = 500,
     ) -> int:
         """Backfill historical data from an external provider.
 
@@ -594,8 +587,9 @@ class GraphDataManager:
         Returns:
             Number of records backfilled
         """
-        logger.info("Starting backfill for {} on {} from {} to {}",
-                   symbol, exchange, start_time, end_time)
+        logger.info(
+            "Starting backfill for {} on {} from {} to {}", symbol, exchange, start_time, end_time
+        )
 
         total_backfilled = 0
         current_time = start_time
@@ -608,7 +602,7 @@ class GraphDataManager:
                     exchange=exchange,
                     start_time=current_time,
                     end_time=min(current_time + timedelta(days=1), end_time),
-                    timeframe=timeframe
+                    timeframe=timeframe,
                 )
 
                 if ohlcv_data:
@@ -625,7 +619,7 @@ class GraphDataManager:
                             low=float(data["low"]),
                             close=float(data["close"]),
                             volume=float(data["volume"]),
-                            trades_count=data.get("trades_count", 0)
+                            trades_count=data.get("trades_count", 0),
                         )
                         ohlcv_nodes.append(node)
 

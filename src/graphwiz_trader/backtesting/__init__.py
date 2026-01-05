@@ -5,7 +5,7 @@ from graphwiz_trader.backtesting.engine import (
     BacktestResult,
     Trade,
     SimpleMovingAverageStrategy,
-    RSIMeanReversionStrategy
+    RSIMeanReversionStrategy,
 )
 
 __all__ = [
@@ -13,5 +13,5 @@ __all__ = [
     "BacktestResult",
     "Trade",
     "SimpleMovingAverageStrategy",
-    "RSIMeanReversionStrategy"
+    "RSIMeanReversionStrategy",
 ]

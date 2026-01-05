@@ -25,6 +25,7 @@ from loguru import logger
 @dataclass
 class PerformanceMetrics:
     """Container for performance metrics."""
+
     total_return: float
     annualized_return: float
     volatility: float
@@ -234,7 +235,7 @@ class PerformanceAnalyzer:
         losses = abs(returns[returns < threshold].sum())
 
         if losses == 0:
-            return float('inf') if gains > 0 else 0.0
+            return float("inf") if gains > 0 else 0.0
 
         return float(gains / losses)
 
@@ -264,8 +265,7 @@ class PerformanceAnalyzer:
 
         trade_returns = [trade.pnl_percentage for trade in trades]
         hold_times = [
-            (trade.exit_time - trade.entry_time).total_seconds() / 3600
-            for trade in trades
+            (trade.exit_time - trade.entry_time).total_seconds() / 3600 for trade in trades
         ]
 
         profitable_trades = [t for t in trades if t.pnl > 0]
@@ -402,20 +402,22 @@ class PerformanceAnalyzer:
         """
         fig = go.Figure()
 
-        fig.add_trace(go.Scatter(
-            x=equity_curve.index,
-            y=equity_curve.values,
-            mode='lines',
-            name='Portfolio Value',
-            line=dict(color='blue', width=2),
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=equity_curve.index,
+                y=equity_curve.values,
+                mode="lines",
+                name="Portfolio Value",
+                line=dict(color="blue", width=2),
+            )
+        )
 
         fig.update_layout(
-            title='Portfolio Equity Curve',
-            xaxis_title='Date',
-            yaxis_title='Portfolio Value',
-            hovermode='x unified',
-            template='plotly_white',
+            title="Portfolio Equity Curve",
+            xaxis_title="Date",
+            yaxis_title="Portfolio Value",
+            hovermode="x unified",
+            template="plotly_white",
         )
 
         if save_path:
@@ -444,21 +446,23 @@ class PerformanceAnalyzer:
 
         fig = go.Figure()
 
-        fig.add_trace(go.Scatter(
-            x=drawdown.index,
-            y=drawdown.values * 100,
-            mode='lines',
-            name='Drawdown',
-            fill='tozeroy',
-            line=dict(color='red', width=1),
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=drawdown.index,
+                y=drawdown.values * 100,
+                mode="lines",
+                name="Drawdown",
+                fill="tozeroy",
+                line=dict(color="red", width=1),
+            )
+        )
 
         fig.update_layout(
-            title='Portfolio Drawdown',
-            xaxis_title='Date',
-            yaxis_title='Drawdown (%)',
-            hovermode='x unified',
-            template='plotly_white',
+            title="Portfolio Drawdown",
+            xaxis_title="Date",
+            yaxis_title="Drawdown (%)",
+            hovermode="x unified",
+            template="plotly_white",
         )
 
         if save_path:
@@ -484,12 +488,14 @@ class PerformanceAnalyzer:
         """
         fig = go.Figure()
 
-        fig.add_trace(go.Histogram(
-            x=returns.values * 100,
-            nbinsx=50,
-            name='Returns',
-            marker_color='lightblue',
-        ))
+        fig.add_trace(
+            go.Histogram(
+                x=returns.values * 100,
+                nbinsx=50,
+                name="Returns",
+                marker_color="lightblue",
+            )
+        )
 
         # Add mean line
         mean_return = returns.mean() * 100
@@ -501,10 +507,10 @@ class PerformanceAnalyzer:
         )
 
         fig.update_layout(
-            title='Returns Distribution',
-            xaxis_title='Return (%)',
-            yaxis_title='Frequency',
-            template='plotly_white',
+            title="Returns Distribution",
+            xaxis_title="Return (%)",
+            yaxis_title="Frequency",
+            template="plotly_white",
         )
 
         if save_path:
@@ -536,7 +542,8 @@ class PerformanceAnalyzer:
         ]
 
         fig = make_subplots(
-            rows=2, cols=2,
+            rows=2,
+            cols=2,
             subplot_titles=(
                 "Total Return",
                 "Sharpe Ratio",
@@ -562,12 +569,13 @@ class PerformanceAnalyzer:
                     name=metric,
                     showlegend=False,
                 ),
-                row=pos[0], col=pos[1],
+                row=pos[0],
+                col=pos[1],
             )
 
         fig.update_layout(
             title_text="Strategy Comparison",
-            template='plotly_white',
+            template="plotly_white",
             height=600,
         )
 

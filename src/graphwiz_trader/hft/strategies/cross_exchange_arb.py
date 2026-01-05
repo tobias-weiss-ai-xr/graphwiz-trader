@@ -244,13 +244,9 @@ class CrossExchangeArbitrage(HFTStrategy):
         }
 
         if performance["winning_trades"] > 0:
-            stats["average_profit"] = (
-                performance["total_profit"] / performance["winning_trades"]
-            )
+            stats["average_profit"] = performance["total_profit"] / performance["winning_trades"]
 
         if performance["losing_trades"] > 0:
-            stats["average_loss"] = (
-                performance["total_loss"] / performance["losing_trades"]
-            )
+            stats["average_loss"] = performance["total_loss"] / performance["losing_trades"]
 
         return stats

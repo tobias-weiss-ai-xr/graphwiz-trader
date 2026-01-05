@@ -1,0 +1,52 @@
+[Unit]
+Description=GraphWiz Live Trading - Real Money Trading with GoEmotions
+Documentation=https://github.com/graphwiz-trader/graphwiz-trader
+After=network-online.target docker.service
+Wants=docker.service
+Requires=network-online.target
+
+[Service]
+Type=simple
+User=weiss
+Group=weiss
+WorkingDirectory=/opt/git/graphwiz-trader
+
+# Pre-start: Stop any existing container
+ExecStartPre=-/usr/bin/docker stop graphwiz-live-trading
+ExecStartPre=-/usr/bin/docker rm graphwiz-live-trading
+
+# Main: Start live trading container
+ExecStart=/usr/bin/docker run --rm \
+  --name graphwiz-live-trading \
+  --env-file /opt/git/graphwiz-trader/.env \
+  graphwiz-live-trading:latest \
+  python scripts/live_trade_goemotions.py \
+    --symbols BTC/EUR ETH/EUR SOL/EUR UNI/EUR XRP/EUR ADA/EUR LINK/EUR AVAX/EUR DOGE/EUR DOT/EUR \
+    --max-position 250 \
+    --max-daily-loss 75 \
+    --max-daily-trades 15 \
+    --interval 3600 \
+    --no-confirm
+
+# Stop: Graceful shutdown
+ExecStop=/usr/bin/docker stop graphwiz-live-trading
+
+# Restart policy
+Restart=always
+RestartSec=10
+StartLimitInterval=60
+StartLimitBurst=3
+
+# Logging
+StandardOutput=append:/opt/git/graphwiz-trader/logs/live_trading/live_trading_service.log
+StandardError=append:/opt/git/graphwiz-trader/logs/live_trading/live_trading_service_error.log
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Timeout for graceful shutdown
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

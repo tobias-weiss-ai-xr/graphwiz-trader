@@ -123,17 +123,17 @@ class DiscordNotificationChannel(NotificationChannel):
 
             # Color based on severity
             colors = {
-                AlertSeverity.INFO: 0x3498db,  # Blue
-                AlertSeverity.WARNING: 0xf39c12,  # Orange
-                AlertSeverity.CRITICAL: 0xe74c3c,  # Red
-                AlertSeverity.EMERGENCY: 0x8b0000,  # Dark red
+                AlertSeverity.INFO: 0x3498DB,  # Blue
+                AlertSeverity.WARNING: 0xF39C12,  # Orange
+                AlertSeverity.CRITICAL: 0xE74C3C,  # Red
+                AlertSeverity.EMERGENCY: 0x8B0000,  # Dark red
             }
 
             # Build embed
             embed = {
                 "title": f"{alert.severity.value.upper()}: {alert.alert_type.value.replace('_', ' ').title()}",
                 "description": alert.message,
-                "color": colors.get(alert.severity, 0x3498db),
+                "color": colors.get(alert.severity, 0x3498DB),
                 "fields": [],
                 "timestamp": alert.timestamp.isoformat(),
             }
@@ -163,7 +163,9 @@ class DiscordNotificationChannel(NotificationChannel):
             # Send webhook
             async with aiohttp.ClientSession() as session:
                 async with session.post(
-                    self.webhook_url, json={"embeds": [embed]}, timeout=aiohttp.ClientTimeout(total=10)
+                    self.webhook_url,
+                    json={"embeds": [embed]},
+                    timeout=aiohttp.ClientTimeout(total=10),
                 ) as response:
                     return response.status == 200
 
@@ -288,7 +290,9 @@ class SlackNotificationChannel(NotificationChannel):
 
             # Add fields
             if alert.symbol:
-                attachment["fields"].append({"title": "Symbol", "value": alert.symbol, "short": True})
+                attachment["fields"].append(
+                    {"title": "Symbol", "value": alert.symbol, "short": True}
+                )
 
             if alert.metric_value is not None:
                 attachment["fields"].append(

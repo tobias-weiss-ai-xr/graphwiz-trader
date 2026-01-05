@@ -69,6 +69,7 @@ class RiskManager:
             self.daily_trade_count = 0
             self.last_reset_date = today
             from loguru import logger
+
             logger.info("Daily risk stats reset")
 
     def calculate_position_size(
@@ -171,9 +172,8 @@ class RiskManager:
         )
 
         from loguru import logger
-        logger.info(
-            f"Opened {side} position: {quantity:.4f} {symbol} @ ${entry_price:,.2f}"
-        )
+
+        logger.info(f"Opened {side} position: {quantity:.4f} {symbol} @ ${entry_price:,.2f}")
 
     def close_position(self, symbol: str, exit_price: float) -> float:
         """Close a position and return realized P&L.
@@ -187,6 +187,7 @@ class RiskManager:
         """
         if symbol not in self.positions:
             from loguru import logger
+
             logger.warning(f"No position found for {symbol}")
             return 0.0
 
@@ -198,6 +199,7 @@ class RiskManager:
         self.daily_trade_count += 1
 
         from loguru import logger
+
         if pnl >= 0:
             logger.success(
                 f"Closed position: {position.quantity:.4f} {symbol} @ ${exit_price:,.2f} "

@@ -12,6 +12,7 @@ try:
     from qlib.data.dataset import DatasetH
     from qlib.data.dataset.handler import DataHandlerLP
     from qlib.contrib.data.handler import Alpha158
+
     QLIB_AVAILABLE = True
 except ImportError:
     QLIB_AVAILABLE = False
@@ -108,14 +109,14 @@ class AlphaFeatureExtractor:
             DataFrame in Qlib format
         """
         # Ensure we have required columns
-        required_cols = ['open', 'high', 'low', 'close', 'volume']
+        required_cols = ["open", "high", "low", "close", "volume"]
         df_prep = df[required_cols].copy()
 
         # Rename to Qlib format
         df_prep.columns = [col.upper() for col in df_prep.columns]
 
         # Add instrument column
-        df_prep['instrument'] = symbol
+        df_prep["instrument"] = symbol
 
         return df_prep
 
@@ -134,53 +135,50 @@ class AlphaFeatureExtractor:
         features = pd.DataFrame(index=df.index)
 
         # Price-based features
-        features['returns'] = df['close'].pct_change()
-        features['high_low_pct'] = (df['high'] - df['low']) / df['close']
-        features['close_open_pct'] = (df['close'] - df['open']) / df['open']
+        features["returns"] = df["close"].pct_change()
+        features["high_low_pct"] = (df["high"] - df["low"]) / df["close"]
+        features["close_open_pct"] = (df["close"] - df["open"]) / df["open"]
 
         # Moving averages
         for window in [5, 10, 20, 30, 60]:
-            features[f'ma_{window}'] = df['close'].rolling(window=window).mean()
-            features[f'close_ma_{window}_pct'] = df['close'] / features[f'ma_{window}'] - 1
+            features[f"ma_{window}"] = df["close"].rolling(window=window).mean()
+            features[f"close_ma_{window}_pct"] = df["close"] / features[f"ma_{window}"] - 1
 
         # Momentum
         for window in [5, 10, 20]:
-            features[f'momentum_{window}'] = df['close'].pct_change(window)
+            features[f"momentum_{window}"] = df["close"].pct_change(window)
 
         # Volatility
         for window in [5, 10, 20]:
-            features[f'volatility_{window}'] = features['returns'].rolling(window=window).std()
+            features[f"volatility_{window}"] = features["returns"].rolling(window=window).std()
 
         # Volume features
-        features['volume_ma_5'] = df['volume'].rolling(window=5).mean()
-        features['volume_ratio'] = df['volume'] / features['volume_ma_5']
-        features['volume_change'] = df['volume'].pct_change()
+        features["volume_ma_5"] = df["volume"].rolling(window=5).mean()
+        features["volume_ratio"] = df["volume"] / features["volume_ma_5"]
+        features["volume_change"] = df["volume"].pct_change()
 
         # Price position in range
-        features['close_position'] = (
-            (df['close'] - df['low']) / (df['high'] - df['low'] + 1e-10)
-        )
+        features["close_position"] = (df["close"] - df["low"]) / (df["high"] - df["low"] + 1e-10)
 
         # Bollinger Bands
         for window in [20]:
-            ma = df['close'].rolling(window=window).mean()
-            std = df['close'].rolling(window=window).std()
-            features[f'bb_upper_{window}'] = ma + 2 * std
-            features[f'bb_lower_{window}'] = ma - 2 * std
-            features[f'bb_position_{window}'] = (
-                (df['close'] - features[f'bb_lower_{window}']) /
-                (features[f'bb_upper_{window}'] - features[f'bb_lower_{window}'] + 1e-10)
+            ma = df["close"].rolling(window=window).mean()
+            std = df["close"].rolling(window=window).std()
+            features[f"bb_upper_{window}"] = ma + 2 * std
+            features[f"bb_lower_{window}"] = ma - 2 * std
+            features[f"bb_position_{window}"] = (df["close"] - features[f"bb_lower_{window}"]) / (
+                features[f"bb_upper_{window}"] - features[f"bb_lower_{window}"] + 1e-10
             )
 
         # RSI (Relative Strength Index)
-        features['rsi_14'] = self._calculate_rsi(df['close'], 14)
+        features["rsi_14"] = self._calculate_rsi(df["close"], 14)
 
         # MACD components
-        exp1 = df['close'].ewm(span=12, adjust=False).mean()
-        exp2 = df['close'].ewm(span=26, adjust=False).mean()
-        features['macd'] = exp1 - exp2
-        features['macd_signal'] = features['macd'].ewm(span=9, adjust=False).mean()
-        features['macd_hist'] = features['macd'] - features['macd_signal']
+        exp1 = df["close"].ewm(span=12, adjust=False).mean()
+        exp2 = df["close"].ewm(span=26, adjust=False).mean()
+        features["macd"] = exp1 - exp2
+        features["macd_signal"] = features["macd"].ewm(span=9, adjust=False).mean()
+        features["macd_hist"] = features["macd"] - features["macd_signal"]
 
         logger.info(f"Extracted {len(features.columns)} fallback features")
 
@@ -233,7 +231,7 @@ class AlphaFeatureExtractor:
             result = neo4j_client.run(query, symbol=symbol)
             single_result = result.single()
             if single_result:
-                features['highly_correlated_symbols'] = single_result['highly_correlated_count']
+                features["highly_correlated_symbols"] = single_result["highly_correlated_count"]
 
             # Query for trading patterns
             pattern_query = """
@@ -251,9 +249,9 @@ class AlphaFeatureExtractor:
             result = neo4j_client.run(pattern_query, symbol=symbol, since=since)
             single_result = result.single()
             if single_result:
-                features['recent_trades_7d'] = single_result['recent_trades']
-                features['avg_profit_loss_7d'] = single_result['avg_profit_loss'] or 0
-                features['win_rate_7d'] = single_result['win_rate'] or 0
+                features["recent_trades_7d"] = single_result["recent_trades"]
+                features["avg_profit_loss_7d"] = single_result["avg_profit_loss"] or 0
+                features["win_rate_7d"] = single_result["win_rate"] or 0
 
             logger.debug(f"Extracted {len(features)} graph features for {symbol}")
 

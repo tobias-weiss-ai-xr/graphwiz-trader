@@ -55,12 +55,18 @@ class KnowledgeGraph:
                 max_connection_lifetime=self.max_connection_lifetime,
                 max_connection_pool_size=self.max_connection_pool_size,
                 connection_acquisition_timeout=self.connection_acquisition_timeout,
-                resolver=lambda _: [(self.uri.replace("bolt://", "").replace("neo4j://", "").split(":")[0], 7687)]
+                resolver=lambda _: [
+                    (self.uri.replace("bolt://", "").replace("neo4j://", "").split(":")[0], 7687)
+                ],
             )
             # Verify connectivity
             self.driver.verify_connectivity()
-            logger.info("✅ Connected to Neo4j at {} (pool size: {}, lifetime: {}s)",
-                       self.uri, self.max_connection_pool_size, self.max_connection_lifetime)
+            logger.info(
+                "✅ Connected to Neo4j at {} (pool size: {}, lifetime: {}s)",
+                self.uri,
+                self.max_connection_pool_size,
+                self.max_connection_lifetime,
+            )
         except Exception as e:
             logger.error("Failed to connect to Neo4j: {}", e)
             raise
@@ -70,8 +76,10 @@ class KnowledgeGraph:
         if self.driver:
             # Flush any pending batch operations
             if self._batch_buffer:
-                logger.warning("Flushing {} pending batch operations before disconnect",
-                               len(self._batch_buffer))
+                logger.warning(
+                    "Flushing {} pending batch operations before disconnect",
+                    len(self._batch_buffer),
+                )
                 self.flush_batch()
 
             self.driver.close()
@@ -179,13 +187,17 @@ class KnowledgeGraph:
             except (ServiceUnavailable, TransientError) as e:
                 last_error = e
                 if attempt < max_retries - 1:
-                    wait_time = 2 ** attempt  # Exponential backoff
-                    logger.warning("Transient error (attempt {}/{}): {}. Retrying in {}s...",
-                                  attempt + 1, max_retries, e, wait_time)
+                    wait_time = 2**attempt  # Exponential backoff
+                    logger.warning(
+                        "Transient error (attempt {}/{}): {}. Retrying in {}s...",
+                        attempt + 1,
+                        max_retries,
+                        e,
+                        wait_time,
+                    )
                     time.sleep(wait_time)
                 else:
-                    logger.error("Max retries ({}) exhausted for query: {}",
-                                max_retries, e)
+                    logger.error("Max retries ({}) exhausted for query: {}", max_retries, e)
                     raise
 
         raise last_error if last_error else RuntimeError("Unknown error in retry logic")
@@ -226,12 +238,15 @@ class KnowledgeGraph:
                         tx.run(cypher, params)
 
             query_time = time.time() - start_time
-            logger.info("Flushed batch of {} queries in {:.3f}s ({:.1f} queries/s)",
-                       len(queries), query_time, len(queries) / query_time if query_time > 0 else 0)
+            logger.info(
+                "Flushed batch of {} queries in {:.3f}s ({:.1f} queries/s)",
+                len(queries),
+                query_time,
+                len(queries) / query_time if query_time > 0 else 0,
+            )
 
         except Exception as e:
-            logger.error("Failed to execute batch: {}. Re-queueing {} queries.",
-                        e, len(queries))
+            logger.error("Failed to execute batch: {}. Re-queueing {} queries.", e, len(queries))
             # Re-queue failed queries
             with self._batch_lock:
                 self._batch_buffer.extend(queries)
@@ -247,8 +262,8 @@ class KnowledgeGraph:
             True if query is read-only (SELECT-like)
         """
         cypher_upper = cypher.strip().upper()
-        read_keywords = ['MATCH', 'RETURN', 'WHERE', 'WITH', 'ORDER BY', 'LIMIT', 'SKIP']
-        write_keywords = ['CREATE', 'SET', 'DELETE', 'DETACH', 'MERGE', 'DROP', 'CALL']
+        read_keywords = ["MATCH", "RETURN", "WHERE", "WITH", "ORDER BY", "LIMIT", "SKIP"]
+        write_keywords = ["CREATE", "SET", "DELETE", "DETACH", "MERGE", "DROP", "CALL"]
 
         # Check for write keywords first (they override read keywords)
         for keyword in write_keywords:
@@ -273,10 +288,11 @@ class KnowledgeGraph:
             Cache key string
         """
         # Normalize query (remove extra whitespace)
-        normalized_query = ' '.join(cypher.split())
+        normalized_query = " ".join(cypher.split())
 
         # Create hash of query and params
         import hashlib
+
         param_str = str(sorted(params.items()))
         key_string = f"{normalized_query}:{param_str}"
         return hashlib.md5(key_string.encode()).hexdigest()
@@ -317,7 +333,9 @@ class KnowledgeGraph:
             max_cache_size = 1000
             if len(self._query_cache) > max_cache_size:
                 # Remove oldest entries (simple FIFO)
-                keys_to_remove = list(self._query_cache.keys())[:len(self._query_cache) - max_cache_size]
+                keys_to_remove = list(self._query_cache.keys())[
+                    : len(self._query_cache) - max_cache_size
+                ]
                 for key in keys_to_remove:
                     del self._query_cache[key]
                 logger.debug("Pruned query cache (removed {} entries)", len(keys_to_remove))
@@ -336,8 +354,9 @@ class KnowledgeGraph:
             Dictionary with performance metrics
         """
         with self._metrics_lock:
-            avg_query_time = (self._query_time_total / self._query_count
-                            if self._query_count > 0 else 0)
+            avg_query_time = (
+                self._query_time_total / self._query_count if self._query_count > 0 else 0
+            )
 
             return {
                 "query_count": self._query_count,
@@ -357,5 +376,166 @@ class KnowledgeGraph:
             metrics["total_query_time"],
             metrics["average_query_time"],
             metrics["cache_size"],
-            metrics["batch_buffer_size"]
+            metrics["batch_buffer_size"],
         )
+
+    # ===== Sentiment Analysis Methods =====
+
+    async def create_sentiment_node(
+        self,
+        symbol: str,
+        timestamp: datetime,
+        source: str,
+        sentiment_score: float,
+        confidence: float,
+        volume: int,
+        keywords: List[str],
+        metadata: Dict[str, Any],
+    ) -> None:
+        """Create a sentiment node in the knowledge graph.
+
+        Args:
+            symbol: Trading symbol (e.g., 'BTC')
+            timestamp: Sentiment timestamp
+            source: Data source (news, twitter, reddit, etc.)
+            sentiment_score: Sentiment score (-1 to 1)
+            confidence: Confidence level (0 to 1)
+            volume: Volume of mentions
+            keywords: Extracted keywords
+            metadata: Additional metadata
+        """
+        cypher = """
+        MERGE (s:Sentiment {
+            symbol: $symbol,
+            timestamp: datetime($timestamp),
+            source: $source
+        })
+        SET s.sentiment_score = $sentiment_score,
+            s.confidence = $confidence,
+            s.volume = $volume,
+            s.keywords = $keywords,
+            s.metadata = $metadata,
+            s.updated_at = datetime()
+        RETURN s
+        """
+
+        self.query(
+            cypher,
+            symbol=symbol,
+            timestamp=timestamp.isoformat(),
+            source=source,
+            sentiment_score=sentiment_score,
+            confidence=confidence,
+            volume=volume,
+            keywords=keywords,
+            metadata=metadata,
+        )
+
+    def get_recent_sentiment(
+        self, symbol: str, hours_back: int = 24, source: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """Get recent sentiment data for a symbol.
+
+        Args:
+            symbol: Trading symbol
+            hours_back: Hours to look back
+            source: Optional source filter
+
+        Returns:
+            List of sentiment data points
+        """
+        cutoff = (datetime.now() - timedelta(hours=hours_back)).isoformat()
+
+        if source:
+            cypher = """
+            MATCH (s:Sentiment)
+            WHERE s.symbol = $symbol
+                AND s.source = $source
+                AND s.timestamp >= datetime($cutoff)
+            RETURN s
+            ORDER BY s.timestamp DESC
+            """
+            return self.query(cypher, symbol=symbol, source=source, cutoff=cutoff)
+        else:
+            cypher = """
+            MATCH (s:Sentiment)
+            WHERE s.symbol = $symbol
+                AND s.timestamp >= datetime($cutoff)
+            RETURN s
+            ORDER BY s.timestamp DESC
+            """
+            return self.query(cypher, symbol=symbol, cutoff=cutoff)
+
+    def get_aggregate_sentiment(self, symbol: str, hours_back: int = 24) -> Dict[str, Any]:
+        """Get aggregate sentiment metrics for a symbol.
+
+        Args:
+            symbol: Trading symbol
+            hours_back: Hours to look back
+
+        Returns:
+            Dictionary with aggregate metrics
+        """
+        cutoff = (datetime.now() - timedelta(hours=hours_back)).isoformat()
+
+        cypher = """
+        MATCH (s:Sentiment)
+        WHERE s.symbol = $symbol
+            AND s.timestamp >= datetime($cutoff)
+        WITH s
+        ORDER BY s.timestamp DESC
+        RETURN
+            avg(s.sentiment_score) as avg_sentiment,
+            avg(s.confidence) as avg_confidence,
+            sum(s.volume) as total_volume,
+            count(s) as data_points,
+            collect(DISTINCT s.source) as sources
+        """
+
+        results = self.query(cypher, symbol=symbol, cutoff=cutoff)
+
+        if results:
+            return results[0]
+        else:
+            return {
+                "avg_sentiment": 0.0,
+                "avg_confidence": 0.0,
+                "total_volume": 0,
+                "data_points": 0,
+                "sources": [],
+            }
+
+    def get_sentiment_trend(
+        self, symbol: str, hours_back: int = 24, interval_hours: int = 1
+    ) -> List[Dict[str, Any]]:
+        """Get sentiment trend over time.
+
+        Args:
+            symbol: Trading symbol
+            hours_back: Hours to look back
+            interval_hours: Interval for grouping data
+
+        Returns:
+            List of time-bucketed sentiment data
+        """
+        cutoff = (datetime.now() - timedelta(hours=hours_back)).isoformat()
+
+        cypher = """
+        MATCH (s:Sentiment)
+        WHERE s.symbol = $symbol
+            AND s.timestamp >= datetime($cutoff)
+        WITH s, datetime({
+            year: s.timestamp.year,
+            month: s.timestamp.month,
+            day: s.timestamp.day,
+            hour: (s.timestamp.hour - $interval_hours)
+        }) as time_bucket
+        WITH time_bucket,
+            avg(s.sentiment_score) as avg_sentiment,
+            sum(s.volume) as volume,
+            count(s) as count
+        RETURN time_bucket, avg_sentiment, volume, count
+        ORDER BY time_bucket ASC
+        """
+
+        return self.query(cypher, symbol=symbol, cutoff=cutoff, interval_hours=interval_hours)

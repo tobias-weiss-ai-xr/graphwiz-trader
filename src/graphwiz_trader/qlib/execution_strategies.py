@@ -28,6 +28,7 @@ from .rl_execution import (
 
 class ExecutionStrategy(Enum):
     """Execution strategy types."""
+
     MARKET = "market"  # Immediate market order
     LIMIT = "limit"  # Limit order
     TWAP = "twap"  # Time-Weighted Average Price
@@ -40,6 +41,7 @@ class ExecutionStrategy(Enum):
 @dataclass
 class ExecutionPlan:
     """Execution plan for an order."""
+
     symbol: str
     side: str  # 'buy' or 'sell'
     total_quantity: float
@@ -68,7 +70,7 @@ class OptimalExecutionEngine:
     def __init__(
         self,
         default_strategy: ExecutionStrategy = ExecutionStrategy.TWAP,
-        risk_tolerance: str = 'medium',  # 'low', 'medium', 'high'
+        risk_tolerance: str = "medium",  # 'low', 'medium', 'high'
     ):
         """
         Initialize execution engine.
@@ -83,8 +85,7 @@ class OptimalExecutionEngine:
         # Initialize strategy executors
         self.twap_executor = TWAPExecutor(num_slices=10)
         self.order_router = SmartOrderRouter(
-            exchanges=['binance', 'okx'],
-            fee_schedule={'binance': 0.001, 'okx': 0.001}
+            exchanges=["binance", "okx"], fee_schedule={"binance": 0.001, "okx": 0.001}
         )
 
         logger.info(f"Optimal execution engine initialized: {default_strategy.value}")
@@ -180,20 +181,22 @@ class OptimalExecutionEngine:
         params: Dict[str, Any],
     ) -> List[Dict[str, Any]]:
         """Create TWAP execution slices."""
-        num_slices = params.get('num_slices', 10)
+        num_slices = params.get("num_slices", 10)
         slice_quantity = quantity / num_slices
 
         slices = []
         for i in range(num_slices):
             slice_time = timedelta(minutes=time_horizon * (i + 1) / num_slices)
 
-            slices.append({
-                'slice_id': i + 1,
-                'quantity': slice_quantity,
-                'execution_time': slice_time,
-                'type': 'market',
-                'strategy': 'twap',
-            })
+            slices.append(
+                {
+                    "slice_id": i + 1,
+                    "quantity": slice_quantity,
+                    "execution_time": slice_time,
+                    "type": "market",
+                    "strategy": "twap",
+                }
+            )
 
         return slices
 
@@ -205,7 +208,7 @@ class OptimalExecutionEngine:
         params: Dict[str, Any],
     ) -> List[Dict[str, Any]]:
         """Create VWAP execution slices based on historical volume patterns."""
-        num_slices = params.get('num_slices', 10)
+        num_slices = params.get("num_slices", 10)
 
         # Use historical volume distribution
         # For simplicity, use equal slices (should use actual volume profile in production)
@@ -215,13 +218,15 @@ class OptimalExecutionEngine:
         for i in range(num_slices):
             slice_time = timedelta(minutes=time_horizon * (i + 1) / num_slices)
 
-            slices.append({
-                'slice_id': i + 1,
-                'quantity': slice_quantity,
-                'execution_time': slice_time,
-                'type': 'market',
-                'strategy': 'vwap',
-            })
+            slices.append(
+                {
+                    "slice_id": i + 1,
+                    "quantity": slice_quantity,
+                    "execution_time": slice_time,
+                    "type": "market",
+                    "strategy": "vwap",
+                }
+            )
 
         logger.info(f"Created VWAP slices (using equal distribution)")
         return slices
@@ -232,13 +237,15 @@ class OptimalExecutionEngine:
         params: Dict[str, Any],
     ) -> List[Dict[str, Any]]:
         """Create immediate market execution."""
-        slices = [{
-            'slice_id': 1,
-            'quantity': quantity,
-            'execution_time': timedelta(0),
-            'type': 'market',
-            'strategy': 'market',
-        }]
+        slices = [
+            {
+                "slice_id": 1,
+                "quantity": quantity,
+                "execution_time": timedelta(0),
+                "type": "market",
+                "strategy": "market",
+            }
+        ]
 
         return slices
 
@@ -250,34 +257,36 @@ class OptimalExecutionEngine:
         params: Dict[str, Any],
     ) -> List[Dict[str, Any]]:
         """Create POV (Percentage of Volume) execution slices."""
-        participation_rate = params.get('participation_rate', 0.1)  # 10% of volume
+        participation_rate = params.get("participation_rate", 0.1)  # 10% of volume
 
         # Estimate total market volume over horizon
-        avg_volume = market_data['volume'].mean()
+        avg_volume = market_data["volume"].mean()
         total_market_volume = avg_volume * (time_horizon / 60)  # Rough estimate
 
         # Calculate execution schedule
         slices = []
-        num_intervals = params.get('num_intervals', 10)
+        num_intervals = params.get("num_intervals", 10)
 
         for i in range(num_intervals):
             interval_volume = total_market_volume / num_intervals
             slice_quantity = interval_volume * participation_rate
 
             # Don't exceed remaining quantity
-            remaining_quantity = quantity - sum(s['quantity'] for s in slices)
+            remaining_quantity = quantity - sum(s["quantity"] for s in slices)
             slice_quantity = min(slice_quantity, remaining_quantity)
 
             slice_time = timedelta(minutes=time_horizon * (i + 1) / num_intervals)
 
-            slices.append({
-                'slice_id': i + 1,
-                'quantity': slice_quantity,
-                'execution_time': slice_time,
-                'type': 'market',
-                'strategy': 'pov',
-                'participation_rate': participation_rate,
-            })
+            slices.append(
+                {
+                    "slice_id": i + 1,
+                    "quantity": slice_quantity,
+                    "execution_time": slice_time,
+                    "type": "market",
+                    "strategy": "pov",
+                    "participation_rate": participation_rate,
+                }
+            )
 
         return slices
 
@@ -306,21 +315,25 @@ class OptimalExecutionEngine:
 
         for slice_plan in plan.slices:
             try:
-                logger.info(f"Executing slice {slice_plan['slice_id']}: {slice_plan['quantity']:.4f}")
+                logger.info(
+                    f"Executing slice {slice_plan['slice_id']}: {slice_plan['quantity']:.4f}"
+                )
 
                 # Execute slice
                 result = execute_func(
                     symbol=plan.symbol,
                     side=plan.side,
-                    quantity=slice_plan['quantity'],
+                    quantity=slice_plan["quantity"],
                 )
 
-                if result and result.get('status') == 'executed':
+                if result and result.get("status") == "executed":
                     execution_results.append(result)
-                    total_executed += slice_plan['quantity']
-                    execution_prices.append(result.get('price', 0))
+                    total_executed += slice_plan["quantity"]
+                    execution_prices.append(result.get("price", 0))
 
-                    logger.info(f"✓ Slice {slice_plan['slice_id']} executed: {result.get('order_id')}")
+                    logger.info(
+                        f"✓ Slice {slice_plan['slice_id']} executed: {result.get('order_id')}"
+                    )
                 else:
                     logger.warning(f"✗ Slice {slice_plan['slice_id']} failed")
 
@@ -332,17 +345,19 @@ class OptimalExecutionEngine:
         avg_price = np.mean(execution_prices) if execution_prices else 0
 
         results = {
-            'strategy': plan.strategy.value,
-            'total_quantity': plan.total_quantity,
-            'executed_quantity': total_executed,
-            'completion_rate': completion_rate,
-            'avg_execution_price': avg_price,
-            'num_slices': len(plan.slices),
-            'successful_slices': len(execution_results),
-            'execution_results': execution_results,
+            "strategy": plan.strategy.value,
+            "total_quantity": plan.total_quantity,
+            "executed_quantity": total_executed,
+            "completion_rate": completion_rate,
+            "avg_execution_price": avg_price,
+            "num_slices": len(plan.slices),
+            "successful_slices": len(execution_results),
+            "execution_results": execution_results,
         }
 
-        logger.info(f"Execution complete: {completion_rate:.1%} filled at avg price {avg_price:.2f}")
+        logger.info(
+            f"Execution complete: {completion_rate:.1%} filled at avg price {avg_price:.2f}"
+        )
 
         return results
 
@@ -415,7 +430,7 @@ class SlippageMinimizer:
         market_volume: float,
         current_spread: float,
         volatility: float,
-        urgency: str = 'medium',  # 'low', 'medium', 'high'
+        urgency: str = "medium",  # 'low', 'medium', 'high'
     ) -> ExecutionStrategy:
         """
         Recommend optimal execution strategy.
@@ -439,14 +454,14 @@ class SlippageMinimizer:
         size_ratio = quantity / market_volume
 
         # Decision logic
-        if urgency == 'high':
+        if urgency == "high":
             # High urgency: execute quickly
             if size_ratio > self.order_size_threshold:
                 return ExecutionStrategy.TWAP
             else:
                 return ExecutionStrategy.MARKET
 
-        elif urgency == 'low':
+        elif urgency == "low":
             # Low urgency: minimize cost
             if estimated_slippage > self.max_slippage_threshold:
                 return ExecutionStrategy.TWAP
@@ -497,7 +512,7 @@ class SlippageMinimizer:
 
 def create_optimal_execution_engine(
     default_strategy: ExecutionStrategy = ExecutionStrategy.TWAP,
-    risk_tolerance: str = 'medium',
+    risk_tolerance: str = "medium",
 ) -> OptimalExecutionEngine:
     """
     Convenience function to create execution engine.

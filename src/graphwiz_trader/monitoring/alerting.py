@@ -16,6 +16,7 @@ from loguru import logger
 
 try:
     import websockets
+
     WEBSOCKETS_AVAILABLE = True
 except ImportError:
     WEBSOCKETS_AVAILABLE = False
@@ -24,6 +25,7 @@ except ImportError:
 
 class AlertSeverity(Enum):
     """Alert severity levels."""
+
     INFO = "INFO"
     WARNING = "WARNING"
     CRITICAL = "CRITICAL"
@@ -32,6 +34,7 @@ class AlertSeverity(Enum):
 
 class AlertChannel(Enum):
     """Alert notification channels."""
+
     DISCORD = "discord"
     SLACK = "slack"
     EMAIL = "email"
@@ -43,6 +46,7 @@ class AlertChannel(Enum):
 @dataclass
 class Alert:
     """Alert data structure."""
+
     title: str
     message: str
     severity: AlertSeverity
@@ -63,6 +67,7 @@ class Alert:
 @dataclass
 class AlertRule:
     """Alert rule definition."""
+
     name: str
     condition: Callable[[Dict[str, Any]], bool]
     severity: AlertSeverity
@@ -96,8 +101,8 @@ class AlertManager:
         self.circuit_breaker_last_attempt: Dict[str, datetime] = {}
 
         # Load configuration
-        self.notification_config = config.get('notifications', {})
-        self.alert_config = config.get('alerts', {})
+        self.notification_config = config.get("notifications", {})
+        self.alert_config = config.get("alerts", {})
 
         # Initialize notification channels
         self._init_channels()
@@ -105,27 +110,24 @@ class AlertManager:
     def _init_channels(self) -> None:
         """Initialize notification channels from configuration."""
         self.channels = {
-            AlertChannel.DISCORD: self.notification_config.get('discord', {}).get('webhook_url'),
-            AlertChannel.SLACK: self.notification_config.get('slack', {}).get('webhook_url'),
-            AlertChannel.EMAIL: self.notification_config.get('email', {}),
-            AlertChannel.TELEGRAM: self.notification_config.get('telegram', {}),
-            AlertChannel.WEBHOOK: self.notification_config.get('webhook', {}).get('url'),
-            AlertChannel.LOG: True  # Always available
+            AlertChannel.DISCORD: self.notification_config.get("discord", {}).get("webhook_url"),
+            AlertChannel.SLACK: self.notification_config.get("slack", {}).get("webhook_url"),
+            AlertChannel.EMAIL: self.notification_config.get("email", {}),
+            AlertChannel.TELEGRAM: self.notification_config.get("telegram", {}),
+            AlertChannel.WEBHOOK: self.notification_config.get("webhook", {}).get("url"),
+            AlertChannel.LOG: True,  # Always available
         }
 
         # Set default cooldowns
         self.default_cooldowns = {
-            AlertSeverity.INFO: self.alert_config.get('cooldown_info', 600),
-            AlertSeverity.WARNING: self.alert_config.get('cooldown_warning', 300),
-            AlertSeverity.CRITICAL: self.alert_config.get('cooldown_critical', 60),
-            AlertSeverity.EMERGENCY: self.alert_config.get('cooldown_emergency', 10)
+            AlertSeverity.INFO: self.alert_config.get("cooldown_info", 600),
+            AlertSeverity.WARNING: self.alert_config.get("cooldown_warning", 300),
+            AlertSeverity.CRITICAL: self.alert_config.get("cooldown_critical", 60),
+            AlertSeverity.EMERGENCY: self.alert_config.get("cooldown_emergency", 10),
         }
 
     def check_alert(
-        self,
-        rule_name: str,
-        metrics: Dict[str, Any],
-        context: Optional[Dict[str, Any]] = None
+        self, rule_name: str, metrics: Dict[str, Any], context: Optional[Dict[str, Any]] = None
     ) -> Optional[Alert]:
         """Check if an alert should be triggered based on rule and metrics.
 
@@ -182,19 +184,19 @@ class AlertManager:
             return built_in_rules[rule_name]
 
         # Check for custom rules in config
-        custom_rules = self.alert_config.get('custom_rules', {})
+        custom_rules = self.alert_config.get("custom_rules", {})
         if rule_name in custom_rules:
             rule_config = custom_rules[rule_name]
             return AlertRule(
                 name=rule_name,
-                condition=lambda m: self._evaluate_condition(rule_config['condition'], m),
-                severity=AlertSeverity(rule_config.get('severity', 'WARNING')),
-                channels=[AlertChannel(c) for c in rule_config.get('channels', ['LOG'])],
-                message_template=rule_config.get('message', '{rule_name} triggered'),
-                title_template=rule_config.get('title', '{rule_name}'),
-                cooldown_seconds=rule_config.get('cooldown_seconds', 300),
-                metadata=rule_config.get('metadata', {}),
-                enabled=rule_config.get('enabled', True)
+                condition=lambda m: self._evaluate_condition(rule_config["condition"], m),
+                severity=AlertSeverity(rule_config.get("severity", "WARNING")),
+                channels=[AlertChannel(c) for c in rule_config.get("channels", ["LOG"])],
+                message_template=rule_config.get("message", "{rule_name} triggered"),
+                title_template=rule_config.get("title", "{rule_name}"),
+                cooldown_seconds=rule_config.get("cooldown_seconds", 300),
+                metadata=rule_config.get("metadata", {}),
+                enabled=rule_config.get("enabled", True),
             )
 
         return None
@@ -206,108 +208,127 @@ class AlertManager:
             Dictionary of built-in AlertRules
         """
         return {
-            'high_cpu': AlertRule(
-                name='high_cpu',
-                condition=lambda m: m.get('system', {}).get('cpu', {}).get('percent', 0) > 90,
+            "high_cpu": AlertRule(
+                name="high_cpu",
+                condition=lambda m: m.get("system", {}).get("cpu", {}).get("percent", 0) > 90,
                 severity=AlertSeverity.WARNING,
                 channels=[AlertChannel.DISCORD, AlertChannel.SLACK, AlertChannel.LOG],
-                title_template='High CPU Usage Detected',
-                message_template='CPU usage is {cpu_percent}% on {hostname}',
-                cooldown_seconds=600
+                title_template="High CPU Usage Detected",
+                message_template="CPU usage is {cpu_percent}% on {hostname}",
+                cooldown_seconds=600,
             ),
-            'high_memory': AlertRule(
-                name='high_memory',
-                condition=lambda m: m.get('system', {}).get('memory', {}).get('percent', 0) > 90,
+            "high_memory": AlertRule(
+                name="high_memory",
+                condition=lambda m: m.get("system", {}).get("memory", {}).get("percent", 0) > 90,
                 severity=AlertSeverity.WARNING,
                 channels=[AlertChannel.DISCORD, AlertChannel.SLACK, AlertChannel.LOG],
-                title_template='High Memory Usage Detected',
-                message_template='Memory usage is {memory_percent}% on {hostname}',
-                cooldown_seconds=600
+                title_template="High Memory Usage Detected",
+                message_template="Memory usage is {memory_percent}% on {hostname}",
+                cooldown_seconds=600,
             ),
-            'exchange_disconnect': AlertRule(
-                name='exchange_disconnect',
+            "exchange_disconnect": AlertRule(
+                name="exchange_disconnect",
                 condition=lambda m: any(
-                    not status.get('connected', True)
-                    for status in m.get('exchanges', {}).values()
+                    not status.get("connected", True) for status in m.get("exchanges", {}).values()
                 ),
                 severity=AlertSeverity.CRITICAL,
-                channels=[AlertChannel.DISCORD, AlertChannel.SLACK, AlertChannel.EMAIL, AlertChannel.LOG],
-                title_template='Exchange Disconnected',
-                message_template='Exchange {exchange_name} is disconnected',
-                cooldown_seconds=60
+                channels=[
+                    AlertChannel.DISCORD,
+                    AlertChannel.SLACK,
+                    AlertChannel.EMAIL,
+                    AlertChannel.LOG,
+                ],
+                title_template="Exchange Disconnected",
+                message_template="Exchange {exchange_name} is disconnected",
+                cooldown_seconds=60,
             ),
-            'high_latency': AlertRule(
-                name='high_latency',
+            "high_latency": AlertRule(
+                name="high_latency",
                 condition=lambda m: any(
-                    status.get('p99_latency', 0) > 5.0
-                    for status in m.get('exchanges', {}).values()
+                    status.get("p99_latency", 0) > 5.0 for status in m.get("exchanges", {}).values()
                 ),
                 severity=AlertSeverity.WARNING,
                 channels=[AlertChannel.DISCORD, AlertChannel.SLACK, AlertChannel.LOG],
-                title_template='High Exchange Latency',
-                message_template='Exchange {exchange_name} latency is {latency}s',
-                cooldown_seconds=300
+                title_template="High Exchange Latency",
+                message_template="Exchange {exchange_name} latency is {latency}s",
+                cooldown_seconds=300,
             ),
-            'large_loss': AlertRule(
-                name='large_loss',
-                condition=lambda m: m.get('trading', {}).get('current_drawdown', 0) > 0.10,
+            "large_loss": AlertRule(
+                name="large_loss",
+                condition=lambda m: m.get("trading", {}).get("current_drawdown", 0) > 0.10,
                 severity=AlertSeverity.CRITICAL,
-                channels=[AlertChannel.DISCORD, AlertChannel.SLACK, AlertChannel.EMAIL, AlertChannel.LOG],
-                title_template='Large Trading Loss Detected',
-                message_template='Current drawdown is {drawdown_percent}% (${loss_usd:.2f})',
-                cooldown_seconds=300
+                channels=[
+                    AlertChannel.DISCORD,
+                    AlertChannel.SLACK,
+                    AlertChannel.EMAIL,
+                    AlertChannel.LOG,
+                ],
+                title_template="Large Trading Loss Detected",
+                message_template="Current drawdown is {drawdown_percent}% (${loss_usd:.2f})",
+                cooldown_seconds=300,
             ),
-            'rate_limit': AlertRule(
-                name='rate_limit',
+            "rate_limit": AlertRule(
+                name="rate_limit",
                 condition=lambda m: any(
-                    status.get('rate_limit_remaining', 100) < 10
-                    for status in m.get('exchanges', {}).values()
+                    status.get("rate_limit_remaining", 100) < 10
+                    for status in m.get("exchanges", {}).values()
                 ),
                 severity=AlertSeverity.WARNING,
                 channels=[AlertChannel.DISCORD, AlertChannel.LOG],
-                title_template='API Rate Limit Warning',
-                message_template='Exchange {exchange_name} rate limit: {remaining} requests remaining',
-                cooldown_seconds=300
+                title_template="API Rate Limit Warning",
+                message_template="Exchange {exchange_name} rate limit: {remaining} requests remaining",
+                cooldown_seconds=300,
             ),
-            'neo4j_disconnect': AlertRule(
-                name='neo4j_disconnect',
-                condition=lambda m: not m.get('neo4j', {}).get('connected', True),
+            "neo4j_disconnect": AlertRule(
+                name="neo4j_disconnect",
+                condition=lambda m: not m.get("neo4j", {}).get("connected", True),
                 severity=AlertSeverity.CRITICAL,
-                channels=[AlertChannel.DISCORD, AlertChannel.SLACK, AlertChannel.EMAIL, AlertChannel.LOG],
-                title_template='Neo4j Disconnected',
-                message_template='Neo4j database connection lost',
-                cooldown_seconds=60
+                channels=[
+                    AlertChannel.DISCORD,
+                    AlertChannel.SLACK,
+                    AlertChannel.EMAIL,
+                    AlertChannel.LOG,
+                ],
+                title_template="Neo4j Disconnected",
+                message_template="Neo4j database connection lost",
+                cooldown_seconds=60,
             ),
-            'agent_failure': AlertRule(
-                name='agent_failure',
-                condition=lambda m: m.get('agents', {}).get('failure_count', 0) > 5,
+            "agent_failure": AlertRule(
+                name="agent_failure",
+                condition=lambda m: m.get("agents", {}).get("failure_count", 0) > 5,
                 severity=AlertSeverity.WARNING,
                 channels=[AlertChannel.DISCORD, AlertChannel.LOG],
-                title_template='Agent Failures Detected',
-                message_template='{failure_count} agents have failed recently',
-                cooldown_seconds=300
+                title_template="Agent Failures Detected",
+                message_template="{failure_count} agents have failed recently",
+                cooldown_seconds=300,
             ),
-            'risk_limit_breach': AlertRule(
-                name='risk_limit_breach',
-                condition=lambda m: m.get('risk', {}).get('leverage', 0) > 3.0,
+            "risk_limit_breach": AlertRule(
+                name="risk_limit_breach",
+                condition=lambda m: m.get("risk", {}).get("leverage", 0) > 3.0,
                 severity=AlertSeverity.EMERGENCY,
-                channels=[AlertChannel.DISCORD, AlertChannel.SLACK, AlertChannel.EMAIL, AlertChannel.TELEGRAM, AlertChannel.LOG],
-                title_template='RISK LIMIT BREACH - EMERGENCY',
-                message_template='Lverage at {leverage}x exceeds maximum. Exposure: ${exposure_usd:.2f}',
-                cooldown_seconds=10
+                channels=[
+                    AlertChannel.DISCORD,
+                    AlertChannel.SLACK,
+                    AlertChannel.EMAIL,
+                    AlertChannel.TELEGRAM,
+                    AlertChannel.LOG,
+                ],
+                title_template="RISK LIMIT BREACH - EMERGENCY",
+                message_template="Lverage at {leverage}x exceeds maximum. Exposure: ${exposure_usd:.2f}",
+                cooldown_seconds=10,
             ),
-            'disk_space': AlertRule(
-                name='disk_space',
+            "disk_space": AlertRule(
+                name="disk_space",
                 condition=lambda m: any(
-                    usage.get('percent', 0) > 90
-                    for usage in m.get('system', {}).get('disk', {}).values()
+                    usage.get("percent", 0) > 90
+                    for usage in m.get("system", {}).get("disk", {}).values()
                 ),
                 severity=AlertSeverity.WARNING,
                 channels=[AlertChannel.DISCORD, AlertChannel.LOG],
-                title_template='Low Disk Space',
-                message_template='Disk {mount} is {percent}% full',
-                cooldown_seconds=3600
-            )
+                title_template="Low Disk Space",
+                message_template="Disk {mount} is {percent}% full",
+                cooldown_seconds=3600,
+            ),
         }
 
     def _evaluate_condition(self, condition: str, metrics: Dict[str, Any]) -> bool:
@@ -323,12 +344,12 @@ class AlertManager:
         try:
             # Create a safe evaluation context
             context = {
-                'system': metrics.get('system', {}),
-                'trading': metrics.get('trading', {}),
-                'exchanges': metrics.get('exchanges', {}),
-                'agents': metrics.get('agents', {}),
-                'risk': metrics.get('risk', {}),
-                'neo4j': metrics.get('neo4j', {})
+                "system": metrics.get("system", {}),
+                "trading": metrics.get("trading", {}),
+                "exchanges": metrics.get("exchanges", {}),
+                "agents": metrics.get("agents", {}),
+                "risk": metrics.get("risk", {}),
+                "neo4j": metrics.get("neo4j", {}),
             }
             return eval(condition, {"__builtins__": {}}, context)
         except Exception as e:
@@ -352,10 +373,7 @@ class AlertManager:
         return elapsed < cooldown_seconds
 
     def _create_alert_from_rule(
-        self,
-        rule: AlertRule,
-        metrics: Dict[str, Any],
-        context: Dict[str, Any]
+        self, rule: AlertRule, metrics: Dict[str, Any], context: Dict[str, Any]
     ) -> Alert:
         """Create Alert from AlertRule.
 
@@ -371,34 +389,34 @@ class AlertManager:
         format_dict = {
             **metrics,
             **context,
-            'rule_name': rule.name,
-            'timestamp': datetime.utcnow().isoformat(),
-            'hostname': context.get('hostname', 'unknown')
+            "rule_name": rule.name,
+            "timestamp": datetime.utcnow().isoformat(),
+            "hostname": context.get("hostname", "unknown"),
         }
 
         # Extract specific values for templates
-        if 'system' in metrics:
-            format_dict['cpu_percent'] = metrics['system'].get('cpu', {}).get('percent', 0)
-            format_dict['memory_percent'] = metrics['system'].get('memory', {}).get('percent', 0)
+        if "system" in metrics:
+            format_dict["cpu_percent"] = metrics["system"].get("cpu", {}).get("percent", 0)
+            format_dict["memory_percent"] = metrics["system"].get("memory", {}).get("percent", 0)
 
-        if 'trading' in metrics:
-            format_dict['drawdown_percent'] = metrics['trading'].get('current_drawdown', 0) * 100
-            format_dict['loss_usd'] = abs(metrics['trading'].get('total_pnl', 0))
+        if "trading" in metrics:
+            format_dict["drawdown_percent"] = metrics["trading"].get("current_drawdown", 0) * 100
+            format_dict["loss_usd"] = abs(metrics["trading"].get("total_pnl", 0))
 
-        if 'exchanges' in metrics:
-            for exchange_name, exchange_metrics in metrics['exchanges'].items():
-                if not exchange_metrics.get('connected', True):
-                    format_dict['exchange_name'] = exchange_name
-                if exchange_metrics.get('p99_latency', 0) > 5.0:
-                    format_dict['exchange_name'] = exchange_name
-                    format_dict['latency'] = exchange_metrics['p99_latency']
-                if exchange_metrics.get('rate_limit_remaining', 100) < 10:
-                    format_dict['exchange_name'] = exchange_name
-                    format_dict['remaining'] = exchange_metrics['rate_limit_remaining']
+        if "exchanges" in metrics:
+            for exchange_name, exchange_metrics in metrics["exchanges"].items():
+                if not exchange_metrics.get("connected", True):
+                    format_dict["exchange_name"] = exchange_name
+                if exchange_metrics.get("p99_latency", 0) > 5.0:
+                    format_dict["exchange_name"] = exchange_name
+                    format_dict["latency"] = exchange_metrics["p99_latency"]
+                if exchange_metrics.get("rate_limit_remaining", 100) < 10:
+                    format_dict["exchange_name"] = exchange_name
+                    format_dict["remaining"] = exchange_metrics["rate_limit_remaining"]
 
-        if 'risk' in metrics:
-            format_dict['leverage'] = metrics['risk'].get('leverage', 0)
-            format_dict['exposure_usd'] = metrics['risk'].get('exposure', 0)
+        if "risk" in metrics:
+            format_dict["leverage"] = metrics["risk"].get("leverage", 0)
+            format_dict["exposure_usd"] = metrics["risk"].get("exposure", 0)
 
         title = rule.title_template.format(**format_dict)
         message = rule.message_template.format(**format_dict)
@@ -409,11 +427,11 @@ class AlertManager:
             severity=rule.severity,
             channel=rule.channels[0],
             metadata={
-                'rule_name': rule.name,
-                'metrics': metrics,
-                'context': context,
-                'channels': [c.value for c in rule.channels]
-            }
+                "rule_name": rule.name,
+                "metrics": metrics,
+                "context": context,
+                "channels": [c.value for c in rule.channels],
+            },
         )
 
         self.last_alert_time[rule.name] = datetime.utcnow()
@@ -435,7 +453,7 @@ class AlertManager:
         self.alert_counts[alert.alert_id] += 1
 
         # Determine which channels to use
-        channels = alert.metadata.get('channels', [])
+        channels = alert.metadata.get("channels", [])
         if not channels:
             channels = [alert.channel.value]
 
@@ -509,7 +527,11 @@ class AlertManager:
         # Open circuit breaker after 5 consecutive failures
         if self.circuit_breaker_failures[channel] >= 5:
             self.circuit_breaker_open[channel] = True
-            logger.warning("Circuit breaker opened for {} after {} failures", channel, self.circuit_breaker_failures[channel])
+            logger.warning(
+                "Circuit breaker opened for {} after {} failures",
+                channel,
+                self.circuit_breaker_failures[channel],
+            )
 
     async def _send_discord(self, alert: Alert) -> bool:
         """Send alert to Discord webhook.
@@ -527,29 +549,25 @@ class AlertManager:
 
         # Color based on severity
         colors = {
-            AlertSeverity.INFO: 0x3498db,      # Blue
-            AlertSeverity.WARNING: 0xff9500,   # Orange
-            AlertSeverity.CRITICAL: 0xff0000,  # Red
-            AlertSeverity.EMERGENCY: 0x9b59b6  # Purple
+            AlertSeverity.INFO: 0x3498DB,  # Blue
+            AlertSeverity.WARNING: 0xFF9500,  # Orange
+            AlertSeverity.CRITICAL: 0xFF0000,  # Red
+            AlertSeverity.EMERGENCY: 0x9B59B6,  # Purple
         }
 
         embed = {
             "title": alert.title,
             "description": alert.message,
-            "color": colors.get(alert.severity, 0x3498db),
+            "color": colors.get(alert.severity, 0x3498DB),
             "fields": [],
-            "timestamp": alert.timestamp.isoformat()
+            "timestamp": alert.timestamp.isoformat(),
         }
 
         # Add metadata as fields
         if alert.metadata:
             for key, value in alert.metadata.items():
-                if key not in ['metrics', 'context']:
-                    embed["fields"].append({
-                        "name": key,
-                        "value": str(value),
-                        "inline": True
-                    })
+                if key not in ["metrics", "context"]:
+                    embed["fields"].append({"name": key, "value": str(value), "inline": True})
 
         payload = {"embeds": [embed]}
 
@@ -582,7 +600,7 @@ class AlertManager:
             AlertSeverity.INFO: "#3498db",
             AlertSeverity.WARNING: "#ff9500",
             AlertSeverity.CRITICAL: "#ff0000",
-            AlertSeverity.EMERGENCY: "#9b59b6"
+            AlertSeverity.EMERGENCY: "#9b59b6",
         }
 
         attachment = {
@@ -591,18 +609,14 @@ class AlertManager:
             "text": alert.message,
             "fields": [],
             "footer": f"Severity: {alert.severity.value}",
-            "ts": int(alert.timestamp.timestamp())
+            "ts": int(alert.timestamp.timestamp()),
         }
 
         # Add metadata as fields
         if alert.metadata:
             for key, value in alert.metadata.items():
-                if key not in ['metrics', 'context']:
-                    attachment["fields"].append({
-                        "title": key,
-                        "value": str(value),
-                        "short": True
-                    })
+                if key not in ["metrics", "context"]:
+                    attachment["fields"].append({"title": key, "value": str(value), "short": True})
 
         payload = {"attachments": [attachment]}
 
@@ -626,15 +640,15 @@ class AlertManager:
             True if successful
         """
         email_config = self.channels.get(AlertChannel.EMAIL)
-        if not email_config or not email_config.get('enabled'):
+        if not email_config or not email_config.get("enabled"):
             logger.warning("Email notifications not enabled")
             return False
 
         try:
-            msg = MIMEMultipart('alternative')
-            msg['Subject'] = f"[{alert.severity.value}] {alert.title}"
-            msg['From'] = email_config.get('from')
-            msg['To'] = ', '.join(email_config.get('to', []))
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = f"[{alert.severity.value}] {alert.title}"
+            msg["From"] = email_config.get("from")
+            msg["To"] = ", ".join(email_config.get("to", []))
 
             # HTML body
             html = f"""
@@ -653,20 +667,16 @@ class AlertManager:
             </html>
             """
 
-            msg.attach(MIMEText(html, 'html'))
+            msg.attach(MIMEText(html, "html"))
 
             # Send email
             with smtplib.SMTP(
-                email_config.get('smtp_server', 'localhost'),
-                email_config.get('smtp_port', 587)
+                email_config.get("smtp_server", "localhost"), email_config.get("smtp_port", 587)
             ) as server:
-                if email_config.get('use_tls', True):
+                if email_config.get("use_tls", True):
                     server.starttls()
-                if email_config.get('username') and email_config.get('password'):
-                    server.login(
-                        email_config['username'],
-                        email_config['password']
-                    )
+                if email_config.get("username") and email_config.get("password"):
+                    server.login(email_config["username"], email_config["password"])
                 server.send_message(msg)
 
             logger.info("Alert sent via email successfully")
@@ -688,19 +698,19 @@ class AlertManager:
             True if successful
         """
         telegram_config = self.channels.get(AlertChannel.TELEGRAM)
-        if not telegram_config or not telegram_config.get('bot_token'):
+        if not telegram_config or not telegram_config.get("bot_token"):
             logger.warning("Telegram not configured")
             return False
 
-        bot_token = telegram_config['bot_token']
-        chat_id = telegram_config['chat_id']
+        bot_token = telegram_config["bot_token"]
+        chat_id = telegram_config["chat_id"]
 
         # Emoji based on severity
         emojis = {
             AlertSeverity.INFO: "ℹ️",
             AlertSeverity.WARNING: "⚠️",
             AlertSeverity.CRITICAL: "🚨",
-            AlertSeverity.EMERGENCY: "🔴"
+            AlertSeverity.EMERGENCY: "🔴",
         }
 
         message = f"""
@@ -714,11 +724,7 @@ Time: {alert.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC')}
 
         url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
 
-        payload = {
-            "chat_id": chat_id,
-            "text": message,
-            "parse_mode": "Markdown"
-        }
+        payload = {"chat_id": chat_id, "text": message, "parse_mode": "Markdown"}
 
         async with aiohttp.ClientSession() as session:
             async with session.post(url, json=payload) as response:
@@ -749,7 +755,7 @@ Time: {alert.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC')}
             "message": alert.message,
             "severity": alert.severity.value,
             "timestamp": alert.timestamp.isoformat(),
-            "metadata": alert.metadata
+            "metadata": alert.metadata,
         }
 
         async with aiohttp.ClientSession() as session:
@@ -775,7 +781,7 @@ Time: {alert.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC')}
             AlertSeverity.INFO: logger.info,
             AlertSeverity.WARNING: logger.warning,
             AlertSeverity.CRITICAL: logger.error,
-            AlertSeverity.EMERGENCY: logger.critical
+            AlertSeverity.EMERGENCY: logger.critical,
         }.get(alert.severity, logger.info)
 
         log_level("{}: {}", alert.title, alert.message)
@@ -813,9 +819,7 @@ Time: {alert.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC')}
         return list(self.active_alerts.values())
 
     def get_alert_history(
-        self,
-        hours: int = 24,
-        severity: Optional[AlertSeverity] = None
+        self, hours: int = 24, severity: Optional[AlertSeverity] = None
     ) -> List[Alert]:
         """Get alert history.
 
@@ -828,10 +832,7 @@ Time: {alert.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC')}
         """
         cutoff = datetime.utcnow() - timedelta(hours=hours)
 
-        history = [
-            alert for alert in self.alert_history
-            if alert.timestamp > cutoff
-        ]
+        history = [alert for alert in self.alert_history if alert.timestamp > cutoff]
 
         if severity:
             history = [alert for alert in history if alert.severity == severity]
@@ -845,22 +846,22 @@ Time: {alert.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC')}
             Dictionary of alert statistics
         """
         stats = {
-            'total_alerts': len(self.alert_history),
-            'active_alerts': len(self.active_alerts),
-            'by_severity': defaultdict(int),
-            'by_channel': defaultdict(int),
-            'last_24h': 0,
-            'last_1h': 0
+            "total_alerts": len(self.alert_history),
+            "active_alerts": len(self.active_alerts),
+            "by_severity": defaultdict(int),
+            "by_channel": defaultdict(int),
+            "last_24h": 0,
+            "last_1h": 0,
         }
 
         cutoff_24h = datetime.utcnow() - timedelta(hours=24)
         cutoff_1h = datetime.utcnow() - timedelta(hours=1)
 
         for alert in self.alert_history:
-            stats['by_severity'][alert.severity.value] += 1
+            stats["by_severity"][alert.severity.value] += 1
             if alert.timestamp > cutoff_24h:
-                stats['last_24h'] += 1
+                stats["last_24h"] += 1
             if alert.timestamp > cutoff_1h:
-                stats['last_1h'] += 1
+                stats["last_1h"] += 1
 
         return dict(stats)

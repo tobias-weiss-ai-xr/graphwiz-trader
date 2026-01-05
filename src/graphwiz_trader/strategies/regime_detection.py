@@ -97,9 +97,7 @@ class RegimeDetector:
         price_range = (recent_highs.iloc[-1] - recent_lows.iloc[-1]) / closes.iloc[-1]
 
         # Determine regime
-        regime, confidence = self._classify_regime(
-            trend_slope, adx_value, volatility, price_range
-        )
+        regime, confidence = self._classify_regime(trend_slope, adx_value, volatility, price_range)
 
         # Generate recommendations
         recommendations = self._generate_recommendations(regime, confidence, adx_value)

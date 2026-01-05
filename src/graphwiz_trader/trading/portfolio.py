@@ -12,12 +12,7 @@ from loguru import logger
 class Position:
     """Represents a trading position in a specific asset."""
 
-    def __init__(
-        self,
-        symbol: str,
-        base_currency: str,
-        quote_currency: str
-    ):
+    def __init__(self, symbol: str, base_currency: str, quote_currency: str):
         """Initialize a position.
 
         Args:
@@ -68,11 +63,7 @@ class Position:
         return total_cost / abs(self.amount)
 
     def update_position(
-        self,
-        side: str,
-        amount: Decimal,
-        price: Decimal,
-        fee: Decimal = Decimal("0")
+        self, side: str, amount: Decimal, price: Decimal, fee: Decimal = Decimal("0")
     ) -> Tuple[Decimal, Decimal]:
         """Update position with a trade.
 
@@ -146,7 +137,12 @@ class Position:
         logger.debug(
             "Updated position {}: side={}, amount={}, price={}, "
             "total_amount={}, realized_pnl={}",
-            self.symbol, side, amount, price, self.amount, self.realized_pnl
+            self.symbol,
+            side,
+            amount,
+            price,
+            self.amount,
+            self.realized_pnl,
         )
 
         return self.realized_pnl, self.unrealized_pnl
@@ -191,15 +187,19 @@ class Position:
             "is_long": self.is_long,
             "is_short": self.is_short,
             "is_open": self.is_open,
-            "first_trade_time": self.first_trade_time.isoformat() if self.first_trade_time else None,
+            "first_trade_time": (
+                self.first_trade_time.isoformat() if self.first_trade_time else None
+            ),
             "last_trade_time": self.last_trade_time.isoformat() if self.last_trade_time else None,
-            "trade_count": self.trade_count
+            "trade_count": self.trade_count,
         }
 
     def __repr__(self) -> str:
-        return (f"Position(symbol={self.symbol}, amount={self.amount}, "
-                f"avg_price={self.avg_entry_price}, "
-                f"realized_pnl={self.realized_pnl}, unrealized_pnl={self.unrealized_pnl})")
+        return (
+            f"Position(symbol={self.symbol}, amount={self.amount}, "
+            f"avg_price={self.avg_entry_price}, "
+            f"realized_pnl={self.realized_pnl}, unrealized_pnl={self.unrealized_pnl})"
+        )
 
 
 class PortfolioManager:
@@ -212,7 +212,7 @@ class PortfolioManager:
         max_position_size: float = 0.3,
         max_portfolio_risk: float = 0.1,
         stop_loss_pct: float = 0.05,
-        take_profit_pct: float = 0.15
+        take_profit_pct: float = 0.15,
     ):
         """Initialize PortfolioManager.
 
@@ -248,9 +248,10 @@ class PortfolioManager:
         self.start_time = datetime.now(timezone.utc)
 
         logger.info(
-            "Initialized portfolio with balances: {}, risk_per_trade={}, "
-            "max_position_size={}",
-            self.balances, self.risk_per_trade, self.max_position_size
+            "Initialized portfolio with balances: {}, risk_per_trade={}, " "max_position_size={}",
+            self.balances,
+            self.risk_per_trade,
+            self.max_position_size,
         )
 
     def get_position(self, symbol: str) -> Optional[Position]:
@@ -271,12 +272,7 @@ class PortfolioManager:
         return self.positions[symbol]
 
     def update_position(
-        self,
-        symbol: str,
-        side: str,
-        amount: float,
-        price: float,
-        fee: float = 0.0
+        self, symbol: str, side: str, amount: float, price: float, fee: float = 0.0
     ) -> Tuple[Decimal, Decimal]:
         """Update position with a trade.
 
@@ -318,9 +314,14 @@ class PortfolioManager:
                 self._update_balance_from_closed_position(position, symbol)
 
             logger.info(
-                "Trade executed: {} {} {} @ {}, fee={}, "
-                "realized_pnl={}, total_trades={}",
-                side, amount, symbol, price, fee, realized_pnl, self.total_trades
+                "Trade executed: {} {} {} @ {}, fee={}, " "realized_pnl={}, total_trades={}",
+                side,
+                amount,
+                symbol,
+                price,
+                fee,
+                realized_pnl,
+                self.total_trades,
             )
 
             return realized_pnl, unrealized_pnl
@@ -345,7 +346,8 @@ class PortfolioManager:
 
         logger.debug(
             "Updated balance for {} due to closed position: {}",
-            quote_currency, self.balances[quote_currency]
+            quote_currency,
+            self.balances[quote_currency],
         )
 
     def calculate_position_size(
@@ -353,7 +355,7 @@ class PortfolioManager:
         symbol: str,
         entry_price: float,
         stop_loss_price: Optional[float] = None,
-        risk_amount: Optional[float] = None
+        risk_amount: Optional[float] = None,
     ) -> float:
         """Calculate position size based on risk parameters.
 
@@ -422,7 +424,10 @@ class PortfolioManager:
             result = float(position_size)
             logger.debug(
                 "Calculated position size for {}: {} @ {} (risk={})",
-                symbol, result, entry_price, risk_amount
+                symbol,
+                result,
+                entry_price,
+                risk_amount,
             )
 
             return result
@@ -499,10 +504,7 @@ class PortfolioManager:
         return values.get("USDT", values.get("USD", Decimal("0")))
 
     def rebalance_portfolio(
-        self,
-        target_weights: Dict[str, float],
-        prices: Dict[str, float],
-        threshold: float = 0.05
+        self, target_weights: Dict[str, float], prices: Dict[str, float], threshold: float = 0.05
     ) -> List[Dict[str, Any]]:
         """Calculate rebalancing trades to achieve target weights.
 
@@ -551,14 +553,16 @@ class PortfolioManager:
 
                     side = "buy" if diff > 0 else "sell"
 
-                    trades.append({
-                        "symbol": symbol,
-                        "side": side,
-                        "amount": float(amount),
-                        "price": float(price),
-                        "reason": f"Rebalance: current={current_weight:.2%}, "
-                                 f"target={target_weight:.2%}"
-                    })
+                    trades.append(
+                        {
+                            "symbol": symbol,
+                            "side": side,
+                            "amount": float(amount),
+                            "price": float(price),
+                            "reason": f"Rebalance: current={current_weight:.2%}, "
+                            f"target={target_weight:.2%}",
+                        }
+                    )
 
         logger.info("Calculated {} rebalancing trades", len(trades))
         return trades
@@ -584,7 +588,7 @@ class PortfolioManager:
             "within_risk_per_trade": True,  # Checked at trade time
             "within_max_position_size": True,  # Checked at trade time
             "within_portfolio_risk": risk_ratio <= self.max_portfolio_risk,
-            "risk_ratio": float(risk_ratio)
+            "risk_ratio": float(risk_ratio),
         }
 
     def get_portfolio_statistics(self) -> Dict[str, Any]:
@@ -594,8 +598,9 @@ class PortfolioManager:
             Dictionary with portfolio statistics
         """
         # Calculate performance metrics
-        win_rate = (self.winning_trades / self.total_trades
-                   if self.total_trades > 0 else Decimal("0"))
+        win_rate = (
+            self.winning_trades / self.total_trades if self.total_trades > 0 else Decimal("0")
+        )
 
         avg_win = Decimal("0")
         avg_loss = Decimal("0")
@@ -639,13 +644,10 @@ class PortfolioManager:
             "start_time": self.start_time.isoformat(),
             "risk_per_trade": float(self.risk_per_trade),
             "max_position_size": float(self.max_position_size),
-            "current_risk_status": self.check_risk_limits()
+            "current_risk_status": self.check_risk_limits(),
         }
 
-    def close_all_positions(
-        self,
-        prices: Dict[str, float]
-    ) -> List[Dict[str, Any]]:
+    def close_all_positions(self, prices: Dict[str, float]) -> List[Dict[str, Any]]:
         """Calculate trades to close all positions.
 
         Args:
@@ -663,13 +665,15 @@ class PortfolioManager:
                 else:
                     side = "buy"
 
-                trades.append({
-                    "symbol": symbol,
-                    "side": side,
-                    "amount": float(abs(position.amount)),
-                    "price": prices[symbol],
-                    "reason": "Close all positions"
-                })
+                trades.append(
+                    {
+                        "symbol": symbol,
+                        "side": side,
+                        "amount": float(abs(position.amount)),
+                        "price": prices[symbol],
+                        "reason": "Close all positions",
+                    }
+                )
 
         logger.info("Calculated {} trades to close all positions", len(trades))
         return trades
@@ -679,5 +683,5 @@ class PortfolioManager:
         return {
             "balances": {k: float(v) for k, v in self.balances.items()},
             "positions": {k: v.to_dict() for k, v in self.positions.items()},
-            "statistics": self.get_portfolio_statistics()
+            "statistics": self.get_portfolio_statistics(),
         }

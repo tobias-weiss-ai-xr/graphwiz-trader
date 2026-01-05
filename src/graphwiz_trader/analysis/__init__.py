@@ -3,11 +3,7 @@
 from graphwiz_trader.analysis.indicators import (
     TechnicalAnalysis,
     TechnicalIndicators,
-    IndicatorResult
+    IndicatorResult,
 )
 
-__all__ = [
-    "TechnicalAnalysis",
-    "TechnicalIndicators",
-    "IndicatorResult"
-]
+__all__ = ["TechnicalAnalysis", "TechnicalIndicators", "IndicatorResult"]

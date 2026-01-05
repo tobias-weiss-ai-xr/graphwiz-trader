@@ -30,8 +30,7 @@ def create_exchange(
     if not hasattr(ccxt, exchange_name):
         available = ", ".join(ccxt.exchanges)
         raise ValueError(
-            f"Exchange '{exchange_name}' not found. "
-            f"Available exchanges: {available}"
+            f"Exchange '{exchange_name}' not found. " f"Available exchanges: {available}"
         )
 
     exchange_class = getattr(ccxt, exchange_name)

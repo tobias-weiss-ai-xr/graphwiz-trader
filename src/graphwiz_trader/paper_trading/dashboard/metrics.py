@@ -113,8 +113,9 @@ def calculate_volatility(returns: pd.Series, annualize: bool = True) -> float:
     return vol
 
 
-def get_latest_metrics(symbol: str, equity_df: Optional[pd.DataFrame] = None,
-                       summary: Optional[dict] = None) -> dict:
+def get_latest_metrics(
+    symbol: str, equity_df: Optional[pd.DataFrame] = None, summary: Optional[dict] = None
+) -> dict:
     """Get latest performance metrics for a symbol.
 
     Args:

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "exclude": [
+    "venv/**",
+    "__pycache__/**",
+    "*.pyc",
+    ".env",
+    ".env.*",
+    "logs/**",
+    "htmlcov/**",
+    ".pytest_cache/**",
+    "*.log"
+  ],
+  "instructions": ["STYLE_GUIDE.md"],
+  "provider": {
+    "opencode": {
+      "options": {},
+    },
+  },
+  "permission": {
+    "bash": {
+      "ls foo": "ask",
+    },
+  },
+  "tools": {
+    "github-triage": false,
+    "github-pr-search": false,
+  }
+}

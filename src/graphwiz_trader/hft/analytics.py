@@ -60,22 +60,16 @@ class HFTAnalytics:
             )
 
             # Link to related patterns
-            await self.link_related_patterns(
-                pattern.get("symbol"), pattern.get("type")
-            )
+            await self.link_related_patterns(pattern.get("symbol"), pattern.get("type"))
 
-            logger.info(
-                f"Stored pattern: {pattern.get('type')} for {pattern.get('symbol')}"
-            )
+            logger.info(f"Stored pattern: {pattern.get('type')} for {pattern.get('symbol')}")
             return True
 
         except Exception as e:
             logger.error(f"Failed to store pattern: {e}")
             return False
 
-    async def link_related_patterns(
-        self, symbol: str, pattern_type: str, days: int = 7
-    ) -> None:
+    async def link_related_patterns(self, symbol: str, pattern_type: str, days: int = 7) -> None:
         """
         Link related patterns in the knowledge graph.
 
@@ -155,9 +149,7 @@ class HFTAnalytics:
             logger.error(f"Failed to query strategy performance: {e}")
             return None
 
-    async def get_best_patterns(
-        self, symbol: str, limit: int = 10
-    ) -> List[Dict[str, Any]]:
+    async def get_best_patterns(self, symbol: str, limit: int = 10) -> List[Dict[str, Any]]:
         """
         Get the most profitable patterns for a symbol.
 
@@ -190,9 +182,7 @@ class HFTAnalytics:
             logger.error(f"Failed to query best patterns: {e}")
             return []
 
-    async def get_correlated_patterns(
-        self, symbol: str, pattern_type: str
-    ) -> List[Dict[str, Any]]:
+    async def get_correlated_patterns(self, symbol: str, pattern_type: str) -> List[Dict[str, Any]]:
         """
         Get patterns correlated with a specific pattern type.
 
@@ -332,9 +322,7 @@ class HFTAnalytics:
             logger.error(f"Failed to query top performers: {e}")
             return []
 
-    async def store_arbitrage_opportunity(
-        self, opportunity: Dict[str, Any]
-    ) -> bool:
+    async def store_arbitrage_opportunity(self, opportunity: Dict[str, Any]) -> bool:
         """
         Store arbitrage opportunity for analysis.
 

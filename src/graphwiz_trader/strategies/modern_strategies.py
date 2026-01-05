@@ -24,6 +24,7 @@ import asyncio
 
 try:
     from sklearn.cluster import KMeans
+
     SCIKIT_AVAILABLE = True
 except ImportError:
     SCIKIT_AVAILABLE = False
@@ -32,6 +33,7 @@ except ImportError:
 
 class GridTradingMode(Enum):
     """Grid trading execution modes."""
+
     MANUAL = "manual"  # User-defined grid
     ARITHMETIC = "arithmetic"  # Equal spacing
     GEOMETRIC = "geometric"  # Percentage spacing
@@ -110,18 +112,12 @@ class GridTradingStrategy:
         if self.grid_mode == GridTradingMode.ARITHMETIC:
             # Equal spacing
             step = (self.upper_price - self.lower_price) / self.num_grids
-            self.grid_levels = [
-                self.lower_price + i * step
-                for i in range(self.num_grids + 1)
-            ]
+            self.grid_levels = [self.lower_price + i * step for i in range(self.num_grids + 1)]
 
         elif self.grid_mode == GridTradingMode.GEOMETRIC:
             # Percentage spacing (better for trending markets)
             ratio = (self.upper_price / self.lower_price) ** (1 / self.num_grids)
-            self.grid_levels = [
-                self.lower_price * (ratio ** i)
-                for i in range(self.num_grids + 1)
-            ]
+            self.grid_levels = [self.lower_price * (ratio**i) for i in range(self.num_grids + 1)]
 
         elif self.grid_mode == GridTradingMode.AI_ENHANCED:
             # ML-optimized grid (uses volatility clustering)
@@ -131,8 +127,7 @@ class GridTradingStrategy:
                 # Fallback to geometric
                 ratio = (self.upper_price / self.lower_price) ** (1 / self.num_grids)
                 self.grid_levels = [
-                    self.lower_price * (ratio ** i)
-                    for i in range(self.num_grids + 1)
+                    self.lower_price * (ratio**i) for i in range(self.num_grids + 1)
                 ]
         else:
             # Manual mode
@@ -146,11 +141,13 @@ class GridTradingStrategy:
         # In production, this would use historical price data
         vol_clusters = np.linspace(0.8, 1.2, self.num_grids)
 
-        self.grid_levels = sorted([
-            current_price * cluster
-            for cluster in vol_clusters
-            if self.lower_price <= current_price * cluster <= self.upper_price
-        ])
+        self.grid_levels = sorted(
+            [
+                current_price * cluster
+                for cluster in vol_clusters
+                if self.lower_price <= current_price * cluster <= self.upper_price
+            ]
+        )
 
         # Ensure boundaries
         if self.grid_levels[0] > self.lower_price:
@@ -179,10 +176,7 @@ class GridTradingStrategy:
             quantity_per_grid = self.investment_amount / (
                 len(self.grid_levels) * np.mean(self.grid_levels)
             )
-            position_sizes = {
-                level: quantity_per_grid
-                for level in self.grid_levels[:-1]
-            }
+            position_sizes = {level: quantity_per_grid for level in self.grid_levels[:-1]}
 
         return position_sizes
 
@@ -202,19 +196,19 @@ class GridTradingStrategy:
             Dictionary with signals and recommendations
         """
         signals = {
-            'current_price': current_price,
-            'grid_levels': self.grid_levels,
-            'orders_to_place': [],
-            'rebalance_needed': False,
-            'trailing_profit_active': False,
+            "current_price": current_price,
+            "grid_levels": self.grid_levels,
+            "orders_to_place": [],
+            "rebalance_needed": False,
+            "trailing_profit_active": False,
         }
 
         # Check if dynamic rebalancing is needed
         if self.dynamic_rebalancing and historical_data is not None:
-            volatility = historical_data['close'].pct_change().std()
+            volatility = historical_data["close"].pct_change().std()
             if volatility > self.volatility_threshold:
-                signals['rebalance_needed'] = True
-                signals['suggested_new_range'] = self._calculate_new_range(
+                signals["rebalance_needed"] = True
+                signals["suggested_new_range"] = self._calculate_new_range(
                     current_price, volatility
                 )
 
@@ -226,30 +220,32 @@ class GridTradingStrategy:
 
             # Buy order below current price
             if level < current_price:
-                signals['orders_to_place'].append({
-                    'side': 'buy',
-                    'price': level,
-                    'quantity': position_sizes.get(level, 0),
-                    'type': 'limit',
-                })
+                signals["orders_to_place"].append(
+                    {
+                        "side": "buy",
+                        "price": level,
+                        "quantity": position_sizes.get(level, 0),
+                        "type": "limit",
+                    }
+                )
 
             # Sell order above current price
             if next_level > current_price:
-                signals['orders_to_place'].append({
-                    'side': 'sell',
-                    'price': next_level,
-                    'quantity': position_sizes.get(level, 0),
-                    'type': 'limit',
-                })
+                signals["orders_to_place"].append(
+                    {
+                        "side": "sell",
+                        "price": next_level,
+                        "quantity": position_sizes.get(level, 0),
+                        "type": "limit",
+                    }
+                )
 
         # Trailing profit logic
         if self.trailing_profit:
             highest_price = max(self.grid_levels)
             if current_price > highest_price * (1 - self.trailing_profit_pct):
-                signals['trailing_profit_active'] = True
-                signals['trailing_sell_price'] = current_price * (
-                    1 + self.trailing_profit_pct
-                )
+                signals["trailing_profit_active"] = True
+                signals["trailing_sell_price"] = current_price * (1 + self.trailing_profit_pct)
 
         return signals
 
@@ -364,7 +360,7 @@ class SmartDCAStrategy:
 
         # Volatility adjustment
         if self.volatility_adjustment and historical_data is not None:
-            volatility = historical_data['close'].pct_change().tail(20).std()
+            volatility = historical_data["close"].pct_change().tail(20).std()
 
             # Buy less when volatility is high (risk management)
             if volatility > 0.08:
@@ -391,25 +387,29 @@ class SmartDCAStrategy:
             purchase_amount = remaining
 
         return {
-            'symbol': self.symbol,
-            'action': 'buy',
-            'amount': purchase_amount,
-            'price': current_price,
-            'quantity': purchase_amount / current_price,
-            'reason': self._get_purchase_reason(historical_data),
-            'is_final_purchase': purchase_amount >= remaining,
+            "symbol": self.symbol,
+            "action": "buy",
+            "amount": purchase_amount,
+            "price": current_price,
+            "quantity": purchase_amount / current_price,
+            "reason": self._get_purchase_reason(historical_data),
+            "is_final_purchase": purchase_amount >= remaining,
         }
 
     def execute_purchase(self, purchase: Dict) -> None:
         """Record a purchase and update state."""
-        self.purchases.append({
-            **purchase,
-            'timestamp': datetime.now(),
-        })
-        self.invested_amount += purchase['amount']
-        self.last_purchase_price = purchase['price']
+        self.purchases.append(
+            {
+                **purchase,
+                "timestamp": datetime.now(),
+            }
+        )
+        self.invested_amount += purchase["amount"]
+        self.last_purchase_price = purchase["price"]
 
-        logger.info(f"DCA Purchase: {purchase['quantity']:.4f} {self.symbol} @ ${purchase['price']:.2f}")
+        logger.info(
+            f"DCA Purchase: {purchase['quantity']:.4f} {self.symbol} @ ${purchase['price']:.2f}"
+        )
 
     def get_portfolio_status(self, current_price: float) -> Dict[str, Any]:
         """
@@ -423,30 +423,30 @@ class SmartDCAStrategy:
         """
         if not self.purchases:
             return {
-                'total_invested': 0,
-                'total_quantity': 0,
-                'avg_purchase_price': 0,
-                'current_value': 0,
-                'pnl': 0,
-                'pnl_pct': 0,
-                'num_purchases': 0,
+                "total_invested": 0,
+                "total_quantity": 0,
+                "avg_purchase_price": 0,
+                "current_value": 0,
+                "pnl": 0,
+                "pnl_pct": 0,
+                "num_purchases": 0,
             }
 
-        total_quantity = sum(p['quantity'] for p in self.purchases)
+        total_quantity = sum(p["quantity"] for p in self.purchases)
         avg_price = self.invested_amount / total_quantity if total_quantity > 0 else 0
         current_value = total_quantity * current_price
         pnl = current_value - self.invested_amount
         pnl_pct = (pnl / self.invested_amount * 100) if self.invested_amount > 0 else 0
 
         return {
-            'total_invested': self.invested_amount,
-            'total_quantity': total_quantity,
-            'avg_purchase_price': avg_price,
-            'current_value': current_value,
-            'pnl': pnl,
-            'pnl_pct': pnl_pct,
-            'num_purchases': len(self.purchases),
-            'completion_pct': (self.invested_amount / self.total_investment * 100),
+            "total_invested": self.invested_amount,
+            "total_quantity": total_quantity,
+            "avg_purchase_price": avg_price,
+            "current_value": current_value,
+            "pnl": pnl,
+            "pnl_pct": pnl_pct,
+            "num_purchases": len(self.purchases),
+            "completion_pct": (self.invested_amount / self.total_investment * 100),
         }
 
     def _get_purchase_reason(
@@ -460,7 +460,7 @@ class SmartDCAStrategy:
             reasons.append("Scheduled DCA purchase")
 
         if self.volatility_adjustment and historical_data is not None:
-            volatility = historical_data['close'].pct_change().tail(20).std()
+            volatility = historical_data["close"].pct_change().tail(20).std()
             if volatility < 0.02:
                 reasons.append("Low volatility - opportunity buy")
             elif volatility > 0.08:
@@ -557,10 +557,10 @@ class AutomatedMarketMakingStrategy:
         needs_rebalance = ratio_diff > self.rebalance_threshold
 
         recommendations = {
-            'current_ratio_a': current_ratio_a,
-            'target_ratio': self.inventory_target_ratio,
-            'needs_rebalance': needs_rebalance,
-            'actions': [],
+            "current_ratio_a": current_ratio_a,
+            "target_ratio": self.inventory_target_ratio,
+            "needs_rebalance": needs_rebalance,
+            "actions": [],
         }
 
         if needs_rebalance:
@@ -570,41 +570,44 @@ class AutomatedMarketMakingStrategy:
                 excess_ratio = current_ratio_a - self.inventory_target_ratio
                 sell_amount_a = total_value_a * excess_ratio
 
-                recommendations['actions'].append({
-                    'token': self.token_a,
-                    'side': 'sell',
-                    'amount': sell_amount_a,
-                    'reason': 'Inventory rebalancing',
-                })
+                recommendations["actions"].append(
+                    {
+                        "token": self.token_a,
+                        "side": "sell",
+                        "amount": sell_amount_a,
+                        "reason": "Inventory rebalancing",
+                    }
+                )
             else:
                 # Too much token B, sell B for A
                 excess_ratio = self.inventory_target_ratio - current_ratio_a
                 sell_amount_b = (total_value_a * current_price) * excess_ratio
 
-                recommendations['actions'].append({
-                    'token': self.token_b,
-                    'side': 'sell',
-                    'amount': sell_amount_b,
-                    'reason': 'Inventory rebalancing',
-                })
+                recommendations["actions"].append(
+                    {
+                        "token": self.token_b,
+                        "side": "sell",
+                        "amount": sell_amount_b,
+                        "reason": "Inventory rebalancing",
+                    }
+                )
 
         # Concentrated liquidity recommendations
         lower_price, upper_price = self.price_range
 
         if current_price < lower_price or current_price > upper_price:
             # Price outside range - recommend range adjustment
-            new_range = (
-                current_price * self.price_range[0],
-                current_price * self.price_range[1]
-            )
+            new_range = (current_price * self.price_range[0], current_price * self.price_range[1])
 
-            recommendations['price_range_warning'] = True
-            recommendations['suggested_new_range'] = new_range
-            recommendations['actions'].append({
-                'action': 'reposition_liquidity',
-                'new_range': new_range,
-                'reason': 'Price outside current range',
-            })
+            recommendations["price_range_warning"] = True
+            recommendations["suggested_new_range"] = new_range
+            recommendations["actions"].append(
+                {
+                    "action": "reposition_liquidity",
+                    "new_range": new_range,
+                    "reason": "Price outside current range",
+                }
+            )
 
         return recommendations
 
@@ -621,9 +624,9 @@ class AutomatedMarketMakingStrategy:
         Returns:
             Trade execution result
         """
-        side = incoming_trade['side']
-        amount = incoming_trade['amount']
-        trade_price = incoming_trade.get('price', self.pool_price)
+        side = incoming_trade["side"]
+        amount = incoming_trade["amount"]
+        trade_price = incoming_trade.get("price", self.pool_price)
 
         # Calculate fee
         fee = amount * self.base_fee_rate
@@ -636,16 +639,16 @@ class AutomatedMarketMakingStrategy:
         is_adverse = price_impact > self.adverse_select_threshold
 
         trade_result = {
-            'side': side,
-            'amount_in': amount,
-            'fee_earned': fee,
-            'price_impact': price_impact,
-            'is_adverse_selection': is_adverse,
-            'execution_price': trade_price,
+            "side": side,
+            "amount_in": amount,
+            "fee_earned": fee,
+            "price_impact": price_impact,
+            "is_adverse_selection": is_adverse,
+            "execution_price": trade_price,
         }
 
         # Update inventories
-        if side == 'buy':
+        if side == "buy":
             # Trader buys token A with token B
             self.inventory_a -= amount
             self.inventory_b += amount * trade_price
@@ -662,24 +665,24 @@ class AutomatedMarketMakingStrategy:
         """Calculate pool performance metrics."""
         if not self.trade_history:
             return {
-                'total_trades': 0,
-                'total_fees': 0,
-                'adverse_selection_count': 0,
-                'avg_price_impact': 0,
+                "total_trades": 0,
+                "total_fees": 0,
+                "adverse_selection_count": 0,
+                "avg_price_impact": 0,
             }
 
         total_trades = len(self.trade_history)
-        adverse_count = sum(1 for t in self.trade_history if t['is_adverse_selection'])
-        avg_price_impact = np.mean([t['price_impact'] for t in self.trade_history])
+        adverse_count = sum(1 for t in self.trade_history if t["is_adverse_selection"])
+        avg_price_impact = np.mean([t["price_impact"] for t in self.trade_history])
 
         return {
-            'total_trades': total_trades,
-            'total_fees': self.total_fees_earned,
-            'adverse_selection_count': adverse_count,
-            'adverse_selection_rate': adverse_count / total_trades if total_trades > 0 else 0,
-            'avg_price_impact': avg_price_impact,
-            'inventory_a': self.inventory_a,
-            'inventory_b': self.inventory_b,
+            "total_trades": total_trades,
+            "total_fees": self.total_fees_earned,
+            "adverse_selection_count": adverse_count,
+            "adverse_selection_rate": adverse_count / total_trades if total_trades > 0 else 0,
+            "avg_price_impact": avg_price_impact,
+            "inventory_a": self.inventory_a,
+            "inventory_b": self.inventory_b,
         }
 
 
@@ -769,16 +772,18 @@ class TriangularArbitrageStrategy:
                 profit = self._calculate_path_profit(path, exchange_prices)
 
                 if profit > self.min_profit_threshold:
-                    opportunities.append({
-                        'exchange': exchange,
-                        'path': path,
-                        'profit_pct': profit,
-                        'estimated_profit': self._estimate_dollar_profit(path, profit),
-                        'execution_time_estimate': len(path) * 0.3,  # 300ms per hop
-                    })
+                    opportunities.append(
+                        {
+                            "exchange": exchange,
+                            "path": path,
+                            "profit_pct": profit,
+                            "estimated_profit": self._estimate_dollar_profit(path, profit),
+                            "execution_time_estimate": len(path) * 0.3,  # 300ms per hop
+                        }
+                    )
 
         # Sort by profit (highest first)
-        opportunities.sort(key=lambda x: x['profit_pct'], reverse=True)
+        opportunities.sort(key=lambda x: x["profit_pct"], reverse=True)
 
         return opportunities
 
@@ -787,8 +792,8 @@ class TriangularArbitrageStrategy:
         # Extract unique assets from trading pairs
         assets = set()
         for pair in self.trading_pairs:
-            if '/' in pair:
-                base, quote = pair.split('/')
+            if "/" in pair:
+                base, quote = pair.split("/")
                 assets.add(base)
                 assets.add(quote)
 
@@ -820,7 +825,7 @@ class TriangularArbitrageStrategy:
     def _pair_exists(self, pair: str) -> bool:
         """Check if trading pair exists in our data."""
         # Check both directions
-        reverse_pair = '/'.join(pair.split('/')[::-1])
+        reverse_pair = "/".join(pair.split("/")[::-1])
         return pair in self.trading_pairs or reverse_pair in self.trading_pairs
 
     def _calculate_path_profit(
@@ -846,7 +851,7 @@ class TriangularArbitrageStrategy:
                 amount = amount * prices[pair]
             else:
                 # Try reverse pair
-                reverse_pair = '/'.join(pair.split('/')[::-1])
+                reverse_pair = "/".join(pair.split("/")[::-1])
                 if reverse_pair in prices:
                     amount = amount / prices[reverse_pair]
                 else:
@@ -882,8 +887,8 @@ class TriangularArbitrageStrategy:
         Returns:
             Execution result
         """
-        path = opportunity['path']
-        exchange = opportunity['exchange']
+        path = opportunity["path"]
+        exchange = opportunity["exchange"]
         prices = self.price_graph[exchange]
 
         trades = []
@@ -892,22 +897,24 @@ class TriangularArbitrageStrategy:
         for i, pair in enumerate(path):
             if pair in prices:
                 price = prices[pair]
-                side = 'buy' if i % 2 == 0 else 'sell'
+                side = "buy" if i % 2 == 0 else "sell"
 
-                trades.append({
-                    'exchange': exchange,
-                    'pair': pair,
-                    'side': side,
-                    'amount': current_amount,
-                    'price': price,
-                })
+                trades.append(
+                    {
+                        "exchange": exchange,
+                        "pair": pair,
+                        "side": side,
+                        "amount": current_amount,
+                        "price": price,
+                    }
+                )
 
                 # Update amount for next trade
                 current_amount = current_amount * price
             else:
                 return {
-                    'success': False,
-                    'reason': f'Price not available for {pair}',
+                    "success": False,
+                    "reason": f"Price not available for {pair}",
                 }
 
         final_amount = current_amount
@@ -915,12 +922,12 @@ class TriangularArbitrageStrategy:
         profit_pct = profit / trade_size
 
         return {
-            'success': True,
-            'initial_amount': trade_size,
-            'final_amount': final_amount,
-            'profit': profit,
-            'profit_pct': profit_pct,
-            'trades': trades,
+            "success": True,
+            "initial_amount": trade_size,
+            "final_amount": final_amount,
+            "profit": profit,
+            "profit_pct": profit_pct,
+            "trades": trades,
         }
 
 

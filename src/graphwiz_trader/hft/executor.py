@@ -93,15 +93,11 @@ class FastOrderExecutor:
 
             try:
                 if order_type == "market":
-                    order = await exc.create_market_order(
-                        symbol, side, amount, params=params
-                    )
+                    order = await exc.create_market_order(symbol, side, amount, params=params)
                 elif order_type == "limit":
                     if price is None:
                         raise ValueError("Price required for limit orders")
-                    order = await exc.create_limit_order(
-                        symbol, side, amount, price, params=params
-                    )
+                    order = await exc.create_limit_order(symbol, side, amount, price, params=params)
                 else:
                     raise ValueError(f"Unsupported order type: {order_type}")
 
@@ -137,9 +133,7 @@ class FastOrderExecutor:
                 logger.error(f"Order failed on {exchange}: {e}")
                 raise
 
-    async def place_simultaneous_orders(
-        self, orders: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+    async def place_simultaneous_orders(self, orders: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         Place multiple orders simultaneously for arbitrage.
 
@@ -165,9 +159,7 @@ class FastOrderExecutor:
         results = await asyncio.gather(*tasks, return_exceptions=True)
         return results
 
-    async def cancel_order(
-        self, exchange: str, order_id: str, symbol: str
-    ) -> bool:
+    async def cancel_order(self, exchange: str, order_id: str, symbol: str) -> bool:
         """
         Cancel order immediately.
 
@@ -192,9 +184,7 @@ class FastOrderExecutor:
             logger.error(f"Failed to cancel order {order_id} on {exchange}: {e}")
             return False
 
-    async def cancel_all_orders(
-        self, exchange: str, symbol: Optional[str] = None
-    ) -> int:
+    async def cancel_all_orders(self, exchange: str, symbol: Optional[str] = None) -> int:
         """
         Cancel all open orders.
 
@@ -221,9 +211,7 @@ class FastOrderExecutor:
                 except Exception as e:
                     logger.error(f"Failed to cancel order {order['id']}: {e}")
 
-            logger.info(
-                f"Cancelled {cancelled_count}/{len(open_orders)} orders on {exchange}"
-            )
+            logger.info(f"Cancelled {cancelled_count}/{len(open_orders)} orders on {exchange}")
             return cancelled_count
 
         except Exception as e:
@@ -281,9 +269,7 @@ class FastOrderExecutor:
             logger.error(f"Failed to fetch order {order_id} from {exchange}: {e}")
             return None
 
-    async def get_balance(
-        self, exchange: str, currency: Optional[str] = None
-    ) -> Dict[str, Any]:
+    async def get_balance(self, exchange: str, currency: Optional[str] = None) -> Dict[str, Any]:
         """
         Get account balance.
 
@@ -313,9 +299,7 @@ class FastOrderExecutor:
             logger.error(f"Failed to fetch balance from {exchange}: {e}")
             return {}
 
-    def get_order_history(
-        self, limit: Optional[int] = None
-    ) -> List[Dict[str, Any]]:
+    def get_order_history(self, limit: Optional[int] = None) -> List[Dict[str, Any]]:
         """
         Get order execution history.
 

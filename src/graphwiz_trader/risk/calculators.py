@@ -520,7 +520,7 @@ def calculate_max_drawdown(
     if not pd.isna(recovery_date):
         max_dd_duration = (recovery_date - peak_idx).days
     else:
-        max_dd_duration = (len(cumulative) - peak_idx)  # Still in drawdown
+        max_dd_duration = len(cumulative) - peak_idx  # Still in drawdown
 
     # Current drawdown
     current_dd = drawdowns.iloc[-1]

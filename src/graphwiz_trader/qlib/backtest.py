@@ -17,6 +17,7 @@ from loguru import logger
 
 try:
     from scipy import stats
+
     SCIPY_AVAILABLE = True
 except ImportError:
     SCIPY_AVAILABLE = False
@@ -147,23 +148,25 @@ class BacktestEngine:
 
         # Align signals and price data
         aligned_data = pd.concat([signals, price_data], axis=1).join(
-            pd.concat([signals, price_data], axis=1), how='inner'
+            pd.concat([signals, price_data], axis=1), how="inner"
         )
 
         # Ensure we have the signal column
-        if 'signal' in aligned_data.columns:
-            signal_col = 'signal'
+        if "signal" in aligned_data.columns:
+            signal_col = "signal"
         else:
             # Use first column as signal
             signal_col = aligned_data.columns[0]
 
         # Iterate through data
         for i, (timestamp, row) in enumerate(aligned_data.iterrows()):
-            close_price = row['close']
+            close_price = row["close"]
             signal = row[signal_col]
 
             # Apply slippage
-            execution_price = close_price * (1 - self.config.slippage) if position == 0 else close_price
+            execution_price = (
+                close_price * (1 - self.config.slippage) if position == 0 else close_price
+            )
 
             if signal == 1 and position == 0:
                 # Enter long position
@@ -183,17 +186,19 @@ class BacktestEngine:
                 profit_loss = capital - self.config.initial_capital
                 return_pct = (execution_price - entry_price) / entry_price
 
-                trades.append(Trade(
-                    entry_time=entry_time,
-                    exit_time=timestamp,
-                    symbol="BTC/USDT",  # Can be made configurable
-                    side='buy',
-                    entry_price=entry_price,
-                    exit_price=execution_price,
-                    quantity=position,
-                    profit_loss=profit_loss,
-                    return_pct=return_pct,
-                ))
+                trades.append(
+                    Trade(
+                        entry_time=entry_time,
+                        exit_time=timestamp,
+                        symbol="BTC/USDT",  # Can be made configurable
+                        side="buy",
+                        entry_price=entry_price,
+                        exit_price=execution_price,
+                        quantity=position,
+                        profit_loss=profit_loss,
+                        return_pct=return_pct,
+                    )
+                )
 
                 position = 0
                 entry_price = None
@@ -210,22 +215,24 @@ class BacktestEngine:
 
         # Close any remaining position
         if position > 0 and entry_price is not None:
-            final_price = aligned_data['close'].iloc[-1]
+            final_price = aligned_data["close"].iloc[-1]
             capital = position * final_price
             profit_loss = capital - self.config.initial_capital
             return_pct = (final_price - entry_price) / entry_price
 
-            trades.append(Trade(
-                entry_time=entry_time,
-                exit_time=aligned_data.index[-1],
-                symbol="BTC/USDT",
-                side='buy',
-                entry_price=entry_price,
-                exit_price=final_price,
-                quantity=position,
-                profit_loss=profit_loss,
-                return_pct=return_pct,
-            ))
+            trades.append(
+                Trade(
+                    entry_time=entry_time,
+                    exit_time=aligned_data.index[-1],
+                    symbol="BTC/USDT",
+                    side="buy",
+                    entry_price=entry_price,
+                    exit_price=final_price,
+                    quantity=position,
+                    profit_loss=profit_loss,
+                    return_pct=return_pct,
+                )
+            )
 
         # Create equity curve and returns series
         self.equity_curve = pd.Series(equity_values, index=aligned_data.index)
@@ -269,8 +276,14 @@ class BacktestEngine:
 
         # Sortino Ratio
         downside_returns = self.returns[self.returns < 0]
-        downside_deviation = downside_returns.std() * np.sqrt(252) if len(downside_returns) > 1 else 0
-        sortino_ratio = (annualized_return - risk_free_rate) / downside_deviation if downside_deviation > 0 else 0
+        downside_deviation = (
+            downside_returns.std() * np.sqrt(252) if len(downside_returns) > 1 else 0
+        )
+        sortino_ratio = (
+            (annualized_return - risk_free_rate) / downside_deviation
+            if downside_deviation > 0
+            else 0
+        )
 
         # Maximum drawdown
         cum_returns = (1 + self.returns).cumprod()
@@ -307,7 +320,7 @@ class BacktestEngine:
 
             total_wins = sum(wins)
             total_losses = abs(sum(losses))
-            profit_factor = total_wins / total_losses if total_losses > 0 else float('inf')
+            profit_factor = total_wins / total_losses if total_losses > 0 else float("inf")
         else:
             winning_trades = 0
             losing_trades = 0
@@ -323,16 +336,22 @@ class BacktestEngine:
 
         if benchmark_returns is not None and SCIPY_AVAILABLE:
             # Align returns
-            aligned_returns = self.returns.align(benchmark_returns, join='inner')
+            aligned_returns = self.returns.align(benchmark_returns, join="inner")
             if len(aligned_returns[0]) > 1:
                 excess_returns = aligned_returns[0] - aligned_returns[1]
-                information_ratio = excess_returns.mean() / excess_returns.std() * np.sqrt(252) if excess_returns.std() > 0 else 0
+                information_ratio = (
+                    excess_returns.mean() / excess_returns.std() * np.sqrt(252)
+                    if excess_returns.std() > 0
+                    else 0
+                )
 
                 # Beta and Alpha (CAPM)
                 covariance = np.cov(aligned_returns[0].dropna(), aligned_returns[1].dropna())[0][1]
                 benchmark_variance = aligned_returns[1].var()
                 beta = covariance / benchmark_variance if benchmark_variance > 0 else 0
-                alpha = annualized_return - (risk_free_rate + beta * (benchmark_returns.mean() * 252 - risk_free_rate))
+                alpha = annualized_return - (
+                    risk_free_rate + beta * (benchmark_returns.mean() * 252 - risk_free_rate)
+                )
 
         # Hit rate (same as win_rate)
         hit_rate = win_rate
@@ -490,9 +509,9 @@ class ModelValidator:
             logger.debug(f"Fold {fold + 1}: {score:.4f}")
 
         results = {
-            'mean_score': np.mean(scores),
-            'std_score': np.std(scores),
-            'scores': scores,
+            "mean_score": np.mean(scores),
+            "std_score": np.std(scores),
+            "scores": scores,
         }
 
         logger.info(f"CV Results: {results['mean_score']:.4f} (+/- {results['std_score']:.4f})")
@@ -525,7 +544,7 @@ class ModelValidator:
         for model_name, model in models.items():
             try:
                 results = self.cross_validate(model, X, y)
-                score = results['mean_score']
+                score = results["mean_score"]
 
                 logger.info(f"{model_name}: {score:.4f}")
 

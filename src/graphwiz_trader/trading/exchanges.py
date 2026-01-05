@@ -37,29 +37,33 @@ class GermanExchange:
 
             # Base configuration
             exchange_config = {
-                'enableRateLimit': True,
-                'timeout': self.config.get('timeout', 30000),
-                'options': {
-                    'defaultType': 'spot',
+                "enableRateLimit": True,
+                "timeout": self.config.get("timeout", 30000),
+                "options": {
+                    "defaultType": "spot",
                 },
             }
 
             # Add API credentials
-            if self.config.get('api_key'):
-                exchange_config['apiKey'] = self.config['api_key']
-            if self.config.get('api_secret'):
-                exchange_config['secret'] = self.config['api_secret']
+            if self.config.get("api_key"):
+                exchange_config["apiKey"] = self.config["api_key"]
+            if self.config.get("api_secret"):
+                exchange_config["secret"] = self.config["api_secret"]
 
             # Exchange-specific options
-            if self.exchange_id == 'kraken':
-                exchange_config['options'].update({
-                    'adjustForTimeDifference': True,
-                })
-            elif self.exchange_id == 'onetrading':
+            if self.exchange_id == "kraken":
+                exchange_config["options"].update(
+                    {
+                        "adjustForTimeDifference": True,
+                    }
+                )
+            elif self.exchange_id == "onetrading":
                 # One Trading (formerly Bitpanda Pro)
-                exchange_config['options'].update({
-                    'defaultType': 'spot',
-                })
+                exchange_config["options"].update(
+                    {
+                        "defaultType": "spot",
+                    }
+                )
 
             # Create exchange instance
             self.exchange = exchange_class(exchange_config)
@@ -76,10 +80,7 @@ class GermanExchange:
     @property
     def exchange_name(self) -> str:
         """Get human-readable exchange name."""
-        names = {
-            'kraken': 'Kraken',
-            'onetrading': 'One Trading (Bitpanda Pro)'
-        }
+        names = {"kraken": "Kraken", "onetrading": "One Trading (Bitpanda Pro)"}
         return names.get(self.exchange_id, self.exchange_id)
 
     def get_balance(self) -> Dict[str, Any]:
@@ -111,7 +112,7 @@ class GermanExchange:
             logger.error(f"Failed to fetch ticker for {symbol}: {e}")
             raise
 
-    def get_ohlcv(self, symbol: str, timeframe: str = '1h', limit: int = 100) -> List[List]:
+    def get_ohlcv(self, symbol: str, timeframe: str = "1h", limit: int = 100) -> List[List]:
         """Get OHLCV data.
 
         Args:
@@ -299,21 +300,21 @@ class GermanExchange:
         Returns:
             Validated symbol in exchange format
         """
-        if self.exchange_id == 'kraken':
+        if self.exchange_id == "kraken":
             # Kraken uses specific symbol formats
             # Convert BTC/EUR to XXBTZEUR
             symbol_map = {
-                'BTC/EUR': 'XXBTZEUR',
-                'ETH/EUR': 'XETHZEUR',
-                'SOL/EUR': 'SOLEUR',
-                'ADA/EUR': 'ADAEUR',
-                'DOT/EUR': 'DOT/EUR',
+                "BTC/EUR": "XXBTZEUR",
+                "ETH/EUR": "XETHZEUR",
+                "SOL/EUR": "SOLEUR",
+                "ADA/EUR": "ADAEUR",
+                "DOT/EUR": "DOT/EUR",
             }
 
             if symbol in symbol_map:
                 return symbol_map[symbol]
 
-        elif self.exchange_id == 'onetrading':
+        elif self.exchange_id == "onetrading":
             # One Trading (Bitpanda Pro) uses standard format
             # BTC/EUR, ETH/EUR, etc.
             # No conversion needed
@@ -335,23 +336,23 @@ class GermanExchange:
             market = self.exchange.market(symbol)
 
             # Default fees if not in market
-            if self.exchange_id == 'kraken':
-                maker_fee = market.get('maker', 0.0016)  # 0.16%
-                taker_fee = market.get('taker', 0.0026)  # 0.26%
-            elif self.exchange_id == 'onetrading':
-                maker_fee = market.get('maker', 0.0010)  # 0.10%
-                taker_fee = market.get('taker', 0.0015)  # 0.15%
+            if self.exchange_id == "kraken":
+                maker_fee = market.get("maker", 0.0016)  # 0.16%
+                taker_fee = market.get("taker", 0.0026)  # 0.26%
+            elif self.exchange_id == "onetrading":
+                maker_fee = market.get("maker", 0.0010)  # 0.10%
+                taker_fee = market.get("taker", 0.0015)  # 0.15%
             else:
                 maker_fee = 0.0010
                 taker_fee = 0.0020
 
             return {
-                'maker': maker_fee,
-                'taker': taker_fee,
+                "maker": maker_fee,
+                "taker": taker_fee,
             }
         except Exception as e:
             logger.error(f"Failed to fetch fees for {symbol}: {e}")
-            return {'maker': 0.0010, 'taker': 0.0020}
+            return {"maker": 0.0010, "taker": 0.0020}
 
     def withdraw(self, currency: str, amount: float, address: str, **kwargs) -> Dict[str, Any]:
         """Withdraw funds.
@@ -400,12 +401,12 @@ class KrakenExchange(GermanExchange):
             api_secret: Kraken API secret
         """
         config = {
-            'api_key': api_key,
-            'api_secret': api_secret,
-            'timeout': 30000,
+            "api_key": api_key,
+            "api_secret": api_secret,
+            "timeout": 30000,
         }
 
-        super().__init__('kraken', config)
+        super().__init__("kraken", config)
 
         logger.info("=" * 80)
         logger.info("🇩🇪 KRAKEN EXCHANGE - Germany Compliant")
@@ -426,21 +427,20 @@ class KrakenExchange(GermanExchange):
         # Comprehensive Kraken symbol map
         kraken_symbols = {
             # EUR pairs
-            'BTC/EUR': 'XXBTZEUR',
-            'ETH/EUR': 'XETHZEUR',
-            'XRP/EUR': 'XXRPZEUR',
-            'LTC/EUR': 'XLTCZEUR',
-            'BCH/EUR': 'BCH/EUR',
-            'XLM/EUR': 'XXLMZEUR',
-            'ADA/EUR': 'ADAEUR',
-            'DOT/EUR': 'DOT/EUR',
-            'SOL/EUR': 'SOLEUR',
-            'LINK/EUR': 'LINK/EUR',
-            'USDT/EUR': 'USDT/ZEUR',
-
+            "BTC/EUR": "XXBTZEUR",
+            "ETH/EUR": "XETHZEUR",
+            "XRP/EUR": "XXRPZEUR",
+            "LTC/EUR": "XLTCZEUR",
+            "BCH/EUR": "BCH/EUR",
+            "XLM/EUR": "XXLMZEUR",
+            "ADA/EUR": "ADAEUR",
+            "DOT/EUR": "DOT/EUR",
+            "SOL/EUR": "SOLEUR",
+            "LINK/EUR": "LINK/EUR",
+            "USDT/EUR": "USDT/ZEUR",
             # USD pairs (for reference)
-            'BTC/USD': 'XXBTZUSD',
-            'ETH/USD': 'XETHZUSD',
+            "BTC/USD": "XXBTZUSD",
+            "ETH/USD": "XETHZUSD",
         }
 
         return kraken_symbols.get(symbol, symbol)
@@ -461,12 +461,12 @@ class OneTradingExchange(GermanExchange):
             api_secret: One Trading API secret
         """
         config = {
-            'api_key': api_key,
-            'api_secret': api_secret,
-            'timeout': 30000,
+            "api_key": api_key,
+            "api_secret": api_secret,
+            "timeout": 30000,
         }
 
-        super().__init__('onetrading', config)
+        super().__init__("onetrading", config)
 
         logger.info("=" * 80)
         logger.info("🇩🇪 ONE TRADING EXCHANGE - Germany Compliant")
@@ -490,11 +490,7 @@ class OneTradingExchange(GermanExchange):
         return symbol
 
 
-def create_german_exchange(
-    exchange_id: str,
-    api_key: str,
-    api_secret: str
-) -> GermanExchange:
+def create_german_exchange(exchange_id: str, api_key: str, api_secret: str) -> GermanExchange:
     """Create German exchange instance.
 
     Args:
@@ -516,9 +512,9 @@ def create_german_exchange(
         >>> exchange = create_german_exchange('onetrading', 'key', 'secret')
     """
     supported_exchanges = {
-        'kraken': KrakenExchange,
-        'onetrading': OneTradingExchange,
-        'bitpanda': OneTradingExchange,  # Alias for backwards compatibility
+        "kraken": KrakenExchange,
+        "onetrading": OneTradingExchange,
+        "bitpanda": OneTradingExchange,  # Alias for backwards compatibility
     }
 
     if exchange_id not in supported_exchanges:
@@ -541,23 +537,23 @@ def get_available_exchanges() -> List[Dict[str, str]]:
     """
     return [
         {
-            'id': 'kraken',
-            'name': 'Kraken',
-            'license': 'MiCA',
-            'license_date': 'August 2025',
-            'regulator': 'BaFin',
-            'status': 'Active',
-            'url': 'https://www.kraken.com',
-            'notes': 'Well-established exchange with EUR markets'
+            "id": "kraken",
+            "name": "Kraken",
+            "license": "MiCA",
+            "license_date": "August 2025",
+            "regulator": "BaFin",
+            "status": "Active",
+            "url": "https://www.kraken.com",
+            "notes": "Well-established exchange with EUR markets",
         },
         {
-            'id': 'onetrading',
-            'name': 'One Trading (Bitpanda Pro)',
-            'license': 'MiCA',
-            'license_date': 'January 2025',
-            'regulator': 'BaFin',
-            'status': 'Active',
-            'url': 'https://www.onetrading.com',
-            'notes': 'Formerly Bitpanda Pro. Austrian-based EU exchange.'
+            "id": "onetrading",
+            "name": "One Trading (Bitpanda Pro)",
+            "license": "MiCA",
+            "license_date": "January 2025",
+            "regulator": "BaFin",
+            "status": "Active",
+            "url": "https://www.onetrading.com",
+            "notes": "Formerly Bitpanda Pro. Austrian-based EU exchange.",
         },
     ]

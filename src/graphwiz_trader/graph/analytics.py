@@ -27,11 +27,7 @@ class GraphAnalytics:
     # ========== CORRELATION ANALYSIS ==========
 
     def calculate_correlation_matrix(
-        self,
-        symbols: List[str],
-        exchange: str,
-        window: str = "24h",
-        min_correlation: float = 0.5
+        self, symbols: List[str], exchange: str, window: str = "24h", min_correlation: float = 0.5
     ) -> Dict[str, Any]:
         """Calculate correlation matrix for multiple assets.
 
@@ -65,7 +61,7 @@ class GraphAnalytics:
         correlation_matrix = defaultdict(dict)
 
         for i, sym1 in enumerate(symbols):
-            for sym2 in symbols[i+1:]:
+            for sym2 in symbols[i + 1 :]:
                 if sym1 in price_data and sym2 in price_data:
                     # Align data lengths
                     min_len = min(len(price_data[sym1]), len(price_data[sym2]))
@@ -79,21 +75,24 @@ class GraphAnalytics:
                             correlation_matrix[sym1][sym2] = corr
                             correlation_matrix[sym2][sym1] = corr
 
-                            correlations.append({
-                                "symbol1": sym1,
-                                "symbol2": sym2,
-                                "correlation": corr,
-                                "p_value": p_value
-                            })
+                            correlations.append(
+                                {
+                                    "symbol1": sym1,
+                                    "symbol2": sym2,
+                                    "correlation": corr,
+                                    "p_value": p_value,
+                                }
+                            )
 
                             # Store in graph
                             from .models import CorrelationRelationship
+
                             corr_rel = CorrelationRelationship(
                                 symbol1=sym1,
                                 symbol2=sym2,
                                 correlation_coefficient=corr,
                                 p_value=p_value,
-                                window=window
+                                window=window,
                             )
                             self.graph.create_correlation(corr_rel)
 
@@ -102,15 +101,11 @@ class GraphAnalytics:
             "correlations": correlations,
             "window": window,
             "exchange": exchange,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
     def find_correlation_clusters(
-        self,
-        symbols: List[str],
-        exchange: str,
-        window: str = "24h",
-        eps: float = 0.3
+        self, symbols: List[str], exchange: str, window: str = "24h", eps: float = 0.3
     ) -> List[List[str]]:
         """Find clusters of highly correlated assets using DBSCAN.
 
@@ -162,10 +157,7 @@ class GraphAnalytics:
         return list(clusters.values())
 
     def update_correlations(
-        self,
-        exchange: str,
-        asset_type: Optional[str] = None,
-        window: str = "24h"
+        self, exchange: str, asset_type: Optional[str] = None, window: str = "24h"
     ) -> int:
         """Update correlations for all assets on an exchange.
 
@@ -182,7 +174,9 @@ class GraphAnalytics:
         if asset_type:
             assets = self.graph.get_assets_by_type(AssetType(asset_type))
         else:
-            assets = self.graph.query("MATCH (a:Asset)-[:TRADED_ON]->(e:Exchange {name: $name}) RETURN a", name=exchange)
+            assets = self.graph.query(
+                "MATCH (a:Asset)-[:TRADED_ON]->(e:Exchange {name: $name}) RETURN a", name=exchange
+            )
             assets = [r["a"] for r in assets]
 
         symbols = [a["symbol"] for a in assets]
@@ -203,7 +197,7 @@ class GraphAnalytics:
         exchanges: List[str],
         symbols: Optional[List[str]] = None,
         min_profit_percentage: float = 0.5,
-        include_fees: bool = True
+        include_fees: bool = True,
     ) -> List[Dict[str, Any]]:
         """Detect arbitrage opportunities across exchanges.
 
@@ -236,7 +230,7 @@ class GraphAnalytics:
                 # Get all symbols traded on this exchange
                 assets = self.graph.query(
                     "MATCH (a:Asset)-[:TRADED_ON]->(e:Exchange {name: $name}) RETURN a",
-                    name=exchange
+                    name=exchange,
                 )
                 check_symbols = [r["a"]["symbol"] for r in assets]
 
@@ -244,10 +238,7 @@ class GraphAnalytics:
                 latest = self.graph.get_latest_ohlcv(symbol, exchange, "1m", count=1)
                 if latest:
                     price = float(latest[0]["close"])
-                    prices_by_symbol[symbol][exchange] = {
-                        "price": price,
-                        "fee": taker_fee
-                    }
+                    prices_by_symbol[symbol][exchange] = {"price": price, "fee": taker_fee}
 
         # Find arbitrage opportunities
         for symbol, exchange_prices in prices_by_symbol.items():
@@ -257,7 +248,7 @@ class GraphAnalytics:
             exchanges_list = list(exchange_prices.keys())
 
             for i in range(len(exchanges_list)):
-                for j in range(i+1, len(exchanges_list)):
+                for j in range(i + 1, len(exchanges_list)):
                     ex1 = exchanges_list[i]
                     ex2 = exchanges_list[j]
 
@@ -285,20 +276,23 @@ class GraphAnalytics:
                         net_profit_pct = gross_profit_pct
 
                     if net_profit_pct >= min_profit_percentage:
-                        opportunities.append({
-                            "symbol": symbol,
-                            "buy_exchange": buy_exchange,
-                            "sell_exchange": sell_exchange,
-                            "buy_price": buy_price,
-                            "sell_price": sell_price,
-                            "gross_profit_pct": gross_profit_pct,
-                            "net_profit_pct": net_profit_pct,
-                            "spread_pct": ((sell_price - buy_price) / buy_price) * 100,
-                            "timestamp": datetime.utcnow().isoformat()
-                        })
+                        opportunities.append(
+                            {
+                                "symbol": symbol,
+                                "buy_exchange": buy_exchange,
+                                "sell_exchange": sell_exchange,
+                                "buy_price": buy_price,
+                                "sell_price": sell_price,
+                                "gross_profit_pct": gross_profit_pct,
+                                "net_profit_pct": net_profit_pct,
+                                "spread_pct": ((sell_price - buy_price) / buy_price) * 100,
+                                "timestamp": datetime.utcnow().isoformat(),
+                            }
+                        )
 
                         # Store in graph
                         from .models import ArbitrageRelationship
+
                         arb = ArbitrageRelationship(
                             symbol=symbol,
                             exchange1=buy_exchange,
@@ -306,7 +300,7 @@ class GraphAnalytics:
                             price1=buy_price,
                             price2=sell_price,
                             spread_percentage=net_profit_pct,
-                            profit_potential=net_profit_pct
+                            profit_potential=net_profit_pct,
                         )
                         self.graph.create_arbitrage_opportunity(arb)
 
@@ -320,7 +314,7 @@ class GraphAnalytics:
         self,
         base_currency: str = "USD",
         exchanges: Optional[List[str]] = None,
-        min_profit_percentage: float = 0.1
+        min_profit_percentage: float = 0.1,
     ) -> List[Dict[str, Any]]:
         """Detect triangular arbitrage opportunities.
 
@@ -341,8 +335,7 @@ class GraphAnalytics:
         for exchange in exchanges:
             # Find all assets traded on this exchange
             assets = self.graph.query(
-                "MATCH (a:Asset)-[:TRADED_ON]->(e:Exchange {name: $name}) RETURN a",
-                name=exchange
+                "MATCH (a:Asset)-[:TRADED_ON]->(e:Exchange {name: $name}) RETURN a", name=exchange
             )
 
             # Build currency pairs graph
@@ -361,12 +354,20 @@ class GraphAnalytics:
                         reverse_pair = f"{cur2}/{cur1}"
 
                         # Get current prices
-                        base_cur1 = self.graph.get_latest_ohlcv(f"{cur1}/{base_currency}", exchange, "1m", count=1)
-                        base_cur2 = self.graph.get_latest_ohlcv(f"{cur2}/{base_currency}", exchange, "1m", count=1)
-                        cur1_cur2 = self.graph.get_latest_ohlcv(pair_symbol, exchange, "1m", count=1)
+                        base_cur1 = self.graph.get_latest_ohlcv(
+                            f"{cur1}/{base_currency}", exchange, "1m", count=1
+                        )
+                        base_cur2 = self.graph.get_latest_ohlcv(
+                            f"{cur2}/{base_currency}", exchange, "1m", count=1
+                        )
+                        cur1_cur2 = self.graph.get_latest_ohlcv(
+                            pair_symbol, exchange, "1m", count=1
+                        )
 
                         if not cur1_cur2:
-                            cur1_cur2 = self.graph.get_latest_ohlcv(reverse_pair, exchange, "1m", count=1)
+                            cur1_cur2 = self.graph.get_latest_ohlcv(
+                                reverse_pair, exchange, "1m", count=1
+                            )
 
                         if base_cur1 and base_cur2 and cur1_cur2:
                             price_base_cur1 = float(base_cur1[0]["close"])
@@ -377,23 +378,29 @@ class GraphAnalytics:
                             # Path: BASE -> CUR1 -> CUR2 -> BASE
                             amount = 1.0
                             amount_after_step1 = amount / price_base_cur1  # Buy CUR1 with BASE
-                            amount_after_step2 = amount_after_step1 * price_cur1_cur2  # Sell CUR1 for CUR2
-                            amount_after_step3 = amount_after_step2 * price_base_cur2  # Sell CUR2 for BASE
+                            amount_after_step2 = (
+                                amount_after_step1 * price_cur1_cur2
+                            )  # Sell CUR1 for CUR2
+                            amount_after_step3 = (
+                                amount_after_step2 * price_base_cur2
+                            )  # Sell CUR2 for BASE
 
                             profit_pct = ((amount_after_step3 - amount) / amount) * 100
 
                             if profit_pct >= min_profit_percentage:
-                                opportunities.append({
-                                    "exchange": exchange,
-                                    "path": f"{base_currency} -> {cur1} -> {cur2} -> {base_currency}",
-                                    "profit_percentage": profit_pct,
-                                    "prices": {
-                                        f"{cur1}/{base_currency}": price_base_cur1,
-                                        f"{cur2}/{base_currency}": price_base_cur2,
-                                        f"{cur1}/{cur2}": price_cur1_cur2
-                                    },
-                                    "timestamp": datetime.utcnow().isoformat()
-                                })
+                                opportunities.append(
+                                    {
+                                        "exchange": exchange,
+                                        "path": f"{base_currency} -> {cur1} -> {cur2} -> {base_currency}",
+                                        "profit_percentage": profit_pct,
+                                        "prices": {
+                                            f"{cur1}/{base_currency}": price_base_cur1,
+                                            f"{cur2}/{base_currency}": price_base_cur2,
+                                            f"{cur1}/{cur2}": price_cur1_cur2,
+                                        },
+                                        "timestamp": datetime.utcnow().isoformat(),
+                                    }
+                                )
 
         opportunities.sort(key=lambda x: x["profit_percentage"], reverse=True)
         logger.info("Found {} triangular arbitrage opportunities", len(opportunities))
@@ -407,7 +414,7 @@ class GraphAnalytics:
         symbol: str,
         exchange: str,
         volume_thresholds: List[float] = [1000, 10000, 100000],
-        lookback_hours: int = 24
+        lookback_hours: int = 24,
     ) -> Dict[str, Any]:
         """Analyze market impact of trades at different volume levels.
 
@@ -439,7 +446,7 @@ class GraphAnalytics:
                 "bid_depth": ob.get("bid_depth", 0),
                 "ask_depth": ob.get("ask_depth", 0),
                 "spread": ob.get("spread", 0),
-                "spread_percentage": ob.get("spread_percentage", 0)
+                "spread_percentage": ob.get("spread_percentage", 0),
             }
 
         return {
@@ -447,7 +454,7 @@ class GraphAnalytics:
             "exchange": exchange,
             "volume_impacts": results,
             "depth_analysis": depth_analysis,
-            "analysis_timestamp": datetime.utcnow().isoformat()
+            "analysis_timestamp": datetime.utcnow().isoformat(),
         }
 
     # ========== PATTERN DETECTION ==========
@@ -458,7 +465,7 @@ class GraphAnalytics:
         exchange: str,
         lookback_hours: int = 24,
         volume_spike_threshold: float = 3.0,
-        price_change_threshold: float = 20.0
+        price_change_threshold: float = 20.0,
     ) -> Dict[str, Any]:
         """Detect potential pump and dump patterns.
 
@@ -481,10 +488,7 @@ class GraphAnalytics:
         )
 
         if not ohlcv_data or len(ohlcv_data) < 12:
-            return {
-                "detected": False,
-                "reason": "Insufficient data"
-            }
+            return {"detected": False, "reason": "Insufficient data"}
 
         # Sort chronologically
         ohlcv_data = list(reversed(ohlcv_data))
@@ -507,9 +511,9 @@ class GraphAnalytics:
         volume_spike = recent_volume / baseline_volume if baseline_volume > 0 else 0
 
         detected = (
-            volume_spike >= volume_spike_threshold and
-            price_increase_pct >= price_change_threshold and
-            price_decrease_pct >= price_change_threshold * 0.5  # Significant drop after peak
+            volume_spike >= volume_spike_threshold
+            and price_increase_pct >= price_change_threshold
+            and price_decrease_pct >= price_change_threshold * 0.5  # Significant drop after peak
         )
 
         return {
@@ -523,14 +527,11 @@ class GraphAnalytics:
             "current_price": price_current,
             "baseline_volume": baseline_volume,
             "recent_volume": recent_volume,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
     def detect_accumulation_distribution(
-        self,
-        symbol: str,
-        exchange: str,
-        lookback_hours: int = 48
+        self, symbol: str, exchange: str, lookback_hours: int = 48
     ) -> Dict[str, Any]:
         """Detect accumulation or distribution patterns.
 
@@ -549,10 +550,7 @@ class GraphAnalytics:
         trades = self.graph.get_trades(symbol, exchange, start_time, end_time, limit=10000)
 
         if not trades:
-            return {
-                "detected": False,
-                "pattern": "insufficient_data"
-            }
+            return {"detected": False, "pattern": "insufficient_data"}
 
         # Separate buy and sell trades
         buy_trades = [t for t in trades if t["side"] == "BUY"]
@@ -577,7 +575,9 @@ class GraphAnalytics:
             confidence = 0.0
 
         # Get price trend
-        ohlcv = self.graph.get_ohlcv(symbol, exchange, start_time, end_time, "1h", limit=lookback_hours)
+        ohlcv = self.graph.get_ohlcv(
+            symbol, exchange, start_time, end_time, "1h", limit=lookback_hours
+        )
         price_trend = 0.0
 
         if ohlcv and len(ohlcv) > 1:
@@ -596,16 +596,12 @@ class GraphAnalytics:
             "buy_sell_ratio": buy_sell_ratio,
             "price_trend_pct": price_trend,
             "trade_count": len(trades),
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
     # ========== SENTIMENT PROPAGATION ==========
 
-    def track_sentiment_propagation(
-        self,
-        symbol: str,
-        lookback_hours: int = 24
-    ) -> Dict[str, Any]:
+    def track_sentiment_propagation(self, symbol: str, lookback_hours: int = 24) -> Dict[str, Any]:
         """Track how sentiment propagates through correlated assets.
 
         Args:
@@ -625,7 +621,7 @@ class GraphAnalytics:
             "source_symbol": symbol,
             "correlated_assets": [],
             "sentiment_lag_analysis": {},
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
         # Get sentiment for source symbol
@@ -639,12 +635,14 @@ class GraphAnalytics:
             corr_sentiment = self.graph.get_average_sentiment(corr_symbol, start_time, end_time)
 
             if corr_sentiment and source_sentiment:
-                results["correlated_assets"].append({
-                    "symbol": corr_symbol,
-                    "correlation": correlation,
-                    "sentiment_score": corr_sentiment.get("avg_score", 0),
-                    "sentiment_volume": corr_sentiment.get("total_volume", 0)
-                })
+                results["correlated_assets"].append(
+                    {
+                        "symbol": corr_symbol,
+                        "correlation": correlation,
+                        "sentiment_score": corr_sentiment.get("avg_score", 0),
+                        "sentiment_volume": corr_sentiment.get("total_volume", 0),
+                    }
+                )
 
         # Calculate sentiment correlation
         if len(results["correlated_assets"]) > 0:
@@ -681,10 +679,7 @@ class GraphAnalytics:
             return timedelta(hours=24)
 
     def generate_market_report(
-        self,
-        symbols: List[str],
-        exchange: str,
-        lookback_hours: int = 24
+        self, symbols: List[str], exchange: str, lookback_hours: int = 24
     ) -> Dict[str, Any]:
         """Generate comprehensive market report.
 
@@ -703,7 +698,7 @@ class GraphAnalytics:
             "exchange": exchange,
             "analysis_period": f"{lookback_hours}h",
             "timestamp": datetime.utcnow().isoformat(),
-            "assets": []
+            "assets": [],
         }
 
         # Analyze correlations
@@ -711,21 +706,16 @@ class GraphAnalytics:
         report["correlation_summary"] = {
             "total_correlations": len(correlations["correlations"]),
             "high_correlations": [
-                c for c in correlations["correlations"]
-                if abs(c["correlation"]) > 0.8
-            ]
+                c for c in correlations["correlations"] if abs(c["correlation"]) > 0.8
+            ],
         }
 
         # Analyze each asset
         for symbol in symbols:
-            asset_report = {
-                "symbol": symbol
-            }
+            asset_report = {"symbol": symbol}
 
             # Price stats
-            price_stats = self.graph.get_price_history_stats(
-                symbol, exchange, start_time, end_time
-            )
+            price_stats = self.graph.get_price_history_stats(symbol, exchange, start_time, end_time)
             asset_report["price_stats"] = price_stats
 
             # Market impact

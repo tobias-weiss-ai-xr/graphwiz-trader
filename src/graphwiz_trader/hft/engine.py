@@ -50,9 +50,7 @@ class HFTEngine:
         self.analytics = HFTAnalytics(knowledge_graph)
 
         # Performance monitoring
-        monitoring_interval = config.get("performance", {}).get(
-            "monitoring_interval", 5
-        )
+        monitoring_interval = config.get("performance", {}).get("monitoring_interval", 5)
         self.monitor = PerformanceMonitor(knowledge_graph, monitoring_interval)
 
         # Strategies
@@ -69,16 +67,12 @@ class HFTEngine:
 
         # Statistical Arbitrage
         if strategies_config.get("statistical_arbitrage", {}).get("enabled", False):
-            stat_arb = StatisticalArbitrage(
-                strategies_config["statistical_arbitrage"], self.kg
-            )
+            stat_arb = StatisticalArbitrage(strategies_config["statistical_arbitrage"], self.kg)
             self.strategies.append(stat_arb)
             logger.info("Initialized Statistical Arbitrage strategy")
 
         # Cross-Exchange Arbitrage
-        if strategies_config.get("cross_exchange_arbitrage", {}).get(
-            "enabled", False
-        ):
+        if strategies_config.get("cross_exchange_arbitrage", {}).get("enabled", False):
             cross_arb = CrossExchangeArbitrage(
                 strategies_config["cross_exchange_arbitrage"],
                 self.kg,
@@ -279,10 +273,7 @@ class HFTEngine:
 
             # Update risk manager for successful fills
             for result in results:
-                if (
-                    isinstance(result, dict)
-                    and result.get("status") == "filled"
-                ):
+                if isinstance(result, dict) and result.get("status") == "filled":
                     fill_data = {
                         "symbol": result["symbol"],
                         "exchange": result["exchange"],
@@ -334,9 +325,7 @@ class HFTEngine:
 
         # Get strategy performance
         for strategy in self.strategies:
-            perf = await self.analytics.get_strategy_performance(
-                strategy.strategy_name, days
-            )
+            perf = await self.analytics.get_strategy_performance(strategy.strategy_name, days)
             if perf:
                 summary[strategy.strategy_name] = perf
 

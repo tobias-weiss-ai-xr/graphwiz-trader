@@ -27,7 +27,7 @@ class PositionCalculator:
         account_balance_eur: float,
         risk_per_trade_pct: float = 0.01,
         max_position_pct: float = 0.05,
-        stop_loss_pct: float = 0.02
+        stop_loss_pct: float = 0.02,
     ):
         """Initialize position calculator.
 
@@ -43,10 +43,7 @@ class PositionCalculator:
         self.stop_loss_pct = Decimal(str(stop_loss_pct))
 
     def calculate_position_size(
-        self,
-        entry_price: float,
-        stop_loss_price: float,
-        fees: float = 0.0026
+        self, entry_price: float, stop_loss_price: float, fees: float = 0.0026
     ) -> Tuple[float, float, Dict[str, Any]]:
         """Calculate optimal position size based on risk.
 
@@ -101,16 +98,13 @@ class PositionCalculator:
             "risk_per_trade": f"{self.risk_per_trade * 100:.1f}%",
             "max_position": f"{self.max_position_pct * 100:.1f}%",
             "price_diff": float(price_diff),
-            "stop_distance_pct": float((price_diff / entry) * 100)
+            "stop_distance_pct": float((price_diff / entry) * 100),
         }
 
         return position_size, total_cost, details
 
     def calculate_take_profit(
-        self,
-        entry_price: float,
-        stop_loss_price: float,
-        reward_ratio: float = 2.0
+        self, entry_price: float, stop_loss_price: float, reward_ratio: float = 2.0
     ) -> float:
         """Calculate take profit price based on risk/reward ratio.
 
@@ -142,10 +136,7 @@ class PositionCalculator:
         return take_profit
 
     def calculate_position_value(
-        self,
-        symbol: str,
-        quantity: float,
-        current_price: float
+        self, symbol: str, quantity: float, current_price: float
     ) -> Dict[str, float]:
         """Calculate current position value.
 
@@ -164,14 +155,11 @@ class PositionCalculator:
             "quantity": quantity,
             "current_price": current_price,
             "value_eur": value,
-            "pct_of_account": (value / float(self.account_balance)) * 100
+            "pct_of_account": (value / float(self.account_balance)) * 100,
         }
 
     def validate_position(
-        self,
-        symbol: str,
-        quantity: float,
-        price: float
+        self, symbol: str, quantity: float, price: float
     ) -> Tuple[bool, str, Dict[str, Any]]:
         """Validate if position meets risk criteria.
 
@@ -190,7 +178,7 @@ class PositionCalculator:
             "position_value": position_value,
             "position_pct": position_pct * 100,
             "max_allowed": float(self.account_balance * self.max_position_pct),
-            "max_pct": float(self.max_position_pct * 100)
+            "max_pct": float(self.max_position_pct * 100),
         }
 
         # Check if position exceeds maximum
@@ -198,7 +186,7 @@ class PositionCalculator:
             return (
                 False,
                 f"Position exceeds maximum: {position_pct*100:.1f}% > {self.max_position_pct*100:.1f}%",
-                details
+                details,
             )
 
         # Check if position is too small (below minimum trade)
@@ -207,15 +195,13 @@ class PositionCalculator:
             return (
                 False,
                 f"Position below minimum trade: €{position_value:.2f} < €{min_trade_eur:.2f}",
-                details
+                details,
             )
 
         return True, "Position is valid", details
 
     def calculate_compounding_position(
-        self,
-        current_balance: float,
-        target_risk_pct: float = None
+        self, current_balance: float, target_risk_pct: float = None
     ) -> Dict[str, Any]:
         """Calculate position size using compounding.
 
@@ -244,15 +230,12 @@ class PositionCalculator:
             "risk_per_trade_pct": f"{risk_pct * 100:.1f}%",
             "max_position_pct": f"{self.max_position_pct * 100:.1f}%",
             "recommended_min": float(risk_amount * 2),  # 2x risk for 2:1 reward
-            "recommended_max": float(max_position)
+            "recommended_max": float(max_position),
         }
 
 
 def calculate_quick_position(
-    balance_eur: float,
-    entry_price: float,
-    stop_loss_price: float,
-    risk_pct: float = 0.01
+    balance_eur: float, entry_price: float, stop_loss_price: float, risk_pct: float = 0.01
 ) -> Dict[str, Any]:
     """Quick position calculation helper.
 
@@ -265,28 +248,20 @@ def calculate_quick_position(
     Returns:
         Dictionary with position calculation results
     """
-    calc = PositionCalculator(
-        account_balance_eur=balance_eur,
-        risk_per_trade_pct=risk_pct
-    )
+    calc = PositionCalculator(account_balance_eur=balance_eur, risk_per_trade_pct=risk_pct)
 
     position_size, cost, details = calc.calculate_position_size(
-        entry_price=entry_price,
-        stop_loss_price=stop_loss_price
+        entry_price=entry_price, stop_loss_price=stop_loss_price
     )
 
     # Calculate take profit
     take_profit = calc.calculate_take_profit(
-        entry_price=entry_price,
-        stop_loss_price=stop_loss_price,
-        reward_ratio=2.0
+        entry_price=entry_price, stop_loss_price=stop_loss_price, reward_ratio=2.0
     )
 
     # Validate position
     is_valid, reason, validation = calc.validate_position(
-        symbol="BTC/EUR",
-        quantity=position_size,
-        price=entry_price
+        symbol="BTC/EUR", quantity=position_size, price=entry_price
     )
 
     return {
@@ -297,7 +272,7 @@ def calculate_quick_position(
         "stop_loss": stop_loss_price,
         "take_profit": take_profit,
         "details": details,
-        "validation": validation
+        "validation": validation,
     }
 
 
@@ -318,10 +293,7 @@ if __name__ == "__main__":
     print()
 
     result = calculate_quick_position(
-        balance_eur=10000,
-        entry_price=90000,
-        stop_loss_price=88200,
-        risk_pct=0.01
+        balance_eur=10000, entry_price=90000, stop_loss_price=88200, risk_pct=0.01
     )
 
     if result["valid"]:

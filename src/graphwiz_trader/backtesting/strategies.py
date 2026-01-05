@@ -22,6 +22,7 @@ from loguru import logger
 
 class Side(Enum):
     """Order side (buy or sell)."""
+
     BUY = "buy"
     SELL = "sell"
 
@@ -29,6 +30,7 @@ class Side(Enum):
 @dataclass
 class Signal:
     """Trading signal."""
+
     timestamp: datetime
     side: Side
     price: float
@@ -40,6 +42,7 @@ class Signal:
 @dataclass
 class Trade:
     """Completed trade."""
+
     entry_time: datetime
     exit_time: datetime
     entry_price: float
@@ -210,12 +213,7 @@ class MomentumStrategy(BaseStrategy):
     sells when momentum weakens or reverses.
     """
 
-    def __init__(
-        self,
-        lookback_period: int = 20,
-        momentum_threshold: float = 0.02,
-        **kwargs
-    ):
+    def __init__(self, lookback_period: int = 20, momentum_threshold: float = 0.02, **kwargs):
         """
         Initialize momentum strategy.
 
@@ -248,25 +246,29 @@ class MomentumStrategy(BaseStrategy):
             # Entry signals
             if momentum > self.momentum_threshold:
                 # Strong upward momentum - buy
-                signals.append(Signal(
-                    timestamp=current_time,
-                    side=Side.BUY,
-                    price=price,
-                    quantity=0.0,  # Will be calculated
-                    reason=f"Strong momentum: {momentum:.4f}",
-                    confidence=min(1.0, abs(momentum) / self.momentum_threshold * 0.5),
-                ))
+                signals.append(
+                    Signal(
+                        timestamp=current_time,
+                        side=Side.BUY,
+                        price=price,
+                        quantity=0.0,  # Will be calculated
+                        reason=f"Strong momentum: {momentum:.4f}",
+                        confidence=min(1.0, abs(momentum) / self.momentum_threshold * 0.5),
+                    )
+                )
 
             elif momentum < -self.momentum_threshold:
                 # Strong downward momentum - sell (if we have position)
-                signals.append(Signal(
-                    timestamp=current_time,
-                    side=Side.SELL,
-                    price=price,
-                    quantity=0.0,
-                    reason=f"Negative momentum: {momentum:.4f}",
-                    confidence=min(1.0, abs(momentum) / self.momentum_threshold * 0.5),
-                ))
+                signals.append(
+                    Signal(
+                        timestamp=current_time,
+                        side=Side.SELL,
+                        price=price,
+                        quantity=0.0,
+                        reason=f"Negative momentum: {momentum:.4f}",
+                        confidence=min(1.0, abs(momentum) / self.momentum_threshold * 0.5),
+                    )
+                )
 
         logger.info(f"Generated {len(signals)} momentum signals")
         return signals
@@ -280,12 +282,7 @@ class MeanReversionStrategy(BaseStrategy):
     sells when price is above mean (overbought).
     """
 
-    def __init__(
-        self,
-        lookback_period: int = 20,
-        std_dev_threshold: float = 2.0,
-        **kwargs
-    ):
+    def __init__(self, lookback_period: int = 20, std_dev_threshold: float = 2.0, **kwargs):
         """
         Initialize mean reversion strategy.
 
@@ -316,25 +313,29 @@ class MeanReversionStrategy(BaseStrategy):
             # Entry signals
             if z_score < -self.std_dev_threshold:
                 # Price significantly below mean - oversold, buy
-                signals.append(Signal(
-                    timestamp=current_time,
-                    side=Side.BUY,
-                    price=price,
-                    quantity=0.0,
-                    reason=f"Oversold: z-score {z_score:.2f}",
-                    confidence=min(1.0, abs(z_score) / self.std_dev_threshold * 0.5),
-                ))
+                signals.append(
+                    Signal(
+                        timestamp=current_time,
+                        side=Side.BUY,
+                        price=price,
+                        quantity=0.0,
+                        reason=f"Oversold: z-score {z_score:.2f}",
+                        confidence=min(1.0, abs(z_score) / self.std_dev_threshold * 0.5),
+                    )
+                )
 
             elif z_score > self.std_dev_threshold:
                 # Price significantly above mean - overbought, sell
-                signals.append(Signal(
-                    timestamp=current_time,
-                    side=Side.SELL,
-                    price=price,
-                    quantity=0.0,
-                    reason=f"Overbought: z-score {z_score:.2f}",
-                    confidence=min(1.0, abs(z_score) / self.std_dev_threshold * 0.5),
-                ))
+                signals.append(
+                    Signal(
+                        timestamp=current_time,
+                        side=Side.SELL,
+                        price=price,
+                        quantity=0.0,
+                        reason=f"Overbought: z-score {z_score:.2f}",
+                        confidence=min(1.0, abs(z_score) / self.std_dev_threshold * 0.5),
+                    )
+                )
 
         logger.info(f"Generated {len(signals)} mean reversion signals")
         return signals
@@ -348,12 +349,7 @@ class GridTradingStrategy(BaseStrategy):
     and sell orders at regular intervals above current price.
     """
 
-    def __init__(
-        self,
-        grid_levels: int = 10,
-        grid_spacing: float = 0.01,  # 1%
-        **kwargs
-    ):
+    def __init__(self, grid_levels: int = 10, grid_spacing: float = 0.01, **kwargs):  # 1%
         """
         Initialize grid trading strategy.
 
@@ -390,27 +386,31 @@ class GridTradingStrategy(BaseStrategy):
             # Check buy levels
             for idx, level in enumerate(buy_levels):
                 if idx not in buy_levels_triggered and price <= level:
-                    signals.append(Signal(
-                        timestamp=current_time,
-                        side=Side.BUY,
-                        price=level,
-                        quantity=0.0,
-                        reason=f"Grid buy level {idx}: {level:.2f}",
-                        confidence=1.0 / self.grid_levels,
-                    ))
+                    signals.append(
+                        Signal(
+                            timestamp=current_time,
+                            side=Side.BUY,
+                            price=level,
+                            quantity=0.0,
+                            reason=f"Grid buy level {idx}: {level:.2f}",
+                            confidence=1.0 / self.grid_levels,
+                        )
+                    )
                     buy_levels_triggered.add(idx)
 
             # Check sell levels
             for idx, level in enumerate(sell_levels):
                 if idx not in sell_levels_triggered and price >= level:
-                    signals.append(Signal(
-                        timestamp=current_time,
-                        side=Side.SELL,
-                        price=level,
-                        quantity=0.0,
-                        reason=f"Grid sell level {idx}: {level:.2f}",
-                        confidence=1.0 / self.grid_levels,
-                    ))
+                    signals.append(
+                        Signal(
+                            timestamp=current_time,
+                            side=Side.SELL,
+                            price=level,
+                            quantity=0.0,
+                            reason=f"Grid sell level {idx}: {level:.2f}",
+                            confidence=1.0 / self.grid_levels,
+                        )
+                    )
                     sell_levels_triggered.add(idx)
 
         logger.info(f"Generated {len(signals)} grid trading signals")
@@ -429,7 +429,7 @@ class DCAStrategy(BaseStrategy):
         self,
         purchase_interval: str = "1D",  # Pandas frequency string
         purchase_amount: float = 1000.0,
-        **kwargs
+        **kwargs,
     ):
         """
         Initialize DCA strategy.
@@ -466,14 +466,16 @@ class DCAStrategy(BaseStrategy):
             # Calculate quantity based on fixed purchase amount
             quantity = self.purchase_amount / price
 
-            signals.append(Signal(
-                timestamp=current_time,
-                side=Side.BUY,
-                price=price,
-                quantity=quantity,
-                reason=f"DCA purchase: {self.purchase_amount:.2f}",
-                confidence=1.0,
-            ))
+            signals.append(
+                Signal(
+                    timestamp=current_time,
+                    side=Side.BUY,
+                    price=price,
+                    quantity=quantity,
+                    reason=f"DCA purchase: {self.purchase_amount:.2f}",
+                    confidence=1.0,
+                )
+            )
 
             last_purchase_time = current_time
 

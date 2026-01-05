@@ -42,10 +42,12 @@ class QlibDataAdapter:
         """Initialize CCXT exchange connection."""
         if self.exchange is None:
             exchange_class = getattr(ccxt, self.exchange_id)
-            self.exchange = exchange_class({
-                'enableRateLimit': True,
-                'options': {'defaultType': 'spot'},
-            })
+            self.exchange = exchange_class(
+                {
+                    "enableRateLimit": True,
+                    "options": {"defaultType": "spot"},
+                }
+            )
             logger.info(f"Initialized CCXT exchange: {self.exchange_id}")
 
     async def close(self):
@@ -93,18 +95,18 @@ class QlibDataAdapter:
             # Convert to DataFrame
             df = pd.DataFrame(
                 ohlcv,
-                columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'],
+                columns=["timestamp", "open", "high", "low", "close", "volume"],
             )
 
             # Convert timestamp to datetime
-            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+            df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms")
 
             # Set timestamp as index
-            df.set_index('timestamp', inplace=True)
+            df.set_index("timestamp", inplace=True)
 
             # Ensure numeric types
-            for col in ['open', 'high', 'low', 'close', 'volume']:
-                df[col] = pd.to_numeric(df[col], errors='coerce')
+            for col in ["open", "high", "low", "close", "volume"]:
+                df[col] = pd.to_numeric(df[col], errors="coerce")
 
             logger.info(f"Fetched {len(df)} candles for {symbol} ({timeframe})")
 
@@ -165,7 +167,7 @@ class QlibDataAdapter:
             DataFrame in Qlib format
         """
         # Ensure we have the required columns
-        required_cols = ['open', 'high', 'low', 'close', 'volume']
+        required_cols = ["open", "high", "low", "close", "volume"]
         if not all(col in df.columns for col in required_cols):
             raise ValueError(f"DataFrame missing required columns: {required_cols}")
 
@@ -177,17 +179,17 @@ class QlibDataAdapter:
         qlib_df.columns = [col.lower() for col in qlib_df.columns]
 
         # Add instrument column (required by Qlib)
-        qlib_df['instrument'] = symbol
+        qlib_df["instrument"] = symbol
 
         # Reset index to make timestamp a column
         qlib_df.reset_index(inplace=True)
-        qlib_df.rename(columns={'timestamp': 'datetime'}, inplace=True)
+        qlib_df.rename(columns={"timestamp": "datetime"}, inplace=True)
 
         # Ensure proper sorting
-        qlib_df.sort_values('datetime', inplace=True)
+        qlib_df.sort_values("datetime", inplace=True)
 
         # Remove any duplicate timestamps
-        qlib_df.drop_duplicates(subset=['datetime', 'instrument'], inplace=True)
+        qlib_df.drop_duplicates(subset=["datetime", "instrument"], inplace=True)
 
         logger.debug(f"Converted {len(qlib_df)} rows to Qlib format for {symbol}")
 
@@ -232,7 +234,9 @@ class QlibDataAdapter:
         # Combine all DataFrames
         if qlib_dfs:
             combined_df = pd.concat(qlib_dfs, ignore_index=True)
-            logger.info(f"Prepared training data: {len(combined_df)} rows for {len(qlib_dfs)} symbols")
+            logger.info(
+                f"Prepared training data: {len(combined_df)} rows for {len(qlib_dfs)} symbols"
+            )
             return combined_df
         else:
             logger.warning("No data fetched for training")
@@ -280,12 +284,12 @@ class QlibDataAdapter:
 
         # Timeframe multiplier
         timeframe_multipliers = {
-            '1m': 1,
-            '5m': 5,
-            '15m': 15,
-            '1h': 60,
-            '4h': 240,
-            '1d': 1440,
+            "1m": 1,
+            "5m": 5,
+            "15m": 15,
+            "1h": 60,
+            "4h": 240,
+            "1d": 1440,
         }
         multiplier = timeframe_multipliers.get(timeframe, 60)
         limit = int(hours * multiplier / 60) + 100  # Add buffer

@@ -14,6 +14,7 @@ from graphwiz_trader.analysis import TechnicalAnalysis
 @dataclass
 class Trade:
     """Represents a trade in backtest."""
+
     timestamp: datetime
     symbol: str
     action: str  # "buy" or "sell"
@@ -26,6 +27,7 @@ class Trade:
 @dataclass
 class BacktestResult:
     """Results of a backtest."""
+
     symbol: str
     start_date: datetime
     end_date: datetime
@@ -70,7 +72,7 @@ class BacktestEngine:
         self,
         historical_data: List[Dict[str, Any]],
         strategy: Callable[[Dict[str, Any]], str],
-        symbol: str = "BTC/USDT"
+        symbol: str = "BTC/USDT",
     ) -> BacktestResult:
         """Run a backtest on historical data.
 
@@ -107,7 +109,7 @@ class BacktestEngine:
                 continue
 
             # Build context for strategy
-            context = self._build_context(historical_data[:i+1], current_price, symbol)
+            context = self._build_context(historical_data[: i + 1], current_price, symbol)
 
             # Get strategy decision
             try:
@@ -118,7 +120,14 @@ class BacktestEngine:
 
             # Execute trades based on signal
             trade = self._execute_strategy(
-                signal, current_price, capital, position, entry_price, position_side, timestamp, symbol
+                signal,
+                current_price,
+                capital,
+                position,
+                entry_price,
+                position_side,
+                timestamp,
+                symbol,
             )
 
             if trade:
@@ -188,16 +197,22 @@ class BacktestEngine:
                 "equity_curve": equity_curve,
                 "trade_count": len(trades),
                 "avg_trade_value": np.mean([t.value for t in trades]) if trades else 0,
-                "final_position": position
-            }
+                "final_position": position,
+            },
         )
 
-        logger.info("Backtest complete: Return {:.2f}%, {} trades, Sharpe: {:.2f}",
-                   total_return_pct, len(trades), sharpe_ratio)
+        logger.info(
+            "Backtest complete: Return {:.2f}%, {} trades, Sharpe: {:.2f}",
+            total_return_pct,
+            len(trades),
+            sharpe_ratio,
+        )
 
         return result
 
-    def _build_context(self, historical_data: List[Dict[str, Any]], current_price: float, symbol: str) -> Dict[str, Any]:
+    def _build_context(
+        self, historical_data: List[Dict[str, Any]], current_price: float, symbol: str
+    ) -> Dict[str, Any]:
         """Build context for strategy decision.
 
         Args:
@@ -221,14 +236,14 @@ class BacktestEngine:
             volumes=volumes if any(volumes) else None,
             high=highs if any(highs) else None,
             low=lows if any(lows) else None,
-            close=closes if any(closes) else None
+            close=closes if any(closes) else None,
         )
 
         return {
             "symbol": symbol,
             "current_price": current_price,
             "technical_indicators": analysis,
-            "data_points": len(historical_data)
+            "data_points": len(historical_data),
         }
 
     def _execute_strategy(
@@ -240,7 +255,7 @@ class BacktestEngine:
         entry_price: float,
         position_side: Optional[str],
         timestamp: datetime,
-        symbol: str
+        symbol: str,
     ) -> Optional[Trade]:
         """Execute strategy signal.
 
@@ -272,7 +287,7 @@ class BacktestEngine:
                 price=price,
                 quantity=quantity,
                 value=trade_size,
-                reason="Strategy buy signal"
+                reason="Strategy buy signal",
             )
         elif signal == "sell":
             # Sell entire position if we have one
@@ -284,7 +299,7 @@ class BacktestEngine:
                 price=price,
                 quantity=sell_quantity,
                 value=sell_quantity * price,
-                reason="Strategy sell signal"
+                reason="Strategy sell signal",
             )
 
         return None
@@ -312,7 +327,9 @@ class BacktestEngine:
 
         return max_dd * 100  # Return as percentage
 
-    def _calculate_sharpe_ratio(self, equity_curve: List[float], risk_free_rate: float = 0.02) -> float:
+    def _calculate_sharpe_ratio(
+        self, equity_curve: List[float], risk_free_rate: float = 0.02
+    ) -> float:
         """Calculate Sharpe ratio.
 
         Args:
@@ -346,7 +363,9 @@ class BacktestEngine:
         sharpe = (avg_return * 252 - risk_free_rate) / (std_return * np.sqrt(252))
         return sharpe
 
-    def _calculate_sortino_ratio(self, equity_curve: List[float], risk_free_rate: float = 0.02) -> float:
+    def _calculate_sortino_ratio(
+        self, equity_curve: List[float], risk_free_rate: float = 0.02
+    ) -> float:
         """Calculate Sortino ratio (downside risk only).
 
         Args:
@@ -404,7 +423,7 @@ class BacktestEngine:
             final_capital=self.initial_capital,
             total_return=0.0,
             total_return_pct=0.0,
-            trades=[]
+            trades=[],
         )
 
 

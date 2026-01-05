@@ -10,6 +10,7 @@ from loguru import logger
 
 try:
     import ccxt
+
     CCXT_AVAILABLE = True
 except ImportError:
     CCXT_AVAILABLE = False
@@ -18,6 +19,7 @@ except ImportError:
 
 class HealthStatus(Enum):
     """Health status levels."""
+
     HEALTHY = "healthy"
     DEGRADED = "degraded"
     UNHEALTHY = "unhealthy"
@@ -26,6 +28,7 @@ class HealthStatus(Enum):
 
 class RecoveryAction(Enum):
     """Types of recovery actions."""
+
     RECONNECT = "reconnect"
     RESTART = "restart"
     SCALE_DOWN = "scale_down"
@@ -39,6 +42,7 @@ class RecoveryAction(Enum):
 @dataclass
 class HealthCheck:
     """Health check definition."""
+
     name: str
     check_func: Callable[[], Dict[str, Any]]
     interval_seconds: int = 30
@@ -50,6 +54,7 @@ class HealthCheck:
 @dataclass
 class HealthResult:
     """Result of a health check."""
+
     name: str
     status: HealthStatus
     message: str
@@ -69,19 +74,21 @@ class HealthChecker:
             config: Configuration dictionary
         """
         self.config = config
-        self.health_config = config.get('health_checks', {})
+        self.health_config = config.get("health_checks", {})
 
         # Health check results storage
         self.health_results: Dict[str, HealthResult] = {}
         self.health_history: List[HealthResult] = []
 
         # Circuit breaker state
-        self.circuit_breakers: Dict[str, Dict[str, Any]] = defaultdict(lambda: {
-            'open': False,
-            'failure_count': 0,
-            'last_failure_time': None,
-            'opened_at': None
-        })
+        self.circuit_breakers: Dict[str, Dict[str, Any]] = defaultdict(
+            lambda: {
+                "open": False,
+                "failure_count": 0,
+                "last_failure_time": None,
+                "opened_at": None,
+            }
+        )
 
         # Recovery state
         self.recovery_history: List[Dict[str, Any]] = []
@@ -98,62 +105,58 @@ class HealthChecker:
     def _init_health_checks(self) -> None:
         """Initialize built-in health checks."""
         self.health_checks = {
-            'exchange_connectivity': HealthCheck(
-                name='exchange_connectivity',
+            "exchange_connectivity": HealthCheck(
+                name="exchange_connectivity",
                 check_func=self._check_exchange_connectivity,
                 interval_seconds=30,
-                recovery_actions=[RecoveryAction.RECONNECT, RecoveryAction.NOTIFY_ADMIN]
+                recovery_actions=[RecoveryAction.RECONNECT, RecoveryAction.NOTIFY_ADMIN],
             ),
-            'neo4j_connectivity': HealthCheck(
-                name='neo4j_connectivity',
+            "neo4j_connectivity": HealthCheck(
+                name="neo4j_connectivity",
                 check_func=self._check_neo4j_connectivity,
                 interval_seconds=60,
-                recovery_actions=[RecoveryAction.RECONNECT, RecoveryAction.NOTIFY_ADMIN]
+                recovery_actions=[RecoveryAction.RECONNECT, RecoveryAction.NOTIFY_ADMIN],
             ),
-            'api_rate_limits': HealthCheck(
-                name='api_rate_limits',
+            "api_rate_limits": HealthCheck(
+                name="api_rate_limits",
                 check_func=self._check_api_rate_limits,
                 interval_seconds=10,
-                recovery_actions=[RecoveryAction.SCALE_DOWN, RecoveryAction.PAUSE_TRADING]
+                recovery_actions=[RecoveryAction.SCALE_DOWN, RecoveryAction.PAUSE_TRADING],
             ),
-            'system_resources': HealthCheck(
-                name='system_resources',
+            "system_resources": HealthCheck(
+                name="system_resources",
                 check_func=self._check_system_resources,
                 interval_seconds=60,
-                recovery_actions=[RecoveryAction.CLEAR_CACHE, RecoveryAction.NOTIFY_ADMIN]
+                recovery_actions=[RecoveryAction.CLEAR_CACHE, RecoveryAction.NOTIFY_ADMIN],
             ),
-            'disk_space': HealthCheck(
-                name='disk_space',
+            "disk_space": HealthCheck(
+                name="disk_space",
                 check_func=self._check_disk_space,
                 interval_seconds=300,
-                recovery_actions=[RecoveryAction.CLEAR_CACHE, RecoveryAction.NOTIFY_ADMIN]
+                recovery_actions=[RecoveryAction.CLEAR_CACHE, RecoveryAction.NOTIFY_ADMIN],
             ),
-            'agent_health': HealthCheck(
-                name='agent_health',
+            "agent_health": HealthCheck(
+                name="agent_health",
                 check_func=self._check_agent_health,
                 interval_seconds=60,
-                recovery_actions=[RecoveryAction.RESTART]
+                recovery_actions=[RecoveryAction.RESTART],
             ),
-            'portfolio_health': HealthCheck(
-                name='portfolio_health',
+            "portfolio_health": HealthCheck(
+                name="portfolio_health",
                 check_func=self._check_portfolio_health,
                 interval_seconds=30,
-                recovery_actions=[RecoveryAction.PAUSE_TRADING, RecoveryAction.CLOSE_POSITIONS]
+                recovery_actions=[RecoveryAction.PAUSE_TRADING, RecoveryAction.CLOSE_POSITIONS],
             ),
-            'database_locks': HealthCheck(
-                name='database_locks',
+            "database_locks": HealthCheck(
+                name="database_locks",
                 check_func=self._check_database_locks,
                 interval_seconds=60,
-                recovery_actions=[RecoveryAction.CLEAR_CACHE]
-            )
+                recovery_actions=[RecoveryAction.CLEAR_CACHE],
+            ),
         }
 
     def set_dependencies(
-        self,
-        exchange_manager=None,
-        neo4j_graph=None,
-        trading_engine=None,
-        agent_manager=None
+        self, exchange_manager=None, neo4j_graph=None, trading_engine=None, agent_manager=None
     ) -> None:
         """Set service dependencies for health checks.
 
@@ -178,30 +181,35 @@ class HealthChecker:
         """
         if not self.exchange_manager or not CCXT_AVAILABLE:
             return {
-                'status': HealthStatus.HEALTHY,
-                'message': 'Exchange manager not configured, skipping check'
+                "status": HealthStatus.HEALTHY,
+                "message": "Exchange manager not configured, skipping check",
             }
 
-        exchanges = self.exchange_manager.get_all_exchanges() if hasattr(self.exchange_manager, 'get_all_exchanges') else []
+        exchanges = (
+            self.exchange_manager.get_all_exchanges()
+            if hasattr(self.exchange_manager, "get_all_exchanges")
+            else []
+        )
         results = {}
 
         for exchange_name in exchanges:
             try:
                 exchange = self.exchange_manager.get_exchange(exchange_name)
                 # Try to fetch ticker to test connectivity
-                ticker = exchange.fetch_ticker('BTC/USDT')
+                ticker = exchange.fetch_ticker("BTC/USDT")
                 results[exchange_name] = {
-                    'connected': True,
-                    'latency': exchange.last_response_headers.get('content-length', 0) if hasattr(exchange, 'last_response_headers') else 0
+                    "connected": True,
+                    "latency": (
+                        exchange.last_response_headers.get("content-length", 0)
+                        if hasattr(exchange, "last_response_headers")
+                        else 0
+                    ),
                 }
             except Exception as e:
-                results[exchange_name] = {
-                    'connected': False,
-                    'error': str(e)
-                }
+                results[exchange_name] = {"connected": False, "error": str(e)}
 
         # Determine overall status
-        connected_count = sum(1 for r in results.values() if r.get('connected', False))
+        connected_count = sum(1 for r in results.values() if r.get("connected", False))
         total_count = len(results)
 
         if connected_count == total_count:
@@ -214,11 +222,7 @@ class HealthChecker:
             status = HealthStatus.CRITICAL
             message = "No exchanges connected"
 
-        return {
-            'status': status,
-            'message': message,
-            'details': results
-        }
+        return {"status": status, "message": message, "details": results}
 
     def _check_neo4j_connectivity(self) -> Dict[str, Any]:
         """Check Neo4j connectivity.
@@ -228,25 +232,23 @@ class HealthChecker:
         """
         if not self.neo4j_graph:
             return {
-                'status': HealthStatus.HEALTHY,
-                'message': 'Neo4j not configured, skipping check'
+                "status": HealthStatus.HEALTHY,
+                "message": "Neo4j not configured, skipping check",
             }
 
         try:
             # Simple query to test connectivity
             result = self.neo4j_graph.query("RETURN 1 as test")
             return {
-                'status': HealthStatus.HEALTHY,
-                'message': 'Neo4j connected and responsive',
-                'details': {
-                    'query_time_ms': result[0].get('test', 0) if result else 0
-                }
+                "status": HealthStatus.HEALTHY,
+                "message": "Neo4j connected and responsive",
+                "details": {"query_time_ms": result[0].get("test", 0) if result else 0},
             }
         except Exception as e:
             return {
-                'status': HealthStatus.CRITICAL,
-                'message': f'Neo4j connection failed: {str(e)}',
-                'details': {'error': str(e)}
+                "status": HealthStatus.CRITICAL,
+                "message": f"Neo4j connection failed: {str(e)}",
+                "details": {"error": str(e)},
             }
 
     def _check_api_rate_limits(self) -> Dict[str, Any]:
@@ -257,38 +259,42 @@ class HealthChecker:
         """
         if not self.exchange_manager:
             return {
-                'status': HealthStatus.HEALTHY,
-                'message': 'Exchange manager not configured, skipping check'
+                "status": HealthStatus.HEALTHY,
+                "message": "Exchange manager not configured, skipping check",
             }
 
-        exchanges = self.exchange_manager.get_all_exchanges() if hasattr(self.exchange_manager, 'get_all_exchanges') else []
+        exchanges = (
+            self.exchange_manager.get_all_exchanges()
+            if hasattr(self.exchange_manager, "get_all_exchanges")
+            else []
+        )
         results = {}
 
-        min_rate_limit = float('inf')
+        min_rate_limit = float("inf")
 
         for exchange_name in exchanges:
             try:
                 exchange = self.exchange_manager.get_exchange(exchange_name)
-                rate_limit = getattr(exchange, 'rateLimit', None)
+                rate_limit = getattr(exchange, "rateLimit", None)
 
                 if rate_limit:
-                    remaining = getattr(exchange, 'rate_limit_remaining', rate_limit)
-                    usage_percent = ((rate_limit - remaining) / rate_limit * 100) if rate_limit > 0 else 0
+                    remaining = getattr(exchange, "rate_limit_remaining", rate_limit)
+                    usage_percent = (
+                        ((rate_limit - remaining) / rate_limit * 100) if rate_limit > 0 else 0
+                    )
 
                     results[exchange_name] = {
-                        'rate_limit': rate_limit,
-                        'remaining': remaining,
-                        'usage_percent': usage_percent
+                        "rate_limit": rate_limit,
+                        "remaining": remaining,
+                        "usage_percent": usage_percent,
                     }
 
                     min_rate_limit = min(min_rate_limit, remaining)
             except Exception as e:
-                results[exchange_name] = {
-                    'error': str(e)
-                }
+                results[exchange_name] = {"error": str(e)}
 
         # Determine status based on lowest remaining rate limit
-        if min_rate_limit == float('inf'):
+        if min_rate_limit == float("inf"):
             status = HealthStatus.HEALTHY
             message = "No rate limit information available"
         elif min_rate_limit > 50:
@@ -301,11 +307,7 @@ class HealthChecker:
             status = HealthStatus.CRITICAL
             message = f"Rate limits critical: {min_rate_limit:.0f} remaining"
 
-        return {
-            'status': status,
-            'message': message,
-            'details': results
-        }
+        return {"status": status, "message": message, "details": results}
 
     def _check_system_resources(self) -> Dict[str, Any]:
         """Check system resources (CPU, memory, etc.).
@@ -318,7 +320,7 @@ class HealthChecker:
 
             cpu_percent = psutil.cpu_percent(interval=1)
             memory = psutil.virtual_memory()
-            disk = psutil.disk_usage('/')
+            disk = psutil.disk_usage("/")
 
             # Determine status
             issues = []
@@ -337,21 +339,21 @@ class HealthChecker:
                 message = "System resources healthy"
 
             return {
-                'status': status,
-                'message': message,
-                'details': {
-                    'cpu_percent': cpu_percent,
-                    'memory_percent': memory.percent,
-                    'memory_available_gb': memory.available / (1024**3),
-                    'disk_percent': disk.percent,
-                    'disk_free_gb': disk.free / (1024**3)
-                }
+                "status": status,
+                "message": message,
+                "details": {
+                    "cpu_percent": cpu_percent,
+                    "memory_percent": memory.percent,
+                    "memory_available_gb": memory.available / (1024**3),
+                    "disk_percent": disk.percent,
+                    "disk_free_gb": disk.free / (1024**3),
+                },
             }
         except Exception as e:
             return {
-                'status': HealthStatus.UNHEALTHY,
-                'message': f'Failed to check system resources: {str(e)}',
-                'details': {'error': str(e)}
+                "status": HealthStatus.UNHEALTHY,
+                "message": f"Failed to check system resources: {str(e)}",
+                "details": {"error": str(e)},
             }
 
     def _check_disk_space(self) -> Dict[str, Any]:
@@ -363,7 +365,7 @@ class HealthChecker:
         try:
             import psutil
 
-            disk = psutil.disk_usage('/')
+            disk = psutil.disk_usage("/")
 
             if disk.percent > 95:
                 status = HealthStatus.CRITICAL
@@ -379,20 +381,20 @@ class HealthChecker:
                 message = f"Disk space OK: {disk.percent}%"
 
             return {
-                'status': status,
-                'message': message,
-                'details': {
-                    'total_gb': disk.total / (1024**3),
-                    'used_gb': disk.used / (1024**3),
-                    'free_gb': disk.free / (1024**3),
-                    'percent': disk.percent
-                }
+                "status": status,
+                "message": message,
+                "details": {
+                    "total_gb": disk.total / (1024**3),
+                    "used_gb": disk.used / (1024**3),
+                    "free_gb": disk.free / (1024**3),
+                    "percent": disk.percent,
+                },
             }
         except Exception as e:
             return {
-                'status': HealthStatus.UNHEALTHY,
-                'message': f'Failed to check disk space: {str(e)}',
-                'details': {'error': str(e)}
+                "status": HealthStatus.UNHEALTHY,
+                "message": f"Failed to check disk space: {str(e)}",
+                "details": {"error": str(e)},
             }
 
     def _check_agent_health(self) -> Dict[str, Any]:
@@ -403,30 +405,31 @@ class HealthChecker:
         """
         if not self.agent_manager:
             return {
-                'status': HealthStatus.HEALTHY,
-                'message': 'Agent manager not configured, skipping check'
+                "status": HealthStatus.HEALTHY,
+                "message": "Agent manager not configured, skipping check",
             }
 
         try:
             # Check if agents are responsive
-            agents = self.agent_manager.get_all_agents() if hasattr(self.agent_manager, 'get_all_agents') else []
+            agents = (
+                self.agent_manager.get_all_agents()
+                if hasattr(self.agent_manager, "get_all_agents")
+                else []
+            )
             results = {}
 
             failure_count = 0
             for agent in agents:
                 try:
-                    is_healthy = agent.is_healthy() if hasattr(agent, 'is_healthy') else True
+                    is_healthy = agent.is_healthy() if hasattr(agent, "is_healthy") else True
                     results[agent.name] = {
-                        'healthy': is_healthy,
-                        'last_prediction': getattr(agent, 'last_prediction_time', None)
+                        "healthy": is_healthy,
+                        "last_prediction": getattr(agent, "last_prediction_time", None),
                     }
                     if not is_healthy:
                         failure_count += 1
                 except Exception as e:
-                    results[agent.name] = {
-                        'healthy': False,
-                        'error': str(e)
-                    }
+                    results[agent.name] = {"healthy": False, "error": str(e)}
                     failure_count += 1
 
             # Determine status
@@ -442,19 +445,19 @@ class HealthChecker:
                 message = f"{failure_count}/{total_count} agents unhealthy"
 
             return {
-                'status': status,
-                'message': message,
-                'details': {
-                    'total_agents': total_count,
-                    'failure_count': failure_count,
-                    'agents': results
-                }
+                "status": status,
+                "message": message,
+                "details": {
+                    "total_agents": total_count,
+                    "failure_count": failure_count,
+                    "agents": results,
+                },
             }
         except Exception as e:
             return {
-                'status': HealthStatus.UNHEALTHY,
-                'message': f'Failed to check agent health: {str(e)}',
-                'details': {'error': str(e)}
+                "status": HealthStatus.UNHEALTHY,
+                "message": f"Failed to check agent health: {str(e)}",
+                "details": {"error": str(e)},
             }
 
     def _check_portfolio_health(self) -> Dict[str, Any]:
@@ -465,26 +468,34 @@ class HealthChecker:
         """
         if not self.trading_engine:
             return {
-                'status': HealthStatus.HEALTHY,
-                'message': 'Trading engine not configured, skipping check'
+                "status": HealthStatus.HEALTHY,
+                "message": "Trading engine not configured, skipping check",
             }
 
         try:
-            portfolio = self.trading_engine.get_portfolio() if hasattr(self.trading_engine, 'get_portfolio') else {}
-            metrics = self.trading_engine.get_metrics() if hasattr(self.trading_engine, 'get_metrics') else {}
+            portfolio = (
+                self.trading_engine.get_portfolio()
+                if hasattr(self.trading_engine, "get_portfolio")
+                else {}
+            )
+            metrics = (
+                self.trading_engine.get_metrics()
+                if hasattr(self.trading_engine, "get_metrics")
+                else {}
+            )
 
             # Check for concerning conditions
             issues = []
 
-            drawdown = metrics.get('current_drawdown', 0)
+            drawdown = metrics.get("current_drawdown", 0)
             if drawdown > 0.15:
                 issues.append(f"High drawdown: {drawdown*100:.1f}%")
 
-            leverage = metrics.get('leverage', 0)
+            leverage = metrics.get("leverage", 0)
             if leverage > 3:
                 issues.append(f"High leverage: {leverage:.1f}x")
 
-            position_count = len(portfolio.get('positions', []))
+            position_count = len(portfolio.get("positions", []))
             if position_count > 20:
                 issues.append(f"Too many positions: {position_count}")
 
@@ -496,20 +507,20 @@ class HealthChecker:
                 message = "Portfolio healthy"
 
             return {
-                'status': status,
-                'message': message,
-                'details': {
-                    'portfolio_value': portfolio.get('total_value', 0),
-                    'drawdown': drawdown,
-                    'leverage': leverage,
-                    'position_count': position_count
-                }
+                "status": status,
+                "message": message,
+                "details": {
+                    "portfolio_value": portfolio.get("total_value", 0),
+                    "drawdown": drawdown,
+                    "leverage": leverage,
+                    "position_count": position_count,
+                },
             }
         except Exception as e:
             return {
-                'status': HealthStatus.UNHEALTHY,
-                'message': f'Failed to check portfolio health: {str(e)}',
-                'details': {'error': str(e)}
+                "status": HealthStatus.UNHEALTHY,
+                "message": f"Failed to check portfolio health: {str(e)}",
+                "details": {"error": str(e)},
             }
 
     def _check_database_locks(self) -> Dict[str, Any]:
@@ -520,8 +531,8 @@ class HealthChecker:
         """
         if not self.neo4j_graph:
             return {
-                'status': HealthStatus.HEALTHY,
-                'message': 'Neo4j not configured, skipping check'
+                "status": HealthStatus.HEALTHY,
+                "message": "Neo4j not configured, skipping check",
             }
 
         try:
@@ -532,7 +543,7 @@ class HealthChecker:
             """
 
             result = self.neo4j_graph.query(query)
-            transaction_count = result[0]['transaction_count'] if result else 0
+            transaction_count = result[0]["transaction_count"] if result else 0
 
             if transaction_count > 10:
                 status = HealthStatus.DEGRADED
@@ -542,15 +553,15 @@ class HealthChecker:
                 message = f"Database transactions normal: {transaction_count}"
 
             return {
-                'status': status,
-                'message': message,
-                'details': {'transaction_count': transaction_count}
+                "status": status,
+                "message": message,
+                "details": {"transaction_count": transaction_count},
             }
         except Exception as e:
             return {
-                'status': HealthStatus.UNHEALTHY,
-                'message': f'Failed to check database locks: {str(e)}',
-                'details': {'error': str(e)}
+                "status": HealthStatus.UNHEALTHY,
+                "message": f"Failed to check database locks: {str(e)}",
+                "details": {"error": str(e)},
             }
 
     # Recovery Actions
@@ -601,12 +612,14 @@ class HealthChecker:
                 logger.error("Recovery action {} failed: {}", action.value, e)
 
         # Record recovery attempt
-        self.recovery_history.append({
-            'check_name': health_check.name,
-            'actions': [a.value for a in health_check.recovery_actions],
-            'successful': recovery_success,
-            'timestamp': datetime.utcnow().isoformat()
-        })
+        self.recovery_history.append(
+            {
+                "check_name": health_check.name,
+                "actions": [a.value for a in health_check.recovery_actions],
+                "successful": recovery_success,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        )
 
         return recovery_success
 
@@ -619,13 +632,13 @@ class HealthChecker:
         Returns:
             True if successful
         """
-        if check_name == 'exchange_connectivity' and self.exchange_manager:
+        if check_name == "exchange_connectivity" and self.exchange_manager:
             # Reconnect to exchanges
             logger.info("Attempting to reconnect to exchanges")
             # Implementation depends on exchange manager interface
             return True
 
-        elif check_name == 'neo4j_connectivity' and self.neo4j_graph:
+        elif check_name == "neo4j_connectivity" and self.neo4j_graph:
             # Reconnect to Neo4j
             logger.info("Attempting to reconnect to Neo4j")
             try:
@@ -646,7 +659,7 @@ class HealthChecker:
         Returns:
             True if successful
         """
-        if check_name == 'agent_health' and self.agent_manager:
+        if check_name == "agent_health" and self.agent_manager:
             logger.info("Attempting to restart unhealthy agents")
             # Implementation depends on agent manager interface
             return True
@@ -741,7 +754,7 @@ class HealthChecker:
             return HealthResult(
                 name=check_name,
                 status=HealthStatus.UNHEALTHY,
-                message=f"Unknown health check: {check_name}"
+                message=f"Unknown health check: {check_name}",
             )
 
         health_check = self.health_checks[check_name]
@@ -749,28 +762,26 @@ class HealthChecker:
         if not health_check.enabled:
             logger.debug("Health check {} is disabled", check_name)
             return HealthResult(
-                name=check_name,
-                status=HealthStatus.HEALTHY,
-                message="Health check disabled"
+                name=check_name, status=HealthStatus.HEALTHY, message="Health check disabled"
             )
 
         try:
             # Check circuit breaker
             cb = self.circuit_breakers[check_name]
-            if cb['open']:
+            if cb["open"]:
                 # Check if we should attempt to close circuit breaker
-                if cb['opened_at'] and (datetime.utcnow() - cb['opened_at']).total_seconds() > 300:
+                if cb["opened_at"] and (datetime.utcnow() - cb["opened_at"]).total_seconds() > 300:
                     # Attempt recovery
                     logger.info("Attempting to close circuit breaker for {}", check_name)
-                    cb['open'] = False
-                    cb['failure_count'] = 0
+                    cb["open"] = False
+                    cb["failure_count"] = 0
                 else:
                     logger.warning("Circuit breaker open for {}, skipping check", check_name)
                     return HealthResult(
                         name=check_name,
                         status=HealthStatus.CRITICAL,
                         message="Circuit breaker open",
-                        recovery_attempted=False
+                        recovery_attempted=False,
                     )
 
             # Run health check
@@ -779,9 +790,9 @@ class HealthChecker:
 
             result = HealthResult(
                 name=check_name,
-                status=result_dict['status'],
-                message=result_dict['message'],
-                details=result_dict.get('details', {})
+                status=result_dict["status"],
+                message=result_dict["message"],
+                details=result_dict.get("details", {}),
             )
 
             # Store result
@@ -797,13 +808,17 @@ class HealthChecker:
                 logger.warning("Health check {} failed: {}", check_name, result.message)
 
                 # Update circuit breaker
-                cb['failure_count'] += 1
-                cb['last_failure_time'] = datetime.utcnow()
+                cb["failure_count"] += 1
+                cb["last_failure_time"] = datetime.utcnow()
 
-                if cb['failure_count'] >= 3:
-                    cb['open'] = True
-                    cb['opened_at'] = datetime.utcnow()
-                    logger.error("Circuit breaker opened for {} after {} failures", check_name, cb['failure_count'])
+                if cb["failure_count"] >= 3:
+                    cb["open"] = True
+                    cb["opened_at"] = datetime.utcnow()
+                    logger.error(
+                        "Circuit breaker opened for {} after {} failures",
+                        check_name,
+                        cb["failure_count"],
+                    )
 
                 # Attempt recovery
                 if health_check.recovery_actions:
@@ -812,7 +827,7 @@ class HealthChecker:
                     result.recovery_successful = recovery_success
             else:
                 # Reset circuit breaker on success
-                cb['failure_count'] = 0
+                cb["failure_count"] = 0
 
             return result
 
@@ -821,7 +836,7 @@ class HealthChecker:
             result = HealthResult(
                 name=check_name,
                 status=HealthStatus.CRITICAL,
-                message=f"Health check exception: {str(e)}"
+                message=f"Health check exception: {str(e)}",
             )
             self.health_results[check_name] = result
             return result
@@ -848,9 +863,7 @@ class HealthChecker:
                 if isinstance(result, Exception):
                     logger.error("Health check {} raised exception: {}", name, result)
                     results[name] = HealthResult(
-                        name=name,
-                        status=HealthStatus.CRITICAL,
-                        message=f"Exception: {str(result)}"
+                        name=name, status=HealthStatus.CRITICAL, message=f"Exception: {str(result)}"
                     )
                 else:
                     results[name] = result
@@ -864,25 +877,31 @@ class HealthChecker:
             Dictionary with health summary
         """
         summary = {
-            'overall_status': HealthStatus.HEALTHY,
-            'checks': {},
-            'last_updated': datetime.utcnow().isoformat()
+            "overall_status": HealthStatus.HEALTHY,
+            "checks": {},
+            "last_updated": datetime.utcnow().isoformat(),
         }
 
         for name, result in self.health_results.items():
-            summary['checks'][name] = {
-                'status': result.status.value,
-                'message': result.message,
-                'timestamp': result.timestamp.isoformat()
+            summary["checks"][name] = {
+                "status": result.status.value,
+                "message": result.message,
+                "timestamp": result.timestamp.isoformat(),
             }
 
             # Update overall status (worst status wins)
             if result.status == HealthStatus.CRITICAL:
-                summary['overall_status'] = HealthStatus.CRITICAL
-            elif result.status == HealthStatus.UNHEALTHY and summary['overall_status'] != HealthStatus.CRITICAL:
-                summary['overall_status'] = HealthStatus.UNHEALTHY
-            elif result.status == HealthStatus.DEGRADED and summary['overall_status'] not in [HealthStatus.CRITICAL, HealthStatus.UNHEALTHY]:
-                summary['overall_status'] = HealthStatus.DEGRADED
+                summary["overall_status"] = HealthStatus.CRITICAL
+            elif (
+                result.status == HealthStatus.UNHEALTHY
+                and summary["overall_status"] != HealthStatus.CRITICAL
+            ):
+                summary["overall_status"] = HealthStatus.UNHEALTHY
+            elif result.status == HealthStatus.DEGRADED and summary["overall_status"] not in [
+                HealthStatus.CRITICAL,
+                HealthStatus.UNHEALTHY,
+            ]:
+                summary["overall_status"] = HealthStatus.DEGRADED
 
         return summary
 
@@ -894,10 +913,12 @@ class HealthChecker:
         """
         return {
             name: {
-                'open': state['open'],
-                'failure_count': state['failure_count'],
-                'last_failure_time': state['last_failure_time'].isoformat() if state['last_failure_time'] else None,
-                'opened_at': state['opened_at'].isoformat() if state['opened_at'] else None
+                "open": state["open"],
+                "failure_count": state["failure_count"],
+                "last_failure_time": (
+                    state["last_failure_time"].isoformat() if state["last_failure_time"] else None
+                ),
+                "opened_at": state["opened_at"].isoformat() if state["opened_at"] else None,
             }
             for name, state in self.circuit_breakers.items()
         }
@@ -910,9 +931,9 @@ class HealthChecker:
         """
         if check_name in self.circuit_breakers:
             self.circuit_breakers[check_name] = {
-                'open': False,
-                'failure_count': 0,
-                'last_failure_time': None,
-                'opened_at': None
+                "open": False,
+                "failure_count": 0,
+                "last_failure_time": None,
+                "opened_at": None,
             }
             logger.info("Circuit breaker reset for {}", check_name)

@@ -185,9 +185,7 @@ class RiskManager:
             raise ValueError(message)
 
         # Check if adding position would exceed total exposure
-        current_exposure = sum(
-            pos.quantity * pos.current_price for pos in self.positions.values()
-        )
+        current_exposure = sum(pos.quantity * pos.current_price for pos in self.positions.values())
         total_exposure = current_exposure + position_value
 
         allowed, message = self.limits.check_total_exposure(
@@ -591,7 +589,9 @@ class RiskManager:
                 alert_type=AlertType.DAILY_LOSS_LIMIT,
                 severity=AlertSeverity.CRITICAL,
                 message=message,
-                metric_value=abs(self.daily_pnl) / self.account_balance if self.account_balance > 0 else 0,
+                metric_value=(
+                    abs(self.daily_pnl) / self.account_balance if self.account_balance > 0 else 0
+                ),
                 limit_value=self.limits.config.max_daily_loss_pct,
             )
             self.alert_manager.issue_alert(alert)
