@@ -253,7 +253,7 @@ class GoEmotionsLiveTrader:
             }
             
         except Exception as e:
-            logger.error(f"Error generating signal for {symbol}: {e}")
+            logger.error(f"Error generating signal: {e}")
             return {'action': 'HOLD', 'confidence': 0.0, 'reason': 'Error'}
     
     def execute_trade(self, signal: Dict[str, Any]):
