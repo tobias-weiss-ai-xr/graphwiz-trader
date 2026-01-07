@@ -42,5 +42,3 @@ ENV MONITORING_INTERVAL_HOURS=${MONITORING_INTERVAL_HOURS:-0.5}
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD pgrep -f "python.*live_trade_goemotions_new.py" > /dev/null || exit 1
-
-CMD ["python", "scripts/live_trade_goemotions_new.py", "--config", "config/goemotions_trading.yaml", "--no-confirm"]

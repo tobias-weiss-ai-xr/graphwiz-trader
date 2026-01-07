@@ -1,28 +1,5 @@
 #!/usr/bin/env python3
-"""
-Live trading script with GoEmotions integration - executes REAL trades with REAL money.
-
-⚠️ WARNING: This script will execute REAL trades!
-Make sure you:
-1. Have tested thoroughly with paper trading
-2. Understand the risks
-3. Have set appropriate safety limits
-4. Start with small amounts
-
-Features:
-- GoEmotions sentiment analysis
-- Multi-factor signals (Technical + Emotion)
-- Kraken exchange (MiCA licensed for Germany)
-- Conservative risk management
-- Manual trade confirmation
-
-Usage:
-    # Test connection only
-    python scripts/live_trade_goemotions.py --test
-    
-    # Run live trading with config file
-    python scripts/live_trade_goemotions.py --config config/goemotions_trading.yaml
-"""
+"""Simplified live trading without monitoring imports."""
 
 import sys
 import os
@@ -60,22 +37,16 @@ try:
         MarketPhase,
         EmotionSignal
     )
-    # from graphwiz_trader.monitoring.metrics_server import start_metrics_server
 except ImportError as e:
     logger.error(f"Failed to import GoEmotions components: {e}")
     sys.exit(1)
 
 
 class GoEmotionsLiveTrader:
-    """Live trading with GoEmotions sentiment analysis and configuration file support."""
+    """Live trading with GoEmotions sentiment analysis."""
 
     def __init__(self, config_path: str):
-        """
-        Initialize GoEmotions live trader from configuration file.
-        
-        Args:
-            config_path: Path to configuration file
-        """
+        """Initialize GoEmotions live trader from configuration file."""
         # Load configuration
         try:
             self.config = load_goemotions_config(config_path)
@@ -169,9 +140,9 @@ class GoEmotionsLiveTrader:
     def calculate_rsi(self, df, period=14):
         """Calculate RSI indicator."""
         delta = df['close'].diff()
-        gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
-        loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
-        rs = gain / loss
+        gain = (delta.where(delta > 0, 0, delta)).rolling(window=period).mean()
+        loss = (-delta.where(delta < 0, 0, -delta)).rolling(window=period).mean()
+        rs = gain.ewm(alpha=1, adjust=False).mean() / loss.ewm(alpha=1, adjust=False).mean()
         rsi = 100 - (100 / (1 + rs))
         return rsi
     
@@ -181,7 +152,7 @@ class GoEmotionsLiveTrader:
             # Get config values
             tech_config = self.config.get_technical_indicators_config()
             signal_config = self.config.get_signal_generation_config()
-            confidence_threshold = self.config.get('goemotions.strategy.confidence_levels.strong_signal.threshold', 0.65)
+            confidence_threshold = 0.65
             
             # Technical analysis - RSI
             rsi_period = tech_config.get('rsi', {}).get('period', 14)
@@ -214,12 +185,8 @@ class GoEmotionsLiveTrader:
                     texts = self.analyzer.fetch_texts_for_symbol(symbol, max_texts=text_config.get('max_texts_per_symbol', 5))
                     
                     if texts and len(texts) >= self.config.get_strategy_config().get('min_data_points', 3):
-                        # Get first emotion profile since we only have texts
-                        profiles = self.emotion_strategy.analyze_emotions(texts)
-                        if profiles:
-                            dominant_emotion = profiles[0].dominant_emotion
-                        else:
-                            dominant_emotion = None
+                        emotion_result = self.emotion_strategy.analyze_emotions(texts)
+                        dominant_emotion = emotion_result.get('dominant_emotion')
                         
                         logger.info(f"  Emotion: {dominant_emotion}")
                         
@@ -253,7 +220,7 @@ class GoEmotionsLiveTrader:
             }
             
         except Exception as e:
-            logger.error(f"Error generating signal: {e}")
+            logger.error(f"Error generating signal for {symbol}: {e}")
             return {'action': 'HOLD', 'confidence': 0.0, 'reason': 'Error'}
     
     def execute_trade(self, signal: Dict[str, Any]):
@@ -263,15 +230,12 @@ class GoEmotionsLiveTrader:
             action = signal['action']
             confidence = signal['confidence']
             
-            # Check confidence threshold from config
-            confidence_threshold = self.config.get('live_trading.execution.interval_seconds', 0.65)
-            
             # Execute if signal is strong enough
-            if action != 'HOLD' and confidence > confidence_threshold:
+            if action != 'HOLD' and confidence > 0.65:
                 logger.success(f"Executing {action} trade for {symbol} (confidence: {confidence:.2%})")
                 
                 # In a real implementation, this would place the order
-                # self.exchange.create_market_order(...)
+                # self.exchange.create_market_order(symbol, 'market', side=action.lower(), amount=0.001)
                 
                 self.daily_trade_count += 1
                 logger.info(f"Trade count: {self.daily_trade_count}/{self.max_daily_trades}")
@@ -287,18 +251,11 @@ class GoEmotionsLiveTrader:
         logger.info("Starting GoEmotions Live Trading")
         logger.info("=" * 80)
         
-        # Start metrics server
-        try:
-            start_metrics_server(port=8080)
-            logger.info("Metrics server started on port 8080")
-        except Exception as e:
-            logger.warning(f"Failed to start metrics server: {e}")
-        
         while True:
             try:
                 # Fetch balance
                 balance = self.fetch_balance()
-                logger.info(f"Account balance updated")
+                logger.info("Account balance updated")
                 
                 # Analyze each symbol
                 for symbol in self.symbols:
@@ -312,7 +269,7 @@ class GoEmotionsLiveTrader:
                             
                             # Execute trade if confident enough
                             if self.daily_trade_count < self.max_daily_trades:
-                                result = self.execute_trade(signal)
+                                self.execute_trade(signal)
                             else:
                                 logger.warning(f"Daily trade limit reached ({self.max_daily_trades})")
                     
