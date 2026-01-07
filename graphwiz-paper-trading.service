@@ -1,23 +1,49 @@
 [Unit]
 Description=GraphWiz Paper Trading Service
-After=network.target
+Documentation=https://github.com/graphwiz-trader/graphwiz-trader
+After=network-online.target docker.service
+Wants=docker.service
+Requires=network-online.target
 
 [Service]
 Type=simple
-User=YOUR_USERNAME_HERE
-WorkingDirectory=/path/to/graphwiz-trader
-Environment="PATH=/path/to/graphwiz-trader/venv/bin"
-ExecStart=/path/to/graphwiz-trader/venv/bin/python scripts/paper_trading_service.py start
-ExecStop=/path/to/graphwiz-trader/venv/bin/python scripts/paper_trading_service.py stop
-Restart=on-failure
-RestartSec=10
+User=weiss
+Group=weiss
+WorkingDirectory=/opt/git/graphwiz-trader
+
+# Environment
+Environment="PATH=/usr/local/bin:/usr/bin:/bin"
+Environment="TRADING_MODE=paper"
+Environment="COMPOSE_PROFILES=development"
+EnvironmentFile=-/opt/git/graphwiz-trader/.env
+
+# Pre-start: Build and prepare
+ExecStartPre=/usr/bin/docker-compose --profile development build
+ExecStartPre=-/usr/bin/docker-compose --profile development down
+
+# Main: Start development stack with Docker Compose
+ExecStart=/usr/bin/docker-compose --profile development up -d
+
+# Stop: Graceful shutdown
+ExecStop=/usr/bin/docker-compose --profile development down
+
+# Reload: Restart services
+ExecReload=/usr/bin/docker-compose --profile development restart
+
+# Restart policy (disabled for Type=simple with docker-compose)
+# Restart is handled by Docker Compose restart policies in docker-compose.yml
 
 # Logging
-StandardOutput=append:/path/to/graphwiz-trader/logs/service.log
-StandardError=append:/path/to/graphwiz-trader/logs/service_error.log
+StandardOutput=append:/opt/git/graphwiz-trader/logs/paper_trading/systemd_service.log
+StandardError=append:/opt/git/graphwiz-trader/logs/paper_trading/systemd_service_error.log
 
 # Security
 NoNewPrivileges=true
+PrivateTmp=true
+
+# Timeout for graceful shutdown
+TimeoutStartSec=120
+TimeoutStopSec=60
 
 [Install]
 WantedBy=multi-user.target

@@ -1,36 +1,46 @@
-# Dockerfile for Live Trading Service
 FROM python:3.10-slim
 
-# Set working directory
 WORKDIR /app
 
-# Install system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
     procps \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
 COPY requirements-live-trading.txt .
-
-# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements-live-trading.txt
 
-# Copy application code
 COPY . .
 
-# Create logs directory
-RUN mkdir -p logs/live_trading
+RUN mkdir -p logs/live_trading data
 
-# Set Python path
 ENV PYTHONPATH=/app/src
 ENV PYTHONUNBUFFERED=1
-ENV TRADING_MODE=live
 
-# Health check
+ENV TRADING_MODE=${TRADING_MODE:-live}
+ENV LOG_LEVEL=${LOG_LEVEL:-INFO}
+ENV NEO4J_URI=${NEO4J_URI:-bolt://neo4j:7687}
+ENV NEO4J_USERNAME=${NEO4J_USERNAME:-neo4j}
+ENV NEO4J_PASSWORD=${NEO4J_PASSWORD}
+ENV KRAKEN_API_KEY=${KRAKEN_API_KEY}
+ENV KRAKEN_API_SECRET=${KRAKEN_API_SECRET}
+ENV ONETRADING_API_KEY=${ONETRADING_API_KEY}
+ENV ONETRADING_API_SECRET=${ONETRADING_API_SECRET}
+ENV BINANCE_API_KEY=${BINANCE_API_KEY}
+ENV BINANCE_API_SECRET=${BINANCE_API_SECRET}
+ENV OPENAI_API_KEY=${OPENAI_API_KEY}
+ENV ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+ENV MAX_POSITION_EUR=${MAX_POSITION_EUR:-250}
+ENV MAX_DAILY_TRADES=${MAX_DAILY_TRADES:-25}
+ENV MAX_DAILY_LOSS_EUR=${MAX_DAILY_LOSS_EUR:-75}
+ENV UPDATE_INTERVAL_SECONDS=${UPDATE_INTERVAL_SECONDS:-30}
+ENV GOEMOTIONS_MIN_DATA_POINTS=${GOEMOTIONS_MIN_DATA_POINTS:-3}
+ENV GOEMOTIONS_MAX_POSITION_PCT=${GOEMOTIONS_MAX_POSITION_PCT:-0.25}
+ENV MONITORING_INTERVAL_HOURS=${MONITORING_INTERVAL_HOURS:-0.5}
+
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD pgrep -f "scripts/live_trade.py" || exit 1
+    CMD pgrep -f "python.*live_trade_goemotions_new.py" > /dev/null || exit 1
 
-# Default command - can be overridden
-CMD ["python", "scripts/live_trade.py", "--exchange", "kraken", "--symbol", "BTC/EUR"]
+CMD ["python", "scripts/live_trade_goemotions_new.py", "--config", "config/goemotions_trading.yaml", "--no-confirm"]

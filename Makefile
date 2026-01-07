@@ -1,4 +1,4 @@
-.PHONY: help test test-unit test-fast test-slow test-integration test-hft test-property test-parallel coverage clean
+.PHONY: help test test-unit test-fast test-slow test-integration test-hft test-property test-parallel coverage clean docker-build docker-up docker-down docker-logs docker-clean docker-dev docker-prod docker-status
 
 help:  ## Show this help message
 	@echo "Available targets:"
@@ -42,3 +42,40 @@ clean:  ## Clean up test artifacts
 	find . -type f -name ".coverage" -delete 2>/dev/null || true
 	rm -rf .tox *.egg-info dist build 2>/dev/null || true
 	@echo "Cleaned up test artifacts"
+
+# Docker targets
+docker-build: ## Build all Docker images
+	docker-compose build
+
+docker-up: ## Start production services
+	docker-compose up -d
+
+docker-down: ## Stop all services
+	docker-compose down
+
+docker-logs: ## Show logs for all services
+	docker-compose logs -f
+
+docker-clean: ## Remove all containers, networks, and volumes
+	docker-compose down -v --remove-orphans
+	docker system prune -f
+
+docker-dev: ## Start development stack (paper trading + monitoring)
+	docker-compose --profile development up -d
+
+docker-prod: ## Start production stack (live trading + monitoring)
+	docker-compose build
+	docker-compose up -d
+
+docker-status: ## Show status of all services
+	docker-compose ps
+
+# Systemd service management (alternative to docker-compose)
+systemd-live: ## Start live trading via systemd
+	sudo systemctl start graphwiz-live-trading.service
+
+systemd-paper: ## Start paper trading via systemd  
+	sudo systemctl start graphwiz-paper-trading.service
+
+systemd-status: ## Check systemd service status
+	sudo systemctl status graphwiz-live-trading.service graphwiz-paper-trading.service

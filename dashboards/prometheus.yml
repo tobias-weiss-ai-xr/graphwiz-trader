@@ -5,8 +5,8 @@ global:
 scrape_configs:
   - job_name: 'graphwiz-trader'
     static_configs:
-      - targets: ['host.docker.internal:8000']
-    scrape_interval: 5s
+      - targets: ['graphwiz-trading:8000']
+    scrape_interval: 30s
 
   - job_name: 'prometheus'
     static_configs:

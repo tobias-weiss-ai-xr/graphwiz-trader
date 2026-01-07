@@ -117,44 +117,25 @@ class EmotionBasedStrategy:
 
         logger.info("Emotion-based trading strategy initialized with GoEmotions")
 
-    async def analyze_emotions_for_symbol(
-        self, symbol: str, texts: List[str], timestamps: Optional[List[datetime]] = None
+    def analyze_emotions(
+        self, texts: List[str]
     ) -> List[EmotionProfile]:
-        """Analyze emotions for texts related to a symbol.
+        """Analyze emotions for texts.
 
         Args:
-            symbol: Trading symbol
             texts: List of texts to analyze
-            timestamps: Optional timestamps for each text
 
         Returns:
             List of emotion profiles
         """
-        if timestamps is None:
-            timestamps = [datetime.now()] * len(texts)
-
         profiles = []
-        for text, ts in zip(texts, timestamps):
+        for text in texts:
             profile = self.analyzer.detect_emotions(text)
-            profile.timestamp = ts
             profiles.append(profile)
 
-        # Store in history
-        if symbol not in self.emotion_history:
-            self.emotion_history[symbol] = []
-
-        self.emotion_history[symbol].extend(
-            [(ts, profile) for ts, profile in zip(timestamps, profiles)]
-        )
-
-        # Clean old data (keep 7 days)
-        cutoff = datetime.now() - timedelta(days=7)
-        self.emotion_history[symbol] = [
-            (ts, p) for ts, p in self.emotion_history[symbol] if ts > cutoff
-        ]
-
+# Return emotion profiles for processing
         logger.info(
-            f"{symbol}: Analyzed {len(profiles)} texts, "
+            f"Analyzed {len(profiles)} texts, "
             f"dominant emotion: {profiles[0].dominant_emotion.value if profiles else 'N/A'}"
         )
 
@@ -549,6 +530,42 @@ class EmotionBasedStrategy:
             "emotion_distribution": group_distribution,
             "timestamp": latest.timestamp.isoformat(),
         }
+
+    # Alias for backward compatibility
+    get_emotion_summary = get_market_emotion_summary
+
+    def analyze_emotions_for_symbol(self, symbol: str, texts: List[str], timestamps: List[datetime]) -> None:
+        """Analyze emotions for a specific symbol.
+
+        Args:
+            symbol: Trading symbol
+            texts: List of texts to analyze
+            timestamps: List of timestamps for each text
+        """
+        if symbol not in self.emotion_history:
+            self.emotion_history[symbol] = []
+
+        # Analyze each text
+        profiles = []
+        for text in texts:
+            profile = self.analyzer.detect_emotions(text)
+            profiles.append(profile)
+
+        # Store in history with timestamps
+        self.emotion_history[symbol].extend(
+            [(ts, profile) for ts, profile in zip(timestamps, profiles)]
+        )
+
+        # Clean old data (keep 7 days)
+        cutoff = datetime.now() - timedelta(days=7)
+        self.emotion_history[symbol] = [
+            (ts, p) for ts, p in self.emotion_history[symbol] if ts > cutoff
+        ]
+
+        logger.info(
+            f"{symbol}: Analyzed {len(profiles)} texts, "
+            f"dominant emotion: {profiles[0].dominant_emotion.value if profiles else 'N/A'}"
+        )
 
 
 class EmotionStrategyFactory:

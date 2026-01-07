@@ -11,42 +11,39 @@ User=weiss
 Group=weiss
 WorkingDirectory=/opt/git/graphwiz-trader
 
-# Pre-start: Stop any existing container
-ExecStartPre=-/usr/bin/docker stop graphwiz-live-trading
-ExecStartPre=-/usr/bin/docker rm graphwiz-live-trading
+# Environment
+Environment="PATH=/usr/local/bin:/usr/bin:/bin"
+EnvironmentFile=-/opt/git/graphwiz-trader/.env
 
-# Main: Start live trading container
-ExecStart=/usr/bin/docker run --rm \
-  --name graphwiz-live-trading \
-  --env-file /opt/git/graphwiz-trader/.env \
-  graphwiz-live-trading:latest \
-  python scripts/live_trade_goemotions.py \
-    --symbols BTC/EUR ETH/EUR SOL/EUR UNI/EUR XRP/EUR ADA/EUR LINK/EUR AVAX/EUR DOGE/EUR DOT/EUR \
-    --max-position 250 \
-    --max-daily-loss 75 \
-    --max-daily-trades 15 \
-    --interval 3600 \
-    --no-confirm
+# Pre-start: Build and prepare
+ExecStartPre=/usr/bin/docker-compose build
+ExecStartPre=-/usr/bin/docker-compose down
+
+# Main: Start full stack with Docker Compose
+ExecStart=/usr/bin/docker-compose up -d
 
 # Stop: Graceful shutdown
-ExecStop=/usr/bin/docker stop graphwiz-live-trading
+ExecStop=/usr/bin/docker-compose down
 
-# Restart policy
-Restart=always
-RestartSec=10
-StartLimitInterval=60
-StartLimitBurst=3
+# Reload: Restart services (graceful)
+ExecReload=/usr/bin/docker-compose restart trading
+
+
+
+# Restart policy (disabled for Type=simple with docker-compose)
+# Restart is handled by Docker Compose restart policies in docker-compose.yml
 
 # Logging
-StandardOutput=append:/opt/git/graphwiz-trader/logs/live_trading/live_trading_service.log
-StandardError=append:/opt/git/graphwiz-trader/logs/live_trading/live_trading_service_error.log
+StandardOutput=append:/opt/git/graphwiz-trader/logs/live_trading/systemd_service.log
+StandardError=append:/opt/git/graphwiz-trader/logs/live_trading/systemd_service_error.log
 
 # Security
 NoNewPrivileges=true
 PrivateTmp=true
 
 # Timeout for graceful shutdown
-TimeoutStopSec=30
+TimeoutStartSec=120
+TimeoutStopSec=60
 
 [Install]
 WantedBy=multi-user.target

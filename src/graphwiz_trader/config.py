@@ -218,25 +218,222 @@ class BacktestConfig(BaseModel):
         return values
 
 
-class MonitoringConfig(BaseModel):
-    """Monitoring and alerting configuration."""
+class GoEmotionsStrategyConfig(BaseModel):
+    extreme_euphoria_threshold: float = Field(0.75, ge=0.0, le=1.0)
+    extreme_fear_threshold: float = Field(0.75, ge=0.0, le=1.0)
+    use_contrarian_signals: bool = Field(True)
+    min_data_points: int = Field(3, ge=1)
+    max_emotion_position_pct: float = Field(0.25, ge=0.01, le=1.0)
 
-    enabled: bool = Field(True, description="Enable monitoring")
-    log_level: str = Field("INFO", description="Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)")
-    metrics_port: int = Field(9090, ge=1024, le=65535, description="Prometheus metrics port")
-    dashboard_port: int = Field(8050, ge=1024, le=65535, description="Dashboard port")
-    enable_slack_alerts: bool = Field(False, description="Enable Slack alerts")
-    slack_webhook_url: Optional[str] = Field(None, description="Slack webhook URL")
-    enable_email_alerts: bool = Field(False, description="Enable email alerts")
-    email_recipients: List[str] = Field(default_factory=list, description="Email recipients")
 
-    @validator("log_level")
-    def validate_log_level(cls, v):
-        """Validate log level."""
-        valid_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
-        if v.upper() not in valid_levels:
-            raise ValueError(f"Invalid log level: {v}. Must be one of {valid_levels}")
-        return v.upper()
+class GoEmotionsTextAnalysisConfig(BaseModel):
+    max_texts_per_symbol: int = Field(5, ge=1, le=50)
+    min_text_length: int = Field(10, ge=1)
+    max_text_length: int = Field(512, ge=50)
+    language: str = Field("en")
+
+
+class GoEmotionsEmotionsConfig(BaseModel):
+    buy_signals: List[str] = Field(
+        default_factory=lambda: ["joy", "excitement", "optimism", "anticipation", "desire"]
+    )
+    sell_signals: List[str] = Field(
+        default_factory=lambda: ["fear", "disgust", "anger", "sadness"]
+    )
+
+
+class GoEmotionsConfig(BaseModel):
+    enabled: bool = Field(True)
+    model_path: Optional[str] = Field(None)
+    use_device: str = Field("cpu")
+    batch_size: int = Field(32, ge=1, le=256)
+    strategy: GoEmotionsStrategyConfig = Field(default_factory=GoEmotionsStrategyConfig)
+    text_analysis: GoEmotionsTextAnalysisConfig = Field(default_factory=GoEmotionsTextAnalysisConfig)
+    emotions: GoEmotionsEmotionsConfig = Field(default_factory=GoEmotionsEmotionsConfig)
+
+
+class TechnicalIndicatorsConfig(BaseModel):
+    rsi_enabled: bool = Field(True)
+    rsi_period: int = Field(14, ge=2)
+    rsi_oversold: int = Field(30, ge=0, le=50)
+    rsi_overbought: int = Field(70, ge=50, le=100)
+    rsi_weight: float = Field(0.4, ge=0.0, le=1.0)
+    macd_enabled: bool = Field(True)
+    macd_fast_period: int = Field(12, ge=5)
+    macd_slow_period: int = Field(26, ge=10)
+    macd_signal_period: int = Field(9, ge=2)
+    macd_weight: float = Field(0.3, ge=0.0, le=1.0)
+
+
+class SignalGenerationConfig(BaseModel):
+    combine_technical_emotion: bool = Field(True)
+    technical_weight: float = Field(0.5, ge=0.0, le=1.0)
+    emotion_weight: float = Field(0.5, ge=0.0, le=1.0)
+
+
+class GoEmotionsTradingConfig(BaseModel):
+    confidence_threshold: float = Field(0.65, ge=0.0, le=1.0)
+    update_interval_seconds: int = Field(30, ge=1, le=3600)
+    max_daily_trades: int = Field(25, ge=1, le=100)
+    max_position_eur: float = Field(250.0, gt=0)
+    max_daily_loss_eur: float = Field(75.0, gt=0)
+    technical_indicators: TechnicalIndicatorsConfig = Field(default_factory=TechnicalIndicatorsConfig)
+    signal_generation: SignalGenerationConfig = Field(default_factory=SignalGenerationConfig)
+
+
+class GoEmotionsStrategyConfig(BaseModel):
+    """GoEmotions sentiment strategy configuration."""
+
+    extreme_euphoria_threshold: float = Field(0.75, ge=0.0, le=1.0, description="Extreme euphoria threshold")
+    extreme_fear_threshold: float = Field(0.75, ge=0.0, le=1.0, description="Extreme fear threshold")
+    use_contrarian_signals: bool = Field(True, description="Use contrarian trading signals")
+    min_data_points: int = Field(3, ge=1, description="Minimum data points for analysis")
+    max_emotion_position_pct: float = Field(0.25, ge=0.01, le=1.0, description="Max position % for emotion trades")
+
+
+class GoEmotionsTextAnalysisConfig(BaseModel):
+    """GoEmotions text analysis configuration."""
+
+    max_texts_per_symbol: int = Field(5, ge=1, le=50, description="Max texts to analyze per symbol")
+    min_text_length: int = Field(10, ge=1, description="Minimum text length")
+    max_text_length: int = Field(512, ge=50, description="Maximum text length")
+    language: str = Field("en", description="Text language")
+
+
+class GoEmotionsEmotionsConfig(BaseModel):
+    """GoEmotions emotions mapping configuration."""
+
+    buy_signals: List[str] = Field(
+        default_factory=lambda: ["joy", "excitement", "optimism", "anticipation", "desire"],
+        description="Emotions that trigger buy signals"
+    )
+    sell_signals: List[str] = Field(
+        default_factory=lambda: ["fear", "disgust", "anger", "sadness"],
+        description="Emotions that trigger sell signals"
+    )
+
+
+class GoEmotionsConfig(BaseModel):
+    """GoEmotions sentiment analysis configuration."""
+
+    enabled: bool = Field(True, description="Enable GoEmotions sentiment analysis")
+    model_path: Optional[str] = Field(None, description="Path to GoEmotions model")
+    use_device: str = Field("cpu", description="Device to use (cpu or cuda)")
+    batch_size: int = Field(32, ge=1, le=256, description="Batch size for inference")
+    strategy: GoEmotionsStrategyConfig = Field(default_factory=GoEmotionsStrategyConfig)
+    text_analysis: GoEmotionsTextAnalysisConfig = Field(default_factory=GoEmotionsTextAnalysisConfig)
+    emotions: GoEmotionsEmotionsConfig = Field(default_factory=GoEmotionsEmotionsConfig)
+
+
+class TechnicalIndicatorsConfig(BaseModel):
+    """Technical indicators configuration."""
+
+    rsi_enabled: bool = Field(True, description="Enable RSI indicator")
+    rsi_period: int = Field(14, ge=2, description="RSI period")
+    rsi_oversold: int = Field(30, ge=0, le=50, description="RSI oversold threshold")
+    rsi_overbought: int = Field(70, ge=50, le=100, description="RSI overbought threshold")
+    rsi_weight: float = Field(0.4, ge=0.0, le=1.0, description="RSI weight in signal")
+    
+    macd_enabled: bool = Field(True, description="Enable MACD indicator")
+    macd_fast_period: int = Field(12, ge=5, description="MACD fast period")
+    macd_slow_period: int = Field(26, ge=10, description="MACD slow period")
+    macd_signal_period: int = Field(9, ge=2, description="MACD signal period")
+    macd_weight: float = Field(0.3, ge=0.0, le=1.0, description="MACD weight in signal")
+
+
+class SignalGenerationConfig(BaseModel):
+    """Signal generation configuration."""
+
+    combine_technical_emotion: bool = Field(True, description="Combine technical and emotion signals")
+    technical_weight: float = Field(0.5, ge=0.0, le=1.0, description="Technical analysis weight")
+    emotion_weight: float = Field(0.5, ge=0.0, le=1.0, description="Emotion analysis weight")
+
+
+class GoEmotionsTradingConfig(BaseModel):
+    """GoEmotions-based trading configuration."""
+
+    confidence_threshold: float = Field(0.65, ge=0.0, le=1.0, description="Minimum confidence to execute trade")
+    update_interval_seconds: int = Field(30, ge=1, le=3600, description="Trading update interval in seconds")
+    max_daily_trades: int = Field(25, ge=1, le=100, description="Maximum trades per day")
+    max_position_eur: float = Field(250.0, gt=0, description="Maximum position size in EUR")
+    max_daily_loss_eur: float = Field(75.0, gt=0, description="Maximum daily loss in EUR")
+    technical_indicators: TechnicalIndicatorsConfig = Field(default_factory=TechnicalIndicatorsConfig)
+    signal_generation: SignalGenerationConfig = Field(default_factory=SignalGenerationConfig)
+
+
+class GoEmotionsConfig(BaseModel):
+    """GoEmotions sentiment analysis configuration."""
+
+    enabled: bool = Field(True, description="Enable GoEmotions sentiment analysis")
+    model_path: Optional[str] = Field(None, description="Path to GoEmotions model")
+    use_device: str = Field("cpu", description="Device to use (cpu or cuda)")
+    batch_size: int = Field(32, ge=1, le=256, description="Batch size for inference")
+    
+    strategy:
+        extreme_euphoria_threshold: float = Field(0.75, ge=0.0, le=1.0, description="Extreme euphoria threshold")
+        extreme_fear_threshold: float = Field(0.75, ge=0.0, le=1.0, description="Extreme fear threshold")
+        use_contrarian_signals: bool = Field(True, description="Use contrarian trading signals")
+        min_data_points: int = Field(3, ge=1, description="Minimum data points for analysis")
+        max_emotion_position_pct: float = Field(0.25, ge=0.01, le=1.0, description="Max position % for emotion trades")
+    
+    text_analysis:
+        max_texts_per_symbol: int = Field(5, ge=1, le=50, description="Max texts to analyze per symbol")
+        min_text_length: int = Field(10, ge=1, description="Minimum text length")
+        max_text_length: int = Field(512, ge=50, description="Maximum text length")
+        language: str = Field("en", description="Text language")
+    
+    emotions:
+        buy_signals: List[str] = Field(
+            default_factory=lambda: ["joy", "excitement", "optimism", "anticipation", "desire"],
+            description="Emotions that trigger buy signals"
+        )
+        sell_signals: List[str] = Field(
+            default_factory=lambda: ["fear", "disgust", "anger", "sadness"],
+            description="Emotions that trigger sell signals"
+        )
+
+
+class GoEmotionsTradingConfig(BaseModel):
+    """GoEmotions-based trading configuration."""
+
+    confidence_threshold: float = Field(0.65, ge=0.0, le=1.0, description="Minimum confidence to execute trade")
+    update_interval_seconds: int = Field(30, ge=1, le=3600, description="Trading update interval in seconds")
+    max_daily_trades: int = Field(25, ge=1, le=100, description="Maximum trades per day")
+    max_position_eur: float = Field(250.0, gt=0, description="Maximum position size in EUR")
+    max_daily_loss_eur: float = Field(75.0, gt=0, description="Maximum daily loss in EUR")
+    
+    technical_indicators:
+        rsi:
+            enabled: bool = Field(True, description="Enable RSI indicator")
+            period: int = Field(14, ge=2, description="RSI period")
+            oversold: int = Field(30, ge=0, le=50, description="RSI oversold threshold")
+            overbought: int = Field(70, ge=50, le=100, description="RSI overbought threshold")
+            weight: float = Field(0.4, ge=0.0, le=1.0, description="RSI weight in signal")
+        
+        macd:
+            enabled: bool = Field(True, description="Enable MACD indicator")
+            fast_period: int = Field(12, ge=5, description="MACD fast period")
+            slow_period: int = Field(26, ge=10, description="MACD slow period")
+            signal_period: int = Field(9, ge=2, description="MACD signal period")
+            weight: float = Field(0.3, ge=0.0, le=1.0, description="MACD weight in signal")
+    
+    signal_generation:
+        combine_technical_emotion: bool = Field(True, description="Combine technical and emotion signals")
+        technical_weight: float = Field(0.5, ge=0.0, le=1.0, description="Technical analysis weight")
+        emotion_weight: float = Field(0.5, ge=0.0, le=1.0, description="Emotion analysis weight")
+    
+    @root_validator
+    def validate_weights(cls, values):
+        """Validate that weights sum to 1.0."""
+        technical = values.get("signal_generation", {}).get("technical_weight", 0)
+        emotion = values.get("signal_generation", {}).get("emotion_weight", 0)
+        
+        if abs(technical + emotion - 1.0) > 0.01:
+            raise ValueError(
+                f"Technical ({technical}) and emotion ({emotion}) weights must sum to 1.0"
+            )
+        
+        return values
 
 
 class GraphWizConfig(BaseSettings):

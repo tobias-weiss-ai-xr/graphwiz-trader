@@ -17,6 +17,13 @@ services:
       - NEO4J_USERNAME=${NEO4J_USERNAME:-neo4j}
       - NEO4J_PASSWORD=${NEO4J_PASSWORD}
       - PYTHONUNBUFFERED=1
+      - MAX_POSITION_EUR=${MAX_POSITION_EUR:-250}
+      - MAX_DAILY_TRADES=${MAX_DAILY_TRADES:-25}
+      - MAX_DAILY_LOSS_EUR=${MAX_DAILY_LOSS_EUR:-75}
+      - UPDATE_INTERVAL_SECONDS=${UPDATE_INTERVAL_SECONDS:-30}
+      - GOEMOTIONS_MIN_DATA_POINTS=${GOEMOTIONS_MIN_DATA_POINTS:-3}
+      - GOEMOTIONS_MAX_POSITION_PCT=${GOEMOTIONS_MAX_POSITION_PCT:-0.25}
+      - AUTO_CONFIRM=yes
 
     volumes:
       - ./logs/live_trading:/app/logs/live_trading
@@ -24,7 +31,7 @@ services:
       - ./data:/app/data
 
     ports:
-      - "8080:8080"  # Health check endpoint
+      - "8082:8080"  # Health check endpoint
       - "9090:9090"  # Metrics endpoint
 
     networks:

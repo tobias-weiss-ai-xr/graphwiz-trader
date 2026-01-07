@@ -780,6 +780,52 @@ class GoEmotionsAnalyzer:
         else:
             return "neutral"
 
+    def fetch_texts_for_symbol(self, symbol: str, max_texts: int = 5) -> List[str]:
+        """Fetch sample texts for sentiment analysis of a symbol.
+        
+        For demo purposes, returns mock texts that would typically come from:
+        - Twitter/X feeds
+        - Reddit discussions  
+        - News headlines
+        - Trading forums
+        
+        Args:
+            symbol: Trading symbol (e.g., 'BTC/EUR')
+            max_texts: Maximum number of texts to return
+            
+        Returns:
+            List of text samples for emotion analysis
+        """
+        # Mock texts based on common crypto sentiment patterns
+        mock_texts = {
+            'BTC/EUR': [
+                "Bitcoin is breaking resistance! 🚀 To the moon everyone! HODL strong!",
+                "Nervous about the current market, might sell my BTC soon",
+                "BTC accumulation phase, buying the dip while prices are low",
+                "This crypto crash is brutal, lost so much money on Bitcoin",
+                "Bitcoin technical analysis shows strong support at current levels"
+            ],
+            'ETH/EUR': [
+                "Ethereum upgrade is coming! ETH will explode 💰",
+                "ETH gas fees are ridiculous, this can't continue",
+                "Smart contract adoption on Ethereum is growing steadily",
+                "Concerned about Ethereum's competition from other L1s",
+                "Ethereum staking rewards look attractive for long-term holds"
+            ]
+        }
+        
+        # Get texts for symbol or return generic crypto texts
+        texts = mock_texts.get(symbol, [
+            "Crypto market is showing interesting patterns today",
+            "Technical indicators suggest a potential breakout soon", 
+            "Market volatility is high, trading with caution",
+            " blockchain technology continues to evolve rapidly",
+            "DeFi protocols are seeing increased usage and adoption"
+        ])
+        
+        # Return limited number of texts
+        return texts[:max_texts]
+
     def batch_analyze(self, texts: List[str]) -> List[EmotionProfile]:
         """Analyze multiple texts.
 

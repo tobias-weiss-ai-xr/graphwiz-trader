@@ -180,7 +180,7 @@ class GoEmotionsLiveTrader:
             )
             
             # Get emotion summary
-            emotion_summary = self.emotion_strategy.get_emotion_summary(symbol)
+            emotion_summary = self.emotion_strategy.get_market_emotion_summary(symbol)
             return emotion_summary
             
         except Exception as e:
@@ -376,7 +376,7 @@ class GoEmotionsLiveTrader:
                 logger.info(f"  Reason: {signal['reason']}")
                 
                 # Execute if signal is strong enough
-                if signal['action'] != 'HOLD' and signal['confidence'] > 0.70:
+                if signal['action'] != 'HOLD' and signal['confidence'] > 0.65:
                     result = self.execute_trade(signal)
                     results.append(result)
                 else:
