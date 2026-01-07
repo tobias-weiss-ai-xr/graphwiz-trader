@@ -8,8 +8,11 @@ Provides:
 - Health checks
 """
 
+"""
+Monitoring and alerting system.
+"""
+
 from .monitor import TradingMonitor
-from .alerts import AlertManager, TelegramNotifier, DiscordNotifier
 
 __all__ = [
     "TradingMonitor",
