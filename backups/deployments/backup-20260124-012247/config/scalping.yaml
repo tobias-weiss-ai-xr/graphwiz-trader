@@ -1,0 +1,288 @@
+# High-Frequency Scalping Configuration
+# Ultra-fast trading strategy focusing on small, quick profits
+
+version: "0.1.0"
+mode: "live_trading"
+strategy: "scalping"
+
+# Trading Engine Settings
+trading:
+  execution_type: "real"
+  require_confirmation: false  # Must be fast
+  max_position_size: 500  # Smaller positions for quick entries/exits
+  risk_per_trade: 0.005  # 0.5% risk per trade
+  max_daily_loss: 200
+  max_positions: 5  # Fewer concurrent positions
+  commission_rate: 0.0004  # Assume lower tier commission
+
+  # Ultra-fast execution
+  order_type: "limit"  # Use limit orders for better prices
+  max_latency_ms: 50  # Maximum acceptable latency
+  execution_timeout: 1  # 1 second timeout
+  max_slippage_pct: 0.0005  # Very low slippage tolerance
+
+  # Scalping parameters
+  min_confidence: 0.70
+  target_profit_pct: 0.005  # 0.5% target profit
+  max_hold_time_minutes: 30  # Max 30 minute hold
+  position_sizing: "fixed"
+
+  # Quick exit conditions
+  quick_exit_profit: 0.003  # Exit at 0.3% profit
+  quick_exit_loss: 0.002  # Exit at 0.2% loss
+
+# Knowledge Graph - Optimized for speed
+neo4j:
+  uri: bolt://localhost:7687
+  username: neo4j
+  password: your_password
+  database: neo4j
+
+  # Enable only essential features for speed
+  enable_market_context: true
+  enable_pattern_recognition: false  # Skip for speed
+  enable_performance_tracking: true
+  cache_ttl: 60  # Short cache for fresh data
+  connection_pool_size: 100  # Larger pool for concurrency
+
+# Exchanges - Low Latency Setup
+exchanges:
+  binance:
+    enabled: true
+    api_key: your_live_api_key
+    api_secret: your_live_api_secret
+    sandbox: false
+    enable_websocket: true  # Use WebSocket for real-time data
+
+    # High liquidity symbols only
+    symbols:
+      - BTC/USDT
+      - ETH/USDT
+      - BNB/USDT
+      - SOL/USDT
+
+    # Aggressive rate limits
+    rate_limit:
+      requests_per_second: 20
+      orders_per_second: 10
+      websocket_streams: 5
+
+    # Order settings
+    min_order_size: 10
+    max_order_size: 500
+    default_order_type: "LIMIT_MAKER"  # Maker orders only for fees
+
+    # Websocket subscriptions
+    websocket_streams:
+      - trade
+      - depth
+      - ticker
+
+# AI Agents - Optimized for Speed
+agents:
+  technical:
+    enabled: true
+    model: "gpt-3.5-turbo"  # Faster model
+    temperature: 0.3
+    max_tokens: 200  # Shorter responses
+    timeout: 3  # 3 second timeout
+
+    # Fast indicators only
+    indicators:
+      - rsi
+      - momentum
+      - volume_surge
+      - price_action
+
+    lookback_periods: [5, 10, 20]  # Shorter lookbacks
+    confidence_threshold: 0.70
+
+    # Pre-computed signals for speed
+    use_cached_signals: true
+    signal_cache_ttl: 5  # 5 second cache
+
+  sentiment:
+    enabled: false  # Disable for speed
+
+  risk:
+    enabled: true
+    model: "gpt-3.5-turbo"
+    temperature: 0.1
+    timeout: 2
+
+    # Simple risk rules
+    max_drawdown: 0.05
+    position_sizing_method: "fixed"
+    fixed_risk_pct: 0.005
+
+  # Fast momentum agent
+  micro_momentum:
+    enabled: true
+    model: "gpt-3.5-turbo"
+    temperature: 0.4
+    timeout: 2
+
+    # Very short-term momentum
+    indicators:
+      - 1m_momentum
+      - 5m_momentum
+      - tick_volume
+      - order_flow
+
+    weight: 0.4
+
+# Risk Management - Tight Controls
+risk:
+  # Small position limits
+  max_position_size: 500
+  max_positions_per_symbol: 1
+  max_total_positions: 5
+  min_position_size: 10
+
+  # Very tight stops
+  default_stop_loss_pct: 0.002  # 0.2% stop loss
+  default_take_profit_pct: 0.005  # 0.5% take profit
+  trailing_stop_enabled: false  # No trailing for scalping
+  breakeven_enabled: true  # Move to breakeven quickly
+  breakeven_trigger: 0.001  # At 0.1% profit
+
+  # Portfolio risk
+  max_correlation_exposure: 0.5  # Keep low
+  max_single_asset_pct: 0.3
+  var_confidence: 0.95
+  var_days: 1
+
+  # High frequency limits
+  max_daily_trades: 100
+  max_hourly_trades: 20
+  max_daily_loss: 200
+  daily_loss_stop_trading: true
+
+  # Drawdown
+  max_drawdown_pct: 0.05
+  reduce_on_drawdown: true
+  drawdown_reduction_pct: 0.5
+
+# Monitoring and Alerts - Real-time
+monitoring:
+  enabled: true
+  log_level: "WARNING"  # Less logging for speed
+  metrics_update_interval: 1  # 1 second updates
+
+  metrics:
+    - pnl
+    - positions
+    - trades
+    - execution_latency
+    - order_fill_rate
+
+  alerts:
+    slack:
+      enabled: true
+      webhook_url: your_webhook_url
+      alert_types:
+        - execution_warning
+        - slippage_alert
+        - latency_alert
+
+    email:
+      enabled: false  # Too slow for scalping
+
+  dashboard:
+    enabled: true
+    port: 8050
+    update_interval: 1  # Real-time updates
+
+# Safety Features - Fast but Safe
+safety:
+  pre_trade_checks:
+    - balance_verification
+    - market_status_check
+    - latency_check
+    - liquidity_check
+
+  circuit_breakers:
+    max_drawdown: 0.05
+    max_daily_loss: 200
+    max_consecutive_losses: 10
+    max_latency_ms: 100
+    min_fill_rate: 0.95
+
+  emergency_shutdown: true
+  close_all_positions_on_shutdown: true
+
+# Logging - Minimal for Performance
+logging:
+  level: "WARNING"
+  format: "%(asctime)s - %(levelname)s - %(message)s"  # Simplified
+  file: "logs/scalping_live.log"
+  rotation: "200 MB"
+  retention: "30 days"
+
+  structured: false  # Faster logging
+  include_timestamp: true
+  include_trace_id: false  # Skip for speed
+
+# Trading Schedule - 24/7 for Scalping
+schedule:
+  timezone: "UTC"
+  trading_hours:
+    start: "00:00"
+    end: "23:59"
+
+  trade_on_weekends: true
+
+  # Avoid low liquidity periods
+  avoid_periods:
+    - start: "02:00"
+      end: "04:00"
+      reason: "Low liquidity"
+
+# Performance Goals
+goals:
+  target_annual_return: 0.30  # 30% annual from many small gains
+  max_acceptable_drawdown: 0.05
+  min_sharpe_ratio: 2.0  # High Sharpe from consistent profits
+  max_monthly_volatility: 0.08
+
+  daily_review: true
+
+# Scalping-Specific Features
+scalping:
+  # Order types
+  prefer_maker_orders: true  # Lower fees
+  avoid_taker_orders: true
+
+  # Entry conditions
+  min_spread_pct: 0.001  # Minimum spread to trade
+  min_liquidity_usd: 1000000  # Minimum liquidity
+
+  # Exit conditions
+  partial_exit_enabled: true  # Exit in parts
+  partial_exit_levels:
+    - profit_pct: 0.003
+      exit_pct: 0.5  # Exit 50% at 0.3%
+    - profit_pct: 0.005
+      exit_pct: 0.5  # Exit remaining at 0.5%
+
+  # Fee optimization
+  track_maker_taker_ratio: true
+  target_maker_ratio: 0.8  # 80% maker orders
+
+# Latency Optimization
+latency_optimization:
+  # Use WebSockets
+  use_websockets: true
+  websocket_ping_interval: 30
+
+  # Pre-compute indicators
+  precompute_indicators: true
+  indicator_cache_ttl: 1
+
+  # Connection pooling
+  connection_pool_size: 50
+  keep_alive_enabled: true
+
+  # Disable unnecessary features
+  disable_slow_features: true
+  skip_historical_queries: true

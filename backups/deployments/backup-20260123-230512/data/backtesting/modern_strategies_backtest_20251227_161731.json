@@ -1,0 +1,224 @@
+{
+  "grid_trading": [
+    {
+      "strategy": "Grid Trading",
+      "config": {
+        "upper_price": 96278.479,
+        "lower_price": 78773.301,
+        "num_grids": 5,
+        "grid_mode": "GridTradingMode.ARITHMETIC",
+        "investment_amount": 10000
+      },
+      "trades_executed": 73,
+      "total_profit": 6582.911410555203,
+      "initial_price": 91467.13,
+      "final_price": 87525.89,
+      "price_change_pct": -4.30891403283344,
+      "data_points": 72
+    },
+    {
+      "strategy": "Grid Trading",
+      "config": {
+        "upper_price": 100654.7735,
+        "lower_price": 74397.0065,
+        "num_grids": 10,
+        "grid_mode": "GridTradingMode.ARITHMETIC",
+        "investment_amount": 10000
+      },
+      "trades_executed": 90,
+      "total_profit": 7223.976928426547,
+      "initial_price": 91467.13,
+      "final_price": 87525.89,
+      "price_change_pct": -4.30891403283344,
+      "data_points": 72
+    },
+    {
+      "strategy": "Grid Trading",
+      "config": {
+        "upper_price": 100654.7735,
+        "lower_price": 74397.0065,
+        "num_grids": 10,
+        "grid_mode": "GridTradingMode.GEOMETRIC",
+        "investment_amount": 10000
+      },
+      "trades_executed": 101,
+      "total_profit": 7990.451932243678,
+      "initial_price": 91467.13,
+      "final_price": 87525.89,
+      "price_change_pct": -4.30891403283344,
+      "data_points": 72
+    },
+    {
+      "strategy": "Grid Trading",
+      "config": {
+        "upper_price": 105031.068,
+        "lower_price": 70020.712,
+        "num_grids": 15,
+        "grid_mode": "GridTradingMode.GEOMETRIC",
+        "investment_amount": 10000
+      },
+      "trades_executed": 108,
+      "total_profit": 7398.4990262467545,
+      "initial_price": 91467.13,
+      "final_price": 87525.89,
+      "price_change_pct": -4.30891403283344,
+      "data_points": 72
+    }
+  ],
+  "smart_dca": [
+    {
+      "strategy": "Smart DCA",
+      "config": {
+        "total_investment": 5000,
+        "purchase_amount": 100,
+        "purchase_frequency": "daily",
+        "volatility_adjustment": false,
+        "momentum_boost": 0.0
+      },
+      "total_invested": 500.0,
+      "total_quantity": 0.16403934831258188,
+      "avg_purchase_price": 3048.0491732217506,
+      "current_value": 480.4121970421598,
+      "pnl": -19.58780295784021,
+      "pnl_pct": -3.9175605915680425,
+      "num_purchases": 5,
+      "initial_price": 3021.03,
+      "final_price": 2928.64,
+      "price_change_pct": -3.058228484986919
+    },
+    {
+      "strategy": "Smart DCA",
+      "config": {
+        "total_investment": 5000,
+        "purchase_amount": 100,
+        "purchase_frequency": "daily",
+        "volatility_adjustment": true,
+        "momentum_boost": 0.0
+      },
+      "total_invested": 580.0,
+      "total_quantity": 0.19022695932159264,
+      "avg_purchase_price": 3048.989491649643,
+      "current_value": 557.106282147589,
+      "pnl": -22.893717852410987,
+      "pnl_pct": -3.947192733174308,
+      "num_purchases": 5,
+      "initial_price": 3021.03,
+      "final_price": 2928.64,
+      "price_change_pct": -3.058228484986919
+    },
+    {
+      "strategy": "Smart DCA",
+      "config": {
+        "total_investment": 5000,
+        "purchase_amount": 100,
+        "purchase_frequency": "daily",
+        "volatility_adjustment": true,
+        "momentum_boost": 0.5
+      },
+      "total_invested": 667.410710911221,
+      "total_quantity": 0.21992011473677744,
+      "avg_purchase_price": 3034.7870257799996,
+      "current_value": 644.0668448227159,
+      "pnl": -23.343866088505138,
+      "pnl_pct": -3.4976762744238212,
+      "num_purchases": 5,
+      "initial_price": 3021.03,
+      "final_price": 2928.64,
+      "price_change_pct": -3.058228484986919
+    },
+    {
+      "strategy": "Smart DCA",
+      "config": {
+        "total_investment": 5000,
+        "purchase_amount": 200,
+        "purchase_frequency": "daily",
+        "volatility_adjustment": true,
+        "momentum_boost": 0.5
+      },
+      "total_invested": 1334.821421822442,
+      "total_quantity": 0.4398402294735549,
+      "avg_purchase_price": 3034.7870257799996,
+      "current_value": 1288.1336896454318,
+      "pnl": -46.687732177010275,
+      "pnl_pct": -3.4976762744238212,
+      "num_purchases": 5,
+      "initial_price": 3021.03,
+      "final_price": 2928.64,
+      "price_change_pct": -3.058228484986919
+    }
+  ],
+  "amm": [
+    {
+      "strategy": "AMM",
+      "config": {
+        "pool_price": 100,
+        "price_range": [
+          80,
+          120
+        ],
+        "base_fee_rate": 0.001
+      },
+      "total_trades": 100,
+      "total_fees": 0.12539893026481572,
+      "adverse_selection_rate": 0.0,
+      "avg_price_impact": 0.0,
+      "initial_price": 142.2,
+      "final_price": 123.25,
+      "price_change_pct": -13.326300984528825
+    },
+    {
+      "strategy": "AMM",
+      "config": {
+        "pool_price": 100,
+        "price_range": [
+          80,
+          120
+        ],
+        "base_fee_rate": 0.003
+      },
+      "total_trades": 100,
+      "total_fees": 0.37619679079444723,
+      "adverse_selection_rate": 0.0,
+      "avg_price_impact": 0.0,
+      "initial_price": 142.2,
+      "final_price": 123.25,
+      "price_change_pct": -13.326300984528825
+    },
+    {
+      "strategy": "AMM",
+      "config": {
+        "pool_price": 100,
+        "price_range": [
+          70,
+          130
+        ],
+        "base_fee_rate": 0.003
+      },
+      "total_trades": 100,
+      "total_fees": 0.37619679079444723,
+      "adverse_selection_rate": 0.0,
+      "avg_price_impact": 0.0,
+      "initial_price": 142.2,
+      "final_price": 123.25,
+      "price_change_pct": -13.326300984528825
+    },
+    {
+      "strategy": "AMM",
+      "config": {
+        "pool_price": 100,
+        "price_range": [
+          90,
+          110
+        ],
+        "base_fee_rate": 0.005
+      },
+      "total_trades": 100,
+      "total_fees": 0.6269946513240782,
+      "adverse_selection_rate": 0.0,
+      "avg_price_impact": 0.0,
+      "initial_price": 142.2,
+      "final_price": 123.25,
+      "price_change_pct": -13.326300984528825
+    }
+  ]
+}

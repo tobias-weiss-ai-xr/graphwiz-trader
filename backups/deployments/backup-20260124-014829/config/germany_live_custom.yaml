@@ -1,0 +1,379 @@
+# ============================================================================
+# GraphWiz Trader - Germany Live Trading Configuration
+# ============================================================================
+# This configuration is optimized for German users with BaFin-compliant exchanges
+# IMPORTANT: Binance is NOT included due to lack of BaFin licensing
+#
+# Exchanges included:
+# - Kraken (MiCA-licensed from August 2025)
+#
+# For 2026, only use BaFin-licensed exchanges in Germany
+# ============================================================================
+
+version: "1.0.0"
+environment: "production"
+debug: false
+
+# ============================================================================
+# Trading Configuration
+# ============================================================================
+trading:
+  mode: "live"  # LIVE TRADING WITH REAL MONEY
+  max_position_size: 0.05  # 5% of portfolio (conservative for live trading)
+  max_daily_loss: 0.03  # 3% daily loss limit
+  max_drawdown: 0.10  # 10% max drawdown
+  commission_rate: 0.001  # 0.1% commission (Kraken: 0.26% taker, 0.16% maker)
+  slippage_rate: 0.0005  # 0.05% slippage
+  order_timeout: 30  # seconds
+  enable_position_limits: true
+  enable_risk_checks: true
+  emergency_shutdown:
+    enabled: true
+    triggers:
+      - type: "max_daily_loss"
+        threshold: 0.03
+      - type: "max_drawdown"
+        threshold: 0.10
+      - type: "system_error"
+        consecutive_errors: 3
+      - type: "connection_lost"
+        timeout_seconds: 60
+
+# ============================================================================
+# Germany-Compliant Exchange Configuration
+# ============================================================================
+exchanges:
+  kraken:
+    enabled: true
+    api_key: "${KRAKEN_API_KEY}"
+    api_secret: "${KRAKEN_API_SECRET}"
+    testnet: false
+    rate_limit: 1200  # Kraken rate limit
+    sandbox: false
+    options:
+      defaultType: "spot"
+      # Kraken-specific options for German users
+      adjustForTimeDifference: true
+      # Enable EUR markets
+      fiat_currencies: ["EUR"]
+    markets:
+      # Kraken uses different symbol format
+      - "BTC/EUR"
+      - "ETH/EUR"
+      - "SOL/EUR"
+      - "ADA/EUR"
+      - "DOT/EUR"
+    features:
+      fetchOrderBook: true
+      fetchTrades: true
+      fetchTicker: true
+      fetchBalance: true
+      # Kraken features
+      fetchOpenOrders: true
+      fetchClosedOrders: true
+      fetchMyTrades: true
+      fetchDepositAddress: true
+      createDepositAddress: true
+      withdraw: true
+    # Germany-specific settings
+    region: "EU"
+    license: "MiCA"
+    license_status: "Active August 2025"
+    regulator: "BaFin"
+    notes: "Fully licensed for German users"
+
+# IMPORTANT: Binance is NOT included
+# Binance's crypto custody license application was DENIED by BaFin in 2023
+# Do not use Binance for live trading in Germany
+
+# ============================================================================
+# Risk Management - Conservative for Live Trading
+# ============================================================================
+risk:
+  enabled: true
+  max_position_size: 500  # EUR (start small)
+  max_portfolio_exposure: 0.20  # 20% of total capital (very conservative)
+  max_correlation_exposure: 0.15  # 15% in correlated assets
+  stop_loss:
+    enabled: true
+    default_percent: 0.02  # 2% stop loss (tight for live trading)
+    trailing_percent: 0.01  # 1% trailing stop
+  take_profit:
+    enabled: true
+    default_percent: 0.04  # 4% take profit (conservative)
+    partial_targets:
+      - percent: 0.5  # Take 50% profit at 2.5%
+        target: 0.025
+      - percent: 1.0  # Take remaining at 4%
+        target: 0.04
+  max_daily_trades: 3  # Limit trades per day
+  cooldown_period: 3600  # Wait 1 hour between trades
+  require_confirmation: true  # Manual confirmation for trades
+
+# ============================================================================
+# Neo4j Knowledge Graph
+# ============================================================================
+neo4j:
+  uri: "${NEO4J_URI:-bolt://localhost:7687}"
+  username: "${NEO4J_USERNAME:-neo4j}"
+  password: "${NEO4J_PASSWORD}"
+  database: "neo4j"
+  max_connection_lifetime: 3600
+  max_connection_pool_size: 50
+  connection_acquisition_timeout: 60
+  connection_timeout: 30
+
+# ============================================================================
+# AI/LLM Configuration
+# ============================================================================
+ai:
+  provider: "${AI_PROVIDER:-openai}"
+  model: "${AI_MODEL:-gpt-4}"
+  temperature: 0.3  # Lower temperature for live trading decisions
+  max_tokens: 2000
+  timeout: 30
+  max_retries: 3
+  cache_enabled: true
+  cache_ttl: 300  # 5 minutes for live trading
+
+  openai:
+    api_key: "${OPENAI_API_KEY}"
+    organization: "${OPENAI_ORG_ID:-}"
+    base_url: "${OPENAI_BASE_URL:-https://api.openai.com/v1}"
+
+  anthropic:
+    api_key: "${ANTHROPIC_API_KEY}"
+    base_url: "${ANTHROPIC_BASE_URL:-https://api.anthropic.com}"
+
+# ============================================================================
+# Agent Configuration
+# ============================================================================
+agents:
+  enabled: true
+  orchestrator:
+    mode: "hierarchical"
+    max_parallel_agents: 3  # Fewer agents for live trading
+    timeout: 180  # 3 minutes
+    retry_failed_tasks: true
+    max_retries: 2
+
+  trading_agent:
+    model: "${AI_MODEL:-gpt-4}"
+    temperature: 0.2  # Very low for live trading
+    max_iterations: 5  # Fewer iterations for speed
+    timeout: 90
+    tools:
+      - "analyze_market"
+      - "calculate_indicators"
+      - "evaluate_risk"
+      - "generate_signals"
+
+  risk_agent:
+    model: "${AI_MODEL:-gpt-4}"
+    temperature: 0.1  # Minimal for risk assessment
+    max_iterations: 3
+    timeout: 30
+    tools:
+      - "calculate_var"
+      - "assess_drawdown"
+      - "check_limits"
+      - "generate_alerts"
+
+# ============================================================================
+# Strategy Configuration (Conservative for Live Trading)
+# ============================================================================
+strategy:
+  name: "rsi_mean_reversion"
+  parameters:
+    oversold: 25  # More conservative
+    overbought: 75  # More conservative
+    rsi_period: 14
+    confirmation_periods: 2  # Require 2 periods of confirmation
+    volume_confirm: true  # Require volume confirmation
+  filters:
+    min_volume_24h: 1000000  # 1M EUR minimum
+    min_price: 10  # Minimum price in EUR
+    max_spread_pct: 0.5  # Maximum spread 0.5%
+
+# ============================================================================
+# Monitoring and Alerting (Critical for Live Trading)
+# ============================================================================
+monitoring:
+  enabled: true
+  metrics:
+    enabled: true
+    port: 9090
+    path: "/metrics"
+    collect_interval: 15
+    labels:
+      service: "graphwiz-trader"
+      environment: "production"
+      region: "germany"
+
+  health:
+    enabled: true
+    port: 8080
+    path: "/health"
+    checks:
+      - name: "exchange_connection"
+        interval: 30  # Check every 30s
+        timeout: 5
+      - name: "trading_engine"
+        interval: 10
+        timeout: 5
+      - name: "memory_usage"
+        interval: 60
+        threshold_percent: 85
+      - name: "disk_space"
+        interval: 300
+        threshold_percent: 85
+
+  alerts:
+    enabled: true
+    channels:
+      - type: "log"
+        level: "WARNING"
+      - type: "webhook"
+        url: "${ALERT_WEBHOOK_URL:-}"
+        enabled: false
+    rules:
+      - name: "trade_executed"
+        condition: "trade_count > 0"
+        level: "INFO"
+      - name: "loss_threshold"
+        condition: "daily_pnl < -100"
+        level: "WARNING"
+      - name: "critical_loss"
+        condition: "daily_pnl < -300"
+        level: "CRITICAL"
+      - name: "exchange_error"
+        condition: "exchange_error_rate > 5"
+        level: "ERROR"
+      - name: "position_limit"
+        condition: "position_size > max_limit"
+        level: "WARNING"
+
+# ============================================================================
+# Logging (Comprehensive for Live Trading)
+# ============================================================================
+logging:
+  level: "INFO"
+  format: "json"
+  output:
+    - type: "file"
+      path: "/opt/git/graphwiz-trader/logs/live_trading.log"
+      rotation: "10 MB"
+      retention: "90 days"
+      level: "INFO"
+    - type: "file"
+      path: "/opt/git/graphwiz-trader/logs/trades.log"
+      rotation: "10 MB"
+      retention: "365 days"
+      level: "INFO"
+    - type: "file"
+      path: "/opt/git/graphwiz-trader/logs/errors.log"
+      rotation: "10 MB"
+      retention: "365 days"
+      level: "ERROR"
+  console:
+    enabled: true  # Enable console for live monitoring
+  structured: true
+  include_timestamp: true
+  include_hostname: true
+  include_pid: true
+
+# ============================================================================
+# Data Configuration
+# ============================================================================
+data:
+  base_path: "/opt/git/graphwiz-trader/data"
+  cache_path: "/tmp/graphwiz_cache"
+  log_path: "/opt/git/graphwiz-trader/logs"
+  backup:
+    enabled: true
+    interval: 3600  # Every hour for live trading
+    retention_days: 90
+    path: "/opt/git/graphwiz-trader/backups/live_trading"
+
+# ============================================================================
+# Security
+# ============================================================================
+security:
+  enable_auth: true
+  jwt_secret: "${JWT_SECRET}"
+  jwt_expiry: 3600
+  api_key_required: true
+  rate_limiting:
+    enabled: true
+    requests_per_minute: 30  # Lower for live trading
+    burst: 5
+  encryption:
+    enabled: true
+    algorithm: "AES-256-GCM"
+    key_path: "/opt/git/graphwiz-trader/config/encryption.key"
+
+# ============================================================================
+# Live Trading Specific Settings
+# ============================================================================
+live_trading:
+  # Safety limits - Conservative for €300-500 starting capital
+  max_position_eur: 300  # Start with €300 max position (conservative)
+  max_daily_loss_eur: 50  # Maximum €50 daily loss (16% of capital)
+  max_daily_trades: 2  # Maximum 2 trades per day (reduced from 3)
+  require_confirmation: true  # Require manual confirmation
+  cooldown_seconds: 3600  # 1 hour cooldown between trades
+
+  # Trading hours (German time)
+  trading_hours:
+    enabled: true
+    timezone: "Europe/Berlin"
+    start: "00:00"  # Crypto markets 24/7
+    end: "23:59"
+    weekends: true  # Trade on weekends
+
+  # Emergency stop
+  emergency_stop:
+    enabled: true
+    hotkey: "ctrl+c"
+    close_positions_on_stop: false  # Don't auto-close on stop
+
+# ============================================================================
+# Development Settings (DISABLED in Production)
+# ============================================================================
+development:
+  debug_mode: false
+  profiling: false
+  query_logging: false
+  slow_query_threshold: 1000
+  mock_mode: false
+
+# ============================================================================
+# Performance
+# ============================================================================
+performance:
+  thread_pool_size: 4
+  async_io: true
+  connection_pooling: true
+  query_cache_size: 500
+  enable_profiling: false
+  optimization_level: "O2"
+
+# ============================================================================
+# Disclaimer
+# ============================================================================
+disclaimer: |
+  ⚠️  WARNING: LIVE TRADING WITH REAL MONEY ⚠️
+
+  This configuration will execute REAL trades with REAL money on Kraken.
+  Kraken is fully licensed under MiCA for German users (August 2025).
+
+  IMPORTANT NOTES:
+  - Start with small amounts (€500 or less)
+  - Monitor trades closely
+  - Understand the risks
+  - Keep security credentials safe
+  - Never share API keys
+  - Use withdrawal restrictions on Kraken
+
+  Past performance does not guarantee future results.
+  Trade at your own risk.

@@ -1,0 +1,298 @@
+version: "1.0.0"
+environment: "${ENVIRONMENT:-production}"
+debug: ${DEBUG:-false}
+
+trading_mode:
+  type: "${TRADING_MODE:-live}"  # live or paper
+
+exchange:
+  provider: "kraken"
+  api_key: "${KRAKEN_API_KEY}"
+  api_secret: "${KRAKEN_API_SECRET}"
+  testnet: false
+  default_type: "spot"
+
+symbols:
+  live:
+    - "BTC/EUR"
+    - "ETH/EUR"
+    - "SOL/EUR"
+    - "UNI/EUR"
+    - "XRP/EUR"
+    - "ADA/EUR"
+    - "LINK/EUR"
+    - "AVAX/EUR"
+    - "DOGE/EUR"
+    - "DOT/EUR"
+  paper:
+    - "BTC/EUR"
+    - "ETH/EUR"
+    - "SOL/EUR"
+    - "XRP/EUR"
+    - "ADA/EUR"
+    - "LINK/EUR"
+    - "UNI/EUR"
+
+goemotions:
+  enabled: true
+  
+  analyzer:
+    model_path: "${GOEMOTIONS_MODEL_PATH:-/app/models}"
+    use_device: "${USE_CUDA:-false}"
+    batch_size: 32
+  
+  strategy:
+    extreme_euphoria_threshold: 0.75
+    extreme_fear_threshold: 0.75
+    use_contrarian_signals: true
+    min_data_points: ${GOEMOTIONS_MIN_DATA_POINTS:-3}
+    max_emotion_position_pct: ${GOEMOTIONS_MAX_POSITION_PCT:-0.25}
+    
+    confidence_levels:
+      strong_signal:
+        threshold: 0.85
+        technical_agreement: 0.85
+        emotion_agreement: 0.85
+      medium_signal:
+        threshold: 0.75
+        technical_agreement: 0.75
+        emotion_agreement: 0.75
+      weak_signal:
+        threshold: 0.65
+        technical_agreement: 0.65
+        emotion_agreement: 0.65
+      no_signal:
+        threshold: 0.50
+        technical_agreement: 0.50
+        emotion_agreement: 0.50
+
+  text_analysis:
+    max_texts_per_symbol: 5
+    min_text_length: 10
+    max_text_length: 512
+    language: "en"
+    
+  emotions:
+    buy_signals:
+      - "joy"
+      - "excitement"
+      - "optimism"
+      - "anticipation"
+      - "desire"
+      - "realization"
+      - "admiration"
+    sell_signals:
+      - "fear"
+      - "disgust"
+      - "anger"
+      - "sadness"
+      - "remorse"
+      - "confusion"
+      - "disappointment"
+
+technical_indicators:
+  rsi:
+    enabled: true
+    period: 14
+    oversold: 30
+    overbought: 70
+    weight: 0.4
+  
+  macd:
+    enabled: true
+    fast_period: 12
+    slow_period: 26
+    signal_period: 9
+    weight: 0.3
+  
+  volume:
+    enabled: true
+    weight: 0.2
+    
+  trend:
+    enabled: true
+    weight: 0.1
+
+signal_generation:
+  combine_technical_emotion: true
+  technical_weight: 0.5
+  emotion_weight: 0.5
+  min_confidence: ${SIGNAL_MIN_CONFIDENCE:-0.65}
+  
+  scenarios:
+    strong_buy:
+      conditions:
+        rsi: "<= 30"
+        emotion: "buy_signals"
+      confidence: 0.85
+    
+    buy:
+      conditions:
+        rsi: "<= 40"
+        emotion: "buy_signals"
+      confidence: 0.75
+    
+    hold:
+      conditions:
+        rsi: "> 30 and < 70"
+        emotion: "neutral"
+      confidence: 0.50
+    
+    sell:
+      conditions:
+        rsi: ">= 60"
+        emotion: "sell_signals"
+      confidence: 0.75
+    
+    strong_sell:
+      conditions:
+        rsi: ">= 70"
+        emotion: "sell_signals"
+      confidence: 0.85
+
+live_trading:
+  position_management:
+    max_position_eur: ${MAX_POSITION_EUR:-250}
+    max_position_pct: 0.20
+    min_position_eur: 10
+  
+  risk_management:
+    max_daily_loss_eur: ${MAX_DAILY_LOSS_EUR:-75}
+    max_drawdown_pct: 0.15
+    stop_loss_pct: 0.02
+    take_profit_pct: 0.04
+    trailing_stop_pct: 0.01
+  
+  trade_limits:
+    max_daily_trades: ${MAX_DAILY_TRADES:-25}
+    max_trades_per_symbol: 3
+    cooldown_seconds: 1800
+    require_confirmation: false
+    
+  execution:
+    interval_seconds: ${UPDATE_INTERVAL_SECONDS:-30}
+    order_timeout: 30
+    max_retries: 3
+    slippage_pct: 0.05
+  
+  trading_hours:
+    enabled: false
+    timezone: "UTC"
+    start: "00:00"
+    end: "23:59"
+    weekends: true
+
+paper_trading:
+  capital:
+    initial_eur: ${PAPER_CAPITAL_EUR:-10000}
+    max_positions: 10
+  
+  position_management:
+    max_position_pct: 0.25
+    min_position_pct: 0.01
+  
+  risk_management:
+    max_daily_loss_pct: 0.10
+    max_drawdown_pct: 0.20
+    stop_loss_pct: 0.02
+    take_profit_pct: 0.06
+    
+  trade_limits:
+    max_daily_trades: 50
+    max_trades_per_symbol: 10
+    cooldown_seconds: 60
+  
+  execution:
+    interval_seconds: ${PAPER_UPDATE_INTERVAL_SECONDS:-30}
+    slippage_pct: 0.05
+    commission_pct: 0.10
+    latency_seconds: 0.1
+    
+  duration:
+    hours: ${PAPER_DURATION_HOURS:-72}
+
+risk_limits:
+  emergency_shutdown:
+    enabled: true
+    triggers:
+      - type: "max_daily_loss"
+        threshold_pct: 0.10
+      - type: "max_drawdown"
+        threshold_pct: 0.20
+      - type: "consecutive_losses"
+        count: 5
+      - type: "system_error"
+        consecutive_errors: 3
+      
+  position_limits:
+    max_total_exposure: 0.50
+    max_correlation_exposure: 0.30
+    max_sector_exposure: 0.25
+
+logging:
+  level: "${LOG_LEVEL:-INFO}"
+  format: "json"
+  
+  file:
+    path: "${LOG_PATH:-/app/logs}"
+    rotation: "10 MB"
+    retention: "90 days"
+  
+  structured: true
+  include_timestamp: true
+  include_hostname: true
+  include_pid: true
+
+monitoring:
+  enabled: true
+  metrics:
+    port: 9090
+    path: "/metrics"
+    interval: 15
+  
+  health:
+    port: 8080
+    path: "/health"
+    interval: 30
+    timeout: 10
+
+performance:
+  thread_pool_size: 4
+  async_io: true
+  connection_pooling: true
+  query_cache_size: 500
+  enable_profiling: false
+
+neo4j:
+  uri: "${NEO4J_URI:-bolt://localhost:7687}"
+  username: "${NEO4J_USERNAME:-neo4j}"
+  password: "${NEO4J_PASSWORD}"
+  database: "neo4j"
+  max_connection_pool_size: 50
+  connection_timeout: 30
+
+alerts:
+  enabled: true
+  channels:
+    - type: "log"
+      level: "WARNING"
+    - type: "webhook"
+      url: "${ALERT_WEBHOOK_URL:-}"
+      enabled: false
+  
+  rules:
+    - name: "trade_executed"
+      condition: "trade_count > 0"
+      level: "INFO"
+    
+    - name: "loss_threshold"
+      condition: "daily_pnl < -50"
+      level: "WARNING"
+    
+    - name: "critical_loss"
+      condition: "daily_pnl < -150"
+      level: "CRITICAL"
+    
+    - name: "exchange_error"
+      condition: "exchange_error_rate > 5"
+      level: "ERROR"

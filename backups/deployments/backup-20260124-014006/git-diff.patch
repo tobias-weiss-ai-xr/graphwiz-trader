@@ -1,0 +1,164 @@
+diff --git a/.opencode.jsonc b/.opencode.jsonc
+deleted file mode 100644
+index 1b424cc..0000000
+--- a/.opencode.jsonc
++++ /dev/null
+@@ -1,29 +0,0 @@
+-{
+-  "$schema": "https://opencode.ai/config.json",
+-  "exclude": [
+-    "venv/**",
+-    "__pycache__/**",
+-    "*.pyc",
+-    ".env",
+-    ".env.*",
+-    "logs/**",
+-    "htmlcov/**",
+-    ".pytest_cache/**",
+-    "*.log"
+-  ],
+-  "instructions": ["STYLE_GUIDE.md"],
+-  "provider": {
+-    "opencode": {
+-      "options": {},
+-    },
+-  },
+-  "permission": {
+-    "bash": {
+-      "ls foo": "ask",
+-    },
+-  },
+-  "tools": {
+-    "github-triage": false,
+-    "github-pr-search": false,
+-  }
+-}
+\ No newline at end of file
+diff --git a/.opencodeignore b/.opencodeignore
+deleted file mode 100644
+index 3a6a328..0000000
+--- a/.opencodeignore
++++ /dev/null
+@@ -1,9 +0,0 @@
+-venv/
+-__pycache__/
+-*.pyc
+-.env
+-.env.*
+-logs/
+-htmlcov/
+-.pytest_cache/
+-*.log
+\ No newline at end of file
+diff --git a/deploy/deploy.sh b/deploy/deploy.sh
+index 3be9c00..e6be454 100755
+--- a/deploy/deploy.sh
++++ b/deploy/deploy.sh
+@@ -61,6 +61,10 @@ trap 'error_exit "Deployment interrupted by signal"' INT TERM
+ 
+ check_environment() {
+     log_info "Validating deployment environment..."
++    
++    # Install system build dependencies
++    sudo apt-get update >/dev/null 2>&1
++    sudo apt-get install -y python3-dev build-essential >/dev/null 2>&1 || log_warning "Failed to install system build tools"
+ 
+     # Check if running as root (should not be)
+     if [[ $EUID -eq 0 ]]; then
+@@ -121,8 +125,13 @@ check_dependencies() {
+ 
+     # Install/update dependencies
+     log_info "Installing Python dependencies..."
+-    pip install --quiet --upgrade pip || error_exit "Failed to upgrade pip"
+-    pip install --quiet -r "${PROJECT_ROOT}/requirements.txt" || error_exit "Failed to install dependencies"
++    pip install --quiet --upgrade pip setuptools || error_exit "Failed to upgrade pip/setuptools"
++    # Install build dependencies first
++    # Install critical build dependencies first
++    pip install --quiet numpy==1.26.3 scipy==1.11.4 pandas==2.1.4 cython==3.0.10 || error_exit "Failed to install build dependencies"
++    
++    # Install remaining dependencies
++    pip install --quiet --no-cache-dir --no-build-isolation -r "${PROJECT_ROOT}/requirements.txt" || error_exit "Failed to install dependencies"
+ 
+     log_success "Dependencies check passed"
+ }
+diff --git a/docker-compose.yml b/docker-compose.yml
+index a92457b..0099624 100644
+--- a/docker-compose.yml
++++ b/docker-compose.yml
+@@ -37,7 +37,7 @@ services:
+     build:
+       context: .
+       dockerfile: Dockerfile.live-trading
+-    image: graphwiz-trading:latest
++    image: graphwiz-trader:latest
+     container_name: graphwiz-trading
+     restart: unless-stopped
+     depends_on:
+@@ -99,7 +99,9 @@ services:
+       timeout: 10s
+       retries: 3
+       start_period: 30s
+-      
++
++    command: python scripts/live_trade_goemotions_new.py
++
+     # Security settings
+     security_opt:
+       - no-new-privileges:true
+diff --git a/requirements.txt b/requirements.txt
+index 555b530..ea1a7fc 100644
+--- a/requirements.txt
++++ b/requirements.txt
+@@ -14,8 +14,10 @@ openai==1.10.0
+ anthropic==0.18.0
+ 
+ # Qlib - AI-oriented quantitative investment platform
+-qlib>=0.9.0
+-PyQLib>=0.9.0
++numpy==1.26.3
++scipy==1.11.4
++pandas==2.1.4
++git+https://github.com/microsoft/qlib.git@v0.9.0#egg=pyqlib
+ lightgbm>=4.0.0
+ torch>=2.0.0
+ h5py>=3.9.0
+diff --git a/src/graphwiz_trader/strategies/emotion_strategy.py b/src/graphwiz_trader/strategies/emotion_strategy.py
+index 63b5870..63c63e8 100644
+--- a/src/graphwiz_trader/strategies/emotion_strategy.py
++++ b/src/graphwiz_trader/strategies/emotion_strategy.py
+@@ -154,10 +154,31 @@ class EmotionBasedStrategy:
+         if symbol not in self.emotion_history:
+             return 0.0
+ 
+-        history = sorted(self.emotion_history[symbol], key=lambda x: x[0])
+-
+-        if len(history) < periods * 2:
+-            return 0.0
++        history = sorted(self.emotion_history[symbol], key=lambda x: x[0])
++
++        if len(history) < periods * 2:
++            return 0.0
++
++    def get_market_emotion_summary(self, symbol: str) -> Dict[str, Any]:
++        """Generate market emotion summary from historical data."""
++        if symbol not in self.emotion_history or not self.emotion_history[symbol]:
++            return {'dominant_emotion': 'neutral', 'intensity': 0.0}
++        
++        # Aggregate emotion profiles
++        profiles = [p for _, p in self.emotion_history[symbol]]
++        dominant_emotion = max(
++            set(p.dominant_emotion for p in profiles),
++            key=lambda e: sum(1 for p in profiles if p.dominant_emotion == e)
++        )
++        
++        # Calculate average intensity
++        avg_intensity = sum(p.intensity for p in profiles) / len(profiles)
++        
++        logger.info(f"{symbol} emotion summary: {dominant_emotion.value} ({avg_intensity:.2f})")
++        return {
++            'dominant_emotion': dominant_emotion.value,
++            'intensity': avg_intensity
++        }
+ 
+         # Calculate average intensity for recent vs older periods
+         recent = history[-periods:]

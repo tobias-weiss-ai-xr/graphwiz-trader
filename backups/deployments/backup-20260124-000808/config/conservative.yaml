@@ -1,0 +1,235 @@
+# Conservative Trading Configuration
+# Low-risk live trading strategy focused on capital preservation
+
+version: "0.1.0"
+mode: "live_trading"
+
+# Trading Engine Settings
+trading:
+  execution_type: "real"
+  require_confirmation: false  # Auto-execute for faster response
+  max_position_size: 2000
+  risk_per_trade: 0.01  # 1% risk per trade - very conservative
+  max_daily_loss: 300   # Stop trading after $300 daily loss
+  max_positions: 5      # Limited number of positions
+  commission_rate: 0.001
+
+  # Order execution
+  order_type: "market"
+  max_slippage_pct: 0.001
+
+  # Conservative trading parameters
+  min_confidence: 0.80  # Only execute on high confidence
+  hold_avg_duration: 7  # Target 7-day average hold time
+  position_sizing: "conservative"
+
+# Knowledge Graph
+neo4j:
+  uri: bolt://localhost:7687
+  username: neo4j
+  password: your_password
+  database: neo4j
+
+  # Enable all conservative features
+  enable_market_context: true
+  enable_pattern_recognition: true
+  enable_performance_tracking: true
+  enable_risk_alerts: true
+
+# Exchanges - Live Trading
+exchanges:
+  binance:
+    enabled: true
+    api_key: your_live_api_key
+    api_secret: your_live_api_secret
+    sandbox: false  # LIVE TRADING - be careful!
+
+    # Limited symbol set for focus
+    symbols:
+      - BTC/USDT
+      - ETH/USDT
+      - BNB/USDT
+
+    # Conservative rate limits
+    rate_limit:
+      requests_per_second: 3
+      orders_per_second: 1
+
+    # Order size limits
+    min_order_size: 10  # Minimum $10 per order
+    max_order_size: 1000
+
+  # Additional exchanges for liquidity
+  kraken:
+    enabled: false
+
+# AI Agents - Conservative Configuration
+agents:
+  technical:
+    enabled: true
+    model: "gpt-4"
+    temperature: 0.1  # Low temperature for consistent decisions
+
+    # Focus on longer-term indicators
+    indicators:
+      - sma_cross  # 50/200 day crosses
+      - rsi
+      - macd
+      - volume_trend
+
+    lookback_periods: [50, 100, 200]
+    confidence_threshold: 0.80  # High threshold
+
+  sentiment:
+    enabled: true
+    model: "gpt-3.5-turbo"
+    temperature: 0.3
+    weight: 0.2  # Lower weight for sentiment
+
+  risk:
+    enabled: true
+    model: "gpt-4"
+    temperature: 0.0  # Very low temperature for risk
+
+    # Conservative risk parameters
+    max_drawdown: 0.08  # 8% max drawdown
+    position_sizing_method: "fixed_risk"
+    fixed_risk_pct: 0.01
+
+# Risk Management - Extra Conservative
+risk:
+  # Tight position limits
+  max_position_size: 2000
+  max_positions_per_symbol: 1
+  max_total_positions: 5
+  min_position_size: 50
+
+  # Wider stops to avoid noise
+  default_stop_loss_pct: 0.03  # 3% stop loss
+  default_take_profit_pct: 0.09  # 3:1 reward:risk ratio
+  trailing_stop_enabled: true
+  trailing_distance_pct: 0.04
+
+  # Portfolio diversification
+  max_correlation_exposure: 0.5  # Low correlation limit
+  max_single_asset_pct: 0.3  # Max 30% in one asset
+  var_confidence: 0.99  # 99% VaR
+  var_days: 5
+
+  # Conservative daily limits
+  max_daily_trades: 5  # Very few trades per day
+  max_daily_loss: 300
+  daily_loss_stop_trading: true
+
+  # Drawdown protection
+  max_drawdown_pct: 0.08
+  reduce_on_drawdown: true
+  drawdown_reduction_pct: 0.7  # Reduce positions more aggressively
+
+  # Position sizing
+  position_sizing_method: "volatility_adjusted"
+  max_volatility_threshold: 0.05
+
+# Monitoring and Alerts - Comprehensive
+monitoring:
+  enabled: true
+  log_level: "DEBUG"  # Detailed logging for conservative approach
+
+  metrics:
+    - pnl
+    - drawdown
+    - positions
+    - trades
+    - agent_decisions
+    - risk_metrics
+    - execution_latency
+    - system_health
+
+  alerts:
+    # Enable all alerts for conservative trading
+    slack:
+      enabled: true
+      webhook_url: your_webhook_url
+      alert_types:
+        - trade_executed
+        - risk_limit_breached
+        - drawdown_warning
+        - system_error
+
+    email:
+      enabled: true
+      smtp_server: smtp.gmail.com
+      smtp_port: 587
+      username: your_email@gmail.com
+      recipients:
+        - trader@example.com
+      alert_types:
+        - daily_summary
+        - risk_alert
+        - system_alert
+
+  dashboard:
+    enabled: true
+    port: 8050
+    update_interval: 10
+
+# Safety Features
+safety:
+  # Pre-trade checks
+  pre_trade_checks:
+    - balance_verification
+    - market_status_check
+    - risk_limit_check
+    - correlation_check
+    - volatility_check
+
+  # Circuit breakers
+  circuit_breakers:
+    max_drawdown: 0.08
+    max_daily_loss: 300
+    max_consecutive_losses: 3
+    system_health_threshold: 0.7
+
+  # Emergency controls
+  emergency_shutdown: true
+  close_all_positions_on_shutdown: true
+  notify_on_shutdown: true
+
+# Logging - Detailed for monitoring
+logging:
+  level: "DEBUG"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "logs/conservative_live.log"
+  rotation: "50 MB"
+  retention: "90 days"
+
+  structured: true
+  include_timestamp: true
+  include_trace_id: true
+
+# Trading Schedule - Limited hours
+schedule:
+  timezone: "UTC"
+  trading_hours:
+    start: "00:00"
+    end: "23:59"
+
+  # Avoid high volatility periods
+  avoid_periods:
+    - start: "12:00"
+      end: "14:00"
+      reason: "High volatility"
+
+  # Weekend trading
+  trade_on_weekends: false
+
+# Performance Goals
+goals:
+  target_annual_return: 0.15  # 15% annual target
+  max_acceptable_drawdown: 0.08
+  min_sharpe_ratio: 1.5
+  max_monthly_volatility: 0.10
+
+  # Review and rebalance
+  monthly_review: true
+  quarterly_rebalance: true

@@ -1,0 +1,367 @@
+# Swing Trading Configuration
+# Longer-term trading strategy capturing medium-term price movements
+
+version: "0.1.0"
+mode: "live_trading"
+strategy: "swing_trading"
+
+# Trading Engine Settings
+trading:
+  execution_type: "real"
+  require_confirmation: true  # Confirm before entering larger positions
+  max_position_size: 5000
+  risk_per_trade: 0.02  # 2% risk per trade
+  max_daily_loss: 800
+  max_positions: 8
+  commission_rate: 0.001
+
+  # Standard execution (speed not critical)
+  order_type: "market"
+  max_slippage_pct: 0.001
+  execution_timeout: 30
+
+  # Swing trading parameters
+  min_confidence: 0.75
+  target_hold_time_days: 7  # Target 7-day average hold
+  min_hold_time_hours: 24  # Minimum 24 hour hold
+  max_hold_time_days: 30  # Maximum 30 day hold
+  position_sizing: "volatility_adjusted"
+
+# Knowledge Graph - Full Analysis
+neo4j:
+  uri: bolt://localhost:7687
+  username: neo4j
+  password: your_password
+  database: neo4j
+
+  # Enable all features for comprehensive analysis
+  enable_market_context: true
+  enable_pattern_recognition: true
+  enable_performance_tracking: true
+  enable_sentiment_analysis: true
+  enable_trend_analysis: true
+  cache_ttl: 600  # 10 minute cache
+  connection_pool_size: 50
+
+# Exchanges
+exchanges:
+  binance:
+    enabled: true
+    api_key: your_live_api_key
+    api_secret: your_live_api_secret
+    sandbox: false
+
+    # Diverse symbol set for swing trading
+    symbols:
+      - BTC/USDT
+      - ETH/USDT
+      - SOL/USDT
+      - BNB/USDT
+      - ADA/USDT
+      - XRP/USDT
+      - MATIC/USDT
+      - DOT/USDT
+      - AVAX/USDT
+      - LINK/USDT
+
+    # Normal rate limits
+    rate_limit:
+      requests_per_second: 5
+      orders_per_second: 2
+
+    min_order_size: 50
+    max_order_size: 5000
+
+# AI Agents - Comprehensive Analysis
+agents:
+  technical:
+    enabled: true
+    model: "gpt-4"
+    temperature: 0.4
+
+    # Full suite of indicators
+    indicators:
+      - rsi
+      - macd
+      - sma_cross
+      - ema_cross
+      - bollinger_bands
+      - fibonacci
+      - support_resistance
+      - trend_lines
+      - chart_patterns
+      - volume_profile
+
+    lookback_periods: [20, 50, 100, 200]
+    confidence_threshold: 0.75
+
+    # Multi-timeframe analysis
+    timeframes:
+      - "4h"
+      - "1d"
+      - "1w"
+
+  sentiment:
+    enabled: true
+    model: "gpt-4"
+    temperature: 0.5
+    weight: 0.3
+
+    sources:
+      - news
+      - social_media
+      - on_chain_metrics
+      - market_data
+
+  # Trend analysis agent
+  trend:
+    enabled: true
+    model: "gpt-4"
+    temperature: 0.3
+    weight: 0.35
+
+    indicators:
+      - adx
+      - ichimoku
+      - moving_averages
+      - trend_strength
+
+  # Market cycles agent
+  cycles:
+    enabled: true
+    model: "gpt-4"
+    temperature: 0.4
+    weight: 0.25
+
+    # Analyze market cycles
+    cycle_periods: [30, 90, 180]  # days
+
+  risk:
+    enabled: true
+    model: "gpt-4"
+    temperature: 0.2
+
+    # Moderate risk parameters
+    max_drawdown: 0.15
+    position_sizing_method: "volatility_adjusted"
+    atr_multiplier: 1.5
+
+# Risk Management - Moderate Approach
+risk:
+  # Medium position limits
+  max_position_size: 5000
+  max_positions_per_symbol: 1
+  max_total_positions: 8
+  min_position_size: 100
+
+  # Wider stops for swing trading
+  default_stop_loss_pct: 0.04  # 4% stop loss
+  default_take_profit_pct: 0.12  # 3:1 reward:risk
+  trailing_stop_enabled: true
+  trailing_distance_pct: 0.05
+  trailing_activation_pct: 0.04  # Activate after 4% profit
+
+  # Portfolio risk
+  max_correlation_exposure: 0.7
+  max_single_asset_pct: 0.35
+  max_sector_exposure: 0.5
+  var_confidence: 0.95
+  var_days: 5
+
+  # Daily limits
+  max_daily_trades: 10  # Fewer trades per day
+  max_daily_loss: 800
+  daily_loss_stop_trading: true
+
+  # Drawdown
+  max_drawdown_pct: 0.15
+  reduce_on_drawdown: true
+  drawdown_reduction_pct: 0.4
+
+  # Pyramiding (adding to winners)
+  enable_pyramiding: true
+  pyramid_max_entries: 3
+  pyramid_add_pct: 0.02  # Add when 2% in profit
+
+# Monitoring and Alerts
+monitoring:
+  enabled: true
+  log_level: "INFO"
+
+  metrics:
+    - pnl
+    - drawdown
+    - positions
+    - trades
+    - agent_decisions
+    - risk_metrics
+    - hold_times
+    - win_rate
+
+  alerts:
+    slack:
+      enabled: true
+      webhook_url: your_webhook_url
+      alert_types:
+        - trade_executed
+        - profit_target_reached
+        - stop_loss_hit
+        - drawdown_warning
+        - position_review
+
+    email:
+      enabled: true
+      smtp_server: smtp.gmail.com
+      smtp_port: 587
+      username: your_email@gmail.com
+      recipients:
+        - trader@example.com
+      alert_types:
+        - daily_summary
+        - weekly_report
+        - risk_alert
+
+  dashboard:
+    enabled: true
+    port: 8050
+    update_interval: 30  # Update every 30 seconds
+
+# Safety Features
+safety:
+  pre_trade_checks:
+    - balance_verification
+    - market_status_check
+    - risk_limit_check
+    - correlation_check
+    - trend_confirmation
+
+  circuit_breakers:
+    max_drawdown: 0.15
+    max_daily_loss: 800
+    max_consecutive_losses: 5
+    system_health_threshold: 0.7
+
+  emergency_shutdown: true
+  close_all_positions_on_shutdown: true
+
+# Logging
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "logs/swing_trading_live.log"
+  rotation: "50 MB"
+  retention: "90 days"
+
+  structured: true
+  include_timestamp: true
+  include_trace_id: true
+
+# Trading Schedule - Normal market hours
+schedule:
+  timezone: "UTC"
+  trading_hours:
+    start: "00:00"
+    end: "23:59"
+
+  trade_on_weekends: true
+
+  # Review periods
+  daily_review_time: "00:00"
+  weekly_review_day: "sunday"
+
+# Performance Goals
+goals:
+  target_annual_return: 0.40  # 40% annual target
+  max_acceptable_drawdown: 0.15
+  min_sharpe_ratio: 1.5
+  max_monthly_volatility: 0.15
+
+  monthly_review: true
+  quarterly_rebalance: true
+
+# Swing Trading Specific Features
+swing:
+  # Entry conditions
+  min_trend_strength: 0.6
+  confirm_with_multiple_timeframes: true
+  require_volume_confirmation: true
+
+  # Exit conditions
+  take_profit_strategy: "trailing"
+  profit_target_pct: 0.12
+  trailing_stop_distance_pct: 0.05
+
+  # Position management
+  partial_exit_enabled: true
+  partial_exit_levels:
+    - profit_pct: 0.06
+      exit_pct: 0.3  # Take 30% profit at 6%
+    - profit_pct: 0.09
+      exit_pct: 0.3  # Take another 30% at 9%
+    - profit_pct: 0.12
+      exit_pct: 0.4  # Exit remaining at 12%
+
+  # Hold time management
+  min_hold_time: 86400  # 24 hours in seconds
+  max_hold_time: 2592000  # 30 days in seconds
+  review_interval: 3600  # Review every hour
+
+  # Trend following
+  enable_trend_following: true
+  trend_reversal_threshold: 0.7
+
+# Multi-Timeframe Analysis
+multi_timeframe:
+  timeframes: ["1h", "4h", "1d", "1w"]
+
+  # Higher timeframe confirmation
+  require_htf_confirmation: true
+  htf_timeframes: ["1d", "1w"]
+
+  # Entry alignment
+  align_multiple_timeframes: true
+  min_aligned_timeframes: 3
+
+# Risk-Reward Optimization
+risk_reward:
+  min_rr_ratio: 2.0  # Minimum 2:1 reward:risk
+  target_rr_ratio: 3.0  # Target 3:1 reward:risk
+  max_rr_ratio: 5.0  # Maximum 5:1 (beyond is unrealistic)
+
+  # Position sizing based on R:R
+  size_on_high_rr: true
+  high_rr_threshold: 3.0
+  high_rr_multiplier: 1.5  # Increase size by 50% for high R:R
+
+# Portfolio Management
+portfolio:
+  # Diversification
+  min_symbols: 3
+  max_symbols: 8
+  diversify_by_sector: true
+  diversify_by_correlation: true
+
+  # Rebalancing
+  auto_rebalance: true
+  rebalance_threshold: 0.10  # Rebalance when 10% off target
+  rebalance_interval: 604800  # Weekly in seconds
+
+# Backtesting Configuration
+backtesting:
+  # Test swing strategies over longer periods
+  min_test_period_days: 180  # 6 months minimum
+  preferred_test_period_days: 365  # 1 year preferred
+
+  # Walk-forward analysis
+  use_walk_forward: true
+  walk_forward_windows: 6
+  window_size_days: 90
+
+  # Performance metrics
+  key_metrics:
+    - total_return
+    - sharpe_ratio
+    - max_drawdown
+    - win_rate
+    - profit_factor
+    - avg_hold_time

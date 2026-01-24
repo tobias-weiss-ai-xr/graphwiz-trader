@@ -1,0 +1,94 @@
+# Sentiment Analysis Configuration
+
+# Knowledge Extractor Settings
+knowledge_extractor:
+  enabled: true
+
+  # Data sources to enable
+  sources:
+    news: true       # News articles and press releases
+    social: true     # Social media (Twitter, Reddit, etc.)
+    onchain: true    # On-chain metrics and analytics
+
+  # Update frequency
+  update_interval_seconds: 300  # 5 minutes
+
+  # API credentials (add to .env file)
+  # NEWS_API_KEY: your_news_api_key
+  # TWITTER_BEARER_TOKEN: your_twitter_bearer_token
+  # REDDIT_CLIENT_ID: your_reddit_client_id
+  # REDDIT_CLIENT_SECRET: your_reddit_client_secret
+  # GLASSNODE_API_KEY: your_glassnode_api_key
+
+  # Rate limiting
+  rate_limit_requests_per_minute: 60
+  rate_limit_burst: 10
+
+# Sentiment Strategy Settings
+sentiment_strategy:
+  # Signal thresholds
+  strong_buy_threshold: 0.6      # Very positive sentiment
+  buy_threshold: 0.3              # Positive sentiment
+  sell_threshold: -0.3            # Negative sentiment
+  strong_sell_threshold: -0.6     # Very negative sentiment
+
+  # Minimum requirements
+  min_confidence: 0.5             # Minimum confidence to trade
+  min_data_points: 5              # Minimum sentiment data points
+  min_volume: 100                 # Minimum mention volume
+
+  # Momentum analysis
+  momentum_periods: 3             # Number of periods for momentum
+  momentum_weight: 0.3            # Weight of momentum in decision (0-1)
+
+  # Source reliability weights
+  news_weight: 1.0                # News articles weight
+  social_weight: 0.7              # Social media weight
+  onchain_weight: 0.9             # On-chain metrics weight
+
+  # Position sizing
+  position_multiplier: 1.5        # Multiply base position for strong signals
+  max_sentiment_position_pct: 0.35  # Max 35% of balance for sentiment trades
+
+  # Time decay
+  sentiment_decay_hours: 6        # Sentiment weight decays after 6 hours
+
+# Symbols to track
+symbols:
+  - BTC
+  - ETH
+  - SOL
+  - ADA
+  - DOT
+  - MATIC
+  - AVAX
+  - LINK
+
+# Data retention
+retention:
+  sentiment_data_days: 30         # Keep sentiment data for 30 days
+  raw_text_days: 7                # Keep raw text for 7 days
+
+# Alert settings
+alerts:
+  enabled: true
+  notify_on_signal_change: true
+  notify_on_extreme_sentiment: true
+  extreme_sentiment_threshold: 0.8  # Notify when sentiment > 0.8 or < -0.8
+
+# Integration settings
+integration:
+  store_in_knowledge_graph: true   # Store sentiment in Neo4j
+  combine_with_rsi: true           # Combine sentiment with technical indicators
+  combine_with_ml: false           # Combine with ML predictions
+
+  # Combination weights
+  sentiment_weight: 0.4            # Weight of sentiment in combined signal
+  technical_weight: 0.4            # Weight of technical indicators
+  ml_weight: 0.2                   # Weight of ML predictions
+
+# Logging
+logging:
+  level: INFO
+  log_sentiment_data: true
+  log_signals: true

@@ -1,0 +1,45 @@
+# Backtesting Configuration File
+
+# Exchange settings
+exchange: binance  # CCXT exchange name
+enable_cache: true
+cache_dir: /opt/git/graphwiz-trader/data
+
+# Risk-free rate for Sharpe/Sortino calculations
+risk_free_rate: 0.02  # 2% annual
+
+# Default backtest settings
+initial_capital: 10000.0
+default_timeframe: 1h
+
+# Commission and slippage settings
+commission_rate: 0.001  # 0.1% per trade
+slippage_rate: 0.0005  # 0.05% per trade
+
+# Output settings
+output_dir: /opt/git/graphwiz-trader/backtests
+save_equity_curves: true
+save_trade_history: true
+
+# Strategy-specific parameters (optional)
+strategies:
+  momentum:
+    lookback_period: 20
+    momentum_threshold: 0.02
+
+  mean_reversion:
+    lookback_period: 20
+    std_dev_threshold: 2.0
+
+  grid_trading:
+    grid_levels: 10
+    grid_spacing: 0.01
+
+  dca:
+    purchase_interval: 1D
+    purchase_amount: 1000.0
+
+# Data quality settings
+data_validation: true
+remove_outliers: true
+outlier_threshold: 0.5  # 50% price change

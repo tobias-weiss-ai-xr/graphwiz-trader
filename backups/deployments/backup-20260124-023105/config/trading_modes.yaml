@@ -1,0 +1,203 @@
+# Trading Modes Configuration
+# Controls paper trading, simulated trading, and live trading modes
+
+# Mode Settings
+modes:
+  # Paper Trading Mode (Simulated execution with real market data)
+  paper:
+    enabled: true  # Paper trading is always enabled
+    execution_delay: 0.1  # Simulated execution delay in seconds
+    slippage_model: "realistic"  # Options: realistic, fixed, none
+    base_slippage: 0.0005  # 0.05% base slippage
+    maker_fee: 0.001  # 0.1% maker fee
+    taker_fee: 0.001  # 0.1% taker fee
+    requires_approval: false
+    description: "Simulated trading with real market data - no real money at risk"
+
+  # Simulated Trading Mode (Historical data replay for backtesting)
+  simulated:
+    enabled: true
+    data_source: "historical"
+    time_multiplier: 1.0  # Speed of simulation (1.0 = real-time, >1 = faster)
+    requires_approval: false
+    description: "Historical data replay for strategy backtesting"
+
+  # Live Trading Mode (Real trading with actual funds)
+  live:
+    enabled: false  # MUST BE EXPLICITLY ENABLED
+    requires_approval: true  # Requires explicit approval to activate
+    emergency_stop: true  # Emergency stop capability enabled
+    max_drawdown_pct: 10.0  # Maximum allowed drawdown before automatic halt
+    daily_loss_limit_pct: 5.0  # Daily loss limit before trading halt
+    confirmation_required: true  # Must confirm live trading activation
+    description: "!!! REAL TRADING WITH ACTUAL FUNDS - USE WITH CAUTION !!!"
+
+# Transition Requirements (Paper Trading -> Live Trading)
+transition_requirements:
+  # Minimum paper trading requirements
+  min_paper_days: 3  # Minimum days of paper trading
+  min_trades: 100  # Minimum number of trades executed
+  max_drawdown_pct: 10.0  # Maximum acceptable drawdown
+  min_win_rate: 55.0  # Minimum win rate percentage
+  min_sharpe_ratio: 1.5  # Minimum Sharpe ratio
+  consecutive_profitable_days: 2  # Minimum consecutive profitable days
+  max_single_loss_pct: 5.0  # Maximum single loss percentage
+
+  # Gradual transition settings
+  initial_capital_pct: 10.0  # Start with 10% of capital
+  capital_increase_steps: [10, 25, 50, 100]  # Progressive capital allocation
+  min_days_per_step: 3  # Minimum days at each allocation level
+
+  # Monitoring during transition
+  monitoring_interval_hours: 1  # Check performance every hour
+  max_drawdown_rollback_pct: 5.0  # Rollback if drawdown exceeds this during transition
+  performance_check_frequency: "hourly"
+
+# Safety Checks Configuration
+safety:
+  # Position size limits
+  max_position_size_pct: 30.0  # Maximum position size as percentage of portfolio
+  max_position_value: 50000.0  # Maximum absolute position value in USD
+
+  # Daily loss limits
+  daily_loss_limit_soft_pct: 3.0  # Soft limit (warning) - 3% daily loss
+  daily_loss_limit_hard_pct: 5.0  # Hard limit (halt) - 5% daily loss
+
+  # Drawdown limits
+  max_drawdown_pct: 10.0  # Maximum portfolio drawdown before halt
+
+  # Trade frequency limits
+  max_daily_trades: 100  # Maximum trades per day
+  max_trades_per_hour: 20  # Maximum trades per hour
+
+  # API rate limiting
+  api_rate_limit: 1200  # API calls per minute
+  api_burst_limit: 100  # API calls per second
+
+  # Circuit breaker
+  circuit_breaker_threshold_pct: 15.0  # Activate at 15% loss
+  circuit_breaker_duration_minutes: 30  # Trading halt duration
+
+  # Market conditions
+  volatility_threshold: 5.0  # Maximum volatility percentage before warning
+  liquidity_threshold: 10000.0  # Minimum liquidity in order book
+
+  # Balance checks
+  min_balance_threshold: 100.0  # Minimum portfolio balance in base currency
+
+  # Symbol restrictions
+  symbol_whitelist: []  # Allowed symbols (empty = all allowed)
+  symbol_blacklist: []  # Blocked symbols (e.g., ["MEME/USDT"])
+
+  # Exchange validation
+  require_api_validation: true  # Validate API keys before live trading
+  check_balance_sufficient: true  # Check sufficient balance before trades
+
+# Approval Workflow
+approval:
+  # Live trading activation
+  live_trading_requires:
+    - paper_trading_validation  # Must pass paper trading validation
+    - api_key_validation  # API keys must be valid
+    - balance_check  # Sufficient balance required
+    - explicit_confirmation  # Must explicitly confirm
+    - safety_checks_enabled  # Safety checks must be enabled
+
+  # Approval methods (in order of priority)
+  methods:
+    - manual  # Manual confirmation via console
+    - callback  # Async callback function
+    - multi_signature  # Multiple approvals (optional)
+
+  # Approval timeout
+  approval_timeout_seconds: 300  # 5 minutes to approve
+
+# Emergency Stop
+emergency_stop:
+  enabled: true
+  auto_activate_on:
+    daily_loss_limit: true
+    max_drawdown_exceeded: true
+    circuit_breaker: true
+    api_failure: true
+    invalid_market_conditions: true
+
+  # Manual emergency stop
+  allow_manual_stop: true  # Allow manual emergency stop activation
+  require_confirmation: true  # Require confirmation to clear emergency stop
+
+  # Notification
+  notify_on_stop: true  # Send notifications when emergency stop activates
+  notification_channels:
+    - log  # Always log
+    - knowledge_graph  # Log to knowledge graph
+    # - webhook  # Optional: Send to webhook
+
+# Audit Trail
+audit:
+  enabled: true
+  log_all_trades: true
+  log_mode_changes: true
+  log_safety_violations: true
+  log_emergency_stops: true
+  log_transitions: true
+  log_rollback: true
+
+  # Retention
+  retention_days: 90  # Keep audit logs for 90 days
+  compress_old_logs: true  # Compress logs older than 30 days
+
+  # Knowledge graph integration
+  sync_to_knowledge_graph: true
+  sync_interval_seconds: 60  # Sync every minute
+
+# Default Settings
+defaults:
+  initial_mode: "paper"  # Start in paper trading mode
+  auto_start_paper_trading: true  # Auto-start paper trading on initialization
+  require_mode_change_reason: true  # Require reason for mode changes
+  log_mode_change_summary: true  # Log summary when mode changes
+
+  # Portfolio defaults
+  initial_balance:
+    USDT: 10000.0  # Default virtual balance for paper trading
+  risk_per_trade: 0.02  # 2% risk per trade
+  max_position_size: 0.3  # 30% max position size
+  stop_loss_pct: 0.05  # 5% stop loss
+  take_profit_pct: 0.15  # 15% take profit
+
+# Feature Flags
+features:
+  enable_paper_trading: true
+  enable_simulated_trading: true
+  enable_live_trading: false  # MUST BE MANUALLY ENABLED
+
+  # Advanced features
+  enable_gradual_transition: true  # Enable gradual capital allocation
+  enable_automatic_rollback: true  # Auto-rollback on severe losses
+  enable_circuit_breaker: true  # Enable circuit breaker
+  enable_advanced_safety_checks: true  # Enable all safety checks
+
+# Warnings
+warnings:
+  live_trading_warning: |
+    !!! WARNING: LIVE TRADING MODE !!!
+    You are about to activate LIVE TRADING with REAL MONEY.
+    - All trades will execute with real funds
+    - Losses are REAL and PERMANENT
+    - Ensure you have:
+      - Sufficient funds
+      - Tested strategy in paper trading
+      - Proper risk management
+      - Emergency stop configured
+    - Past performance does not guarantee future results
+    - Only trade with money you can afford to lose
+
+  emergency_stop_warning: |
+    !!! EMERGENCY STOP ACTIVATED !!!
+    All trading operations have been halted.
+    Reason: {reason}
+    To resume trading:
+    1. Identify and resolve the issue
+    2. Clear emergency stop with explicit confirmation
+    3. Consider reverting to paper trading mode

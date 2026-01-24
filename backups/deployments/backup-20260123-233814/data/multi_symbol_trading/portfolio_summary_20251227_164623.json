@@ -1,0 +1,47 @@
+{
+  "timestamp": "2025-12-27T16:46:22.298695",
+  "iteration": 3,
+  "total_value": 12992.52883359259,
+  "total_capital": 7000.0,
+  "total_position_value": 5992.528833592592,
+  "symbols": {
+    "BTC/USDT": {
+      "price": 87588.0,
+      "capital": 2800.0,
+      "position": 0.02645240266306557,
+      "position_value": 2316.913044452587,
+      "total_value": 5116.913044452587,
+      "pnl": 195.77081428227007,
+      "trades_count": 33
+    },
+    "ETH/USDT": {
+      "price": 2928.64,
+      "capital": 2100.0,
+      "position": 0.5931048719699986,
+      "position_value": 1736.9906522462168,
+      "total_value": 3836.990652246217,
+      "pnl": 146.1339796184787,
+      "trades_count": 33
+    },
+    "SOL/USDT": {
+      "price": 123.48,
+      "capital": 1400.0,
+      "position": 11.009435728391047,
+      "position_value": 1359.4451237417265,
+      "total_value": 2759.4451237417265,
+      "pnl": 157.96924617532179,
+      "trades_count": 33
+    },
+    "BNB/USDT": {
+      "price": 841.45,
+      "capital": 700.0,
+      "position": 0.688311858282798,
+      "position_value": 579.1800131520604,
+      "total_value": 1279.1800131520604,
+      "pnl": 48.89445560948129,
+      "trades_count": 33
+    }
+  },
+  "total_pnl": 2992.5288335925907,
+  "total_roi_pct": 29.92528833592591
+}

@@ -1,0 +1,169 @@
+# ============================================================================
+# GraphWiz Trader - Base Configuration
+# ============================================================================
+# This is the base configuration file that contains common settings.
+# Environment-specific overrides should be placed in:
+#   - config/development.yaml
+#   - config/staging.yaml
+#   - config/production.yaml
+#
+# To use this configuration:
+#   1. Copy this file to config/config.yaml
+#   2. Set environment variables in .env (see .env.example)
+#   3. Override settings in environment-specific configs if needed
+# ============================================================================
+
+# ============================================================================
+# Core Settings
+# ============================================================================
+trading_mode: paper  # paper, live, backtest
+risk_level: moderate  # conservative, moderate, aggressive
+
+# Trading symbols
+symbols:
+  - BTC/USDT
+  - ETH/USDT
+  - BNB/USDT
+  - SOL/USDT
+  - ADA/USDT
+
+# Market data update interval (seconds)
+update_interval_seconds: 60
+
+# Enable file logging
+enable_logging: true
+log_file_path: logs/graphwiz_trader.log
+
+# ============================================================================
+# Exchange Configuration
+# ============================================================================
+exchanges:
+  - name: binance
+    enabled: true
+    test_mode: true  # Use testnet for paper trading
+    rate_limit: 1200  # Requests per minute
+    timeout: 30  # Seconds
+    # API credentials loaded from environment:
+    # EXCHANGE_API_KEY_BINANCE
+    # EXCHANGE_API_SECRET_BINANCE
+
+  - name: coinbase
+    enabled: false
+    test_mode: true
+    rate_limit: 600
+    timeout: 30
+
+  - name: kraken
+    enabled: false
+    test_mode: true
+    rate_limit: 600
+    timeout: 30
+
+# ============================================================================
+# Risk Management
+# ============================================================================
+risk:
+  # Position sizing
+  max_position_size_pct: 0.10  # 10% of portfolio max
+  risk_per_trade: 0.01  # 1% risk per trade (Kelly criterion)
+
+  # Loss limits
+  max_daily_loss_pct: 0.05  # 5% daily loss limit
+  max_drawdown_pct: 0.20  # 20% max drawdown
+
+  # Trade management
+  stop_loss_pct: 0.02  # 2% stop loss
+  take_profit_pct: 0.05  # 5% take profit
+
+  # Correlation
+  max_correlation_exposure: 0.30  # 30% max in correlated assets
+
+  # Circuit breaker
+  enable_circuit_breaker: true
+
+# ============================================================================
+# Knowledge Graph (Neo4j)
+# ============================================================================
+knowledge_graph:
+  # Loaded from environment if not specified:
+  # NEO4J_URI, NEO4J_USERNAME, NEO4J_PASSWORD
+  uri: bolt://localhost:7687
+  username: neo4j
+  password: ${NEO4J_PASSWORD}  # Loaded from environment
+  database: neo4j
+
+  # Connection settings
+  max_connection_lifetime: 3600  # 1 hour
+  max_connection_pool_size: 50
+  connection_acquisition_timeout: 60  # seconds
+
+# ============================================================================
+# AI Agents
+# ============================================================================
+agents:
+  enabled: true
+  provider: openai  # openai, anthropic, cohere
+  model: gpt-4
+  temperature: 0.7
+  max_tokens: 2000
+  timeout: 30
+  max_retries: 3
+  consensus_threshold: 0.7  # 70% agreement required
+
+# ============================================================================
+# Backtesting (only used when trading_mode: backtest)
+# ============================================================================
+backtest:
+  initial_capital: 100000.0
+  commission_pct: 0.001  # 0.1% per trade
+  slippage_pct: 0.0005  # 0.05% per trade
+  data_start_date: "2023-01-01"
+  data_end_date: "2024-01-01"
+
+# ============================================================================
+# Monitoring & Alerting
+# ============================================================================
+monitoring:
+  enabled: true
+  log_level: INFO  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  metrics_port: 9090
+  dashboard_port: 8050
+
+  # Slack alerts
+  enable_slack_alerts: false
+  slack_webhook_url: ${SLACK_WEBHOOK_URL}
+
+  # Email alerts
+  enable_email_alerts: false
+  email_recipients:
+    - trader@example.com
+
+# ============================================================================
+# Environment-Specific Overrides
+# ============================================================================
+environments:
+  development:
+    trading_mode: paper
+    monitoring:
+      log_level: DEBUG
+    exchanges:
+      - name: binance
+        test_mode: true
+
+  staging:
+    trading_mode: paper
+    monitoring:
+      log_level: INFO
+    exchanges:
+      - name: binance
+        test_mode: true
+
+  production:
+    trading_mode: live
+    monitoring:
+      log_level: WARNING
+      enable_slack_alerts: true
+      enable_email_alerts: true
+    exchanges:
+      - name: binance
+        test_mode: false

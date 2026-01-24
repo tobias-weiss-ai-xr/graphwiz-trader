@@ -1,0 +1,445 @@
+# ============================================================================
+# GraphWiz Trader - Multi-Exchange Live Trading Configuration (Germany)
+# ============================================================================
+# Configuration supporting BOTH Kraken and One Trading (Bitpanda Pro)
+# Both are fully licensed under MiCA for German users
+#
+# Exchanges:
+# - Kraken (MiCA-licensed from August 2025)
+# - One Trading/formerly Bitpanda Pro (MiCA-licensed from January 2025)
+#
+# IMPORTANT: Binance is NOT included due to lack of BaFin licensing
+# ============================================================================
+
+version: "1.1.0"
+environment: "production"
+debug: false
+
+# ============================================================================
+# Trading Configuration
+# ============================================================================
+trading:
+  mode: "live"  # LIVE TRADING WITH REAL MONEY
+  max_position_size: 0.05  # 5% of portfolio (conservative)
+  max_daily_loss: 0.03  # 3% daily loss limit
+  max_drawdown: 0.10  # 10% max drawdown
+  commission_rate: 0.0015  # 0.15% average commission
+  slippage_rate: 0.0005  # 0.05% slippage
+  order_timeout: 30  # seconds
+  enable_position_limits: true
+  enable_risk_checks: true
+  emergency_shutdown:
+    enabled: true
+    triggers:
+      - type: "max_daily_loss"
+        threshold: 0.03
+      - type: "max_drawdown"
+        threshold: 0.10
+      - type: "system_error"
+        consecutive_errors: 3
+
+# ============================================================================
+# Multi-Exchange Configuration (Germany-Compliant)
+# ============================================================================
+exchanges:
+  # Primary exchange: Kraken
+  kraken:
+    enabled: true
+    primary: true
+    api_key: "${KRAKEN_API_KEY}"
+    api_secret: "${KRAKEN_API_SECRET}"
+    testnet: false
+    rate_limit: 1200
+    sandbox: false
+    options:
+      defaultType: "spot"
+      adjustForTimeDifference: true
+      fiat_currencies: ["EUR"]
+    markets:
+      - "BTC/EUR"
+      - "ETH/EUR"
+      - "SOL/EUR"
+      - "ADA/EUR"
+      - "DOT/EUR"
+    features:
+      fetchOrderBook: true
+      fetchTrades: true
+      fetchTicker: true
+      fetchBalance: true
+      fetchOpenOrders: true
+      fetchClosedOrders: true
+      fetchMyTrades: true
+    trading_fees:
+      maker: 0.0016  # 0.16%
+      taker: 0.0026  # 0.26%
+    region: "EU"
+    license: "MiCA"
+    license_status: "Active August 2025"
+    regulator: "BaFin"
+    notes: "Primary exchange - well-established EUR markets"
+
+  # Secondary exchange: One Trading (Bitpanda Pro)
+  onetrading:
+    enabled: true
+    primary: false
+    api_key: "${ONETRADING_API_KEY}"
+    api_secret: "${ONETRADING_API_SECRET}"
+    testnet: false
+    rate_limit: 1200
+    sandbox: false
+    options:
+      defaultType: "spot"
+      fiat_currencies: ["EUR"]
+    markets:
+      - "BTC/EUR"
+      - "ETH/EUR"
+      - "BEST/EUR"  # Native token
+      - "SOL/EUR"
+      - "ADA/EUR"
+    features:
+      fetchOrderBook: true
+      fetchTrades: true
+      fetchTicker: true
+      fetchBalance: true
+      fetchOpenOrders: true
+      fetchClosedOrders: true
+    trading_fees:
+      maker: 0.0010  # 0.10%
+      taker: 0.0015  # 0.15%
+    region: "EU"
+    license: "MiCA"
+    license_status: "Active January 2025"
+    regulator: "BaFin"
+    former_name: "Bitpanda Pro"
+    notes: "Austrian-based EU exchange, lower fees"
+    url: "https://www.onetrading.com"
+
+# Exchange selection strategy
+exchange_selection:
+  strategy: "primary"  # Options: primary, lowest_fees, diversify
+  fallback_enabled: true  # Use secondary if primary fails
+  max_consecutive_errors: 3
+  error_cooldown: 300  # 5 minutes
+
+# IMPORTANT: Binance is NOT included
+# Binance's crypto custody license application was DENIED by BaFin in 2023
+# Do not use Binance for live trading in Germany
+
+# ============================================================================
+# Risk Management - Conservative for Live Trading
+# ============================================================================
+risk:
+  enabled: true
+  max_position_size: 500  # EUR (start small)
+  max_portfolio_exposure: 0.20  # 20% of total capital
+  max_correlation_exposure: 0.15  # 15% in correlated assets
+  per_exchange_limit: 0.50  # Max 50% on single exchange
+
+  stop_loss:
+    enabled: true
+    default_percent: 0.02  # 2% stop loss
+    trailing_percent: 0.01  # 1% trailing stop
+
+  take_profit:
+    enabled: true
+    default_percent: 0.04  # 4% take profit
+    partial_targets:
+      - percent: 0.5  # Take 50% profit at 2.5%
+        target: 0.025
+      - percent: 1.0  # Take remaining at 4%
+        target: 0.04
+
+  max_daily_trades: 3  # Limit trades per day
+  cooldown_period: 3600  # Wait 1 hour between trades
+  require_confirmation: true  # Manual confirmation for trades
+
+  # Multi-exchange risk controls
+  max_total_exposure: 0.30  # Max 30% across all exchanges
+  exchange_balance_minimum: 100  # Minimum €100 per exchange
+
+# ============================================================================
+# Neo4j Knowledge Graph
+# ============================================================================
+neo4j:
+  uri: "${NEO4J_URI:-bolt://localhost:7687}"
+  username: "${NEO4J_USERNAME:-neo4j}"
+  password: "${NEO4J_PASSWORD}"
+  database: "neo4j"
+  max_connection_lifetime: 3600
+  max_connection_pool_size: 50
+  connection_acquisition_timeout: 60
+  connection_timeout: 30
+
+# ============================================================================
+# AI/LLM Configuration
+# ============================================================================
+ai:
+  provider: "${AI_PROVIDER:-openai}"
+  model: "${AI_MODEL:-gpt-4}"
+  temperature: 0.3  # Lower for live trading
+  max_tokens: 2000
+  timeout: 30
+  max_retries: 3
+  cache_enabled: true
+  cache_ttl: 300  # 5 minutes
+
+  openai:
+    api_key: "${OPENAI_API_KEY}"
+    organization: "${OPENAI_ORG_ID:-}"
+    base_url: "${OPENAI_BASE_URL:-https://api.openai.com/v1}"
+
+  anthropic:
+    api_key: "${ANTHROPIC_API_KEY}"
+    base_url: "${ANTHROPIC_BASE_URL:-https://api.anthropic.com}"
+
+# ============================================================================
+# Agent Configuration
+# ============================================================================
+agents:
+  enabled: true
+  orchestrator:
+    mode: "hierarchical"
+    max_parallel_agents: 3
+    timeout: 180
+    retry_failed_tasks: true
+    max_retries: 2
+
+  trading_agent:
+    model: "${AI_MODEL:-gpt-4}"
+    temperature: 0.2  # Very low for live trading
+    max_iterations: 5
+    timeout: 90
+    tools:
+      - "analyze_market"
+      - "calculate_indicators"
+      - "evaluate_risk"
+      - "generate_signals"
+
+  risk_agent:
+    model: "${AI_MODEL:-gpt-4}"
+    temperature: 0.1  # Minimal for risk assessment
+    max_iterations: 3
+    timeout: 30
+    tools:
+      - "calculate_var"
+      - "assess_drawdown"
+      - "check_limits"
+      - "generate_alerts"
+
+# ============================================================================
+# Strategy Configuration
+# ============================================================================
+strategy:
+  name: "rsi_mean_reversion"
+  parameters:
+    oversold: 25
+    overbought: 75
+    rsi_period: 14
+    confirmation_periods: 2
+    volume_confirm: true
+  filters:
+    min_volume_24h: 1000000  # 1M EUR minimum
+    min_price: 10
+    max_spread_pct: 0.5
+
+# ============================================================================
+# Monitoring and Alerting
+# ============================================================================
+monitoring:
+  enabled: true
+  metrics:
+    enabled: true
+    port: 9090
+    path: "/metrics"
+    collect_interval: 15
+    labels:
+      service: "graphwiz-trader"
+      environment: "production"
+      region: "germany"
+
+  health:
+    enabled: true
+    port: 8080
+    path: "/health"
+    checks:
+      - name: "kraken_connection"
+        interval: 30
+        timeout: 5
+      - name: "onetrading_connection"
+        interval: 30
+        timeout: 5
+      - name: "trading_engine"
+        interval: 10
+        timeout: 5
+      - name: "memory_usage"
+        interval: 60
+        threshold_percent: 85
+
+  alerts:
+    enabled: true
+    channels:
+      - type: "log"
+        level: "WARNING"
+      - type: "webhook"
+        url: "${ALERT_WEBHOOK_URL:-}"
+        enabled: false
+    rules:
+      - name: "trade_executed"
+        condition: "trade_count > 0"
+        level: "INFO"
+      - name: "loss_threshold"
+        condition: "daily_pnl < -100"
+        level: "WARNING"
+      - name: "critical_loss"
+        condition: "daily_pnl < -300"
+        level: "CRITICAL"
+      - name: "exchange_error"
+        condition: "exchange_error_rate > 5"
+        level: "ERROR"
+
+# ============================================================================
+# Logging
+# ============================================================================
+logging:
+  level: "INFO"
+  format: "json"
+  output:
+    - type: "file"
+      path: "/opt/git/graphwiz-trader/logs/live_trading.log"
+      rotation: "10 MB"
+      retention: "90 days"
+      level: "INFO"
+    - type: "file"
+      path: "/opt/git/graphwiz-trader/logs/trades.log"
+      rotation: "10 MB"
+      retention: "365 days"
+      level: "INFO"
+    - type: "file"
+      path: "/opt/git/graphwiz-trader/logs/errors.log"
+      rotation: "10 MB"
+      retention: "365 days"
+      level: "ERROR"
+  console:
+    enabled: true
+  structured: true
+  include_timestamp: true
+  include_hostname: true
+  include_pid: true
+
+# ============================================================================
+# Data Configuration
+# ============================================================================
+data:
+  base_path: "/opt/git/graphwiz-trader/data"
+  cache_path: "/tmp/graphwiz_cache"
+  log_path: "/opt/git/graphwiz-trader/logs"
+  backup:
+    enabled: true
+    interval: 3600
+    retention_days: 90
+    path: "/opt/git/graphwiz-trader/backups/live_trading"
+
+# ============================================================================
+# Security
+# ============================================================================
+security:
+  enable_auth: true
+  jwt_secret: "${JWT_SECRET}"
+  jwt_expiry: 3600
+  api_key_required: true
+  rate_limiting:
+    enabled: true
+    requests_per_minute: 30
+    burst: 5
+  encryption:
+    enabled: true
+    algorithm: "AES-256-GCM"
+    key_path: "/opt/git/graphwiz-trader/config/encryption.key"
+
+# ============================================================================
+# Live Trading Settings
+# ============================================================================
+live_trading:
+  max_position_eur: 500
+  max_daily_loss_eur: 150
+  max_daily_trades: 3
+  require_confirmation: true
+  cooldown_seconds: 3600
+
+  trading_hours:
+    enabled: true
+    timezone: "Europe/Berlin"
+    start: "00:00"
+    end: "23:59"
+    weekends: true
+
+  emergency_stop:
+    enabled: true
+    hotkey: "ctrl+c"
+    close_positions_on_stop: false
+
+# ============================================================================
+# Multi-Exchange Specific Settings
+# ============================================================================
+multi_exchange:
+  enabled: true
+
+  # Balance distribution
+  distribution_strategy: "manual"  # Options: manual, equal, performance
+  manual_distribution:
+    kraken: 0.60  # 60% on Kraken
+    onetrading: 0.40  # 40% on One Trading
+
+  # Order routing
+  order_routing:
+    strategy: "primary"  # Options: primary, lowest_fees, split
+    min_order_size: 10  # Minimum EUR per exchange
+    split_threshold: 500  # Split orders above €500
+
+  # Fee optimization
+  fee_optimization:
+    enabled: true
+    prefer_market_maker: true
+    threshold_savings: 0.001  # 0.1% minimum savings to switch
+
+# ============================================================================
+# Performance
+# ============================================================================
+performance:
+  thread_pool_size: 4
+  async_io: true
+  connection_pooling: true
+  query_cache_size: 500
+  enable_profiling: false
+  optimization_level: "O2"
+
+# ============================================================================
+# Development Settings
+# ============================================================================
+development:
+  debug_mode: false
+  profiling: false
+  query_logging: false
+  slow_query_threshold: 1000
+  mock_mode: false
+
+# ============================================================================
+# Disclaimer
+# ============================================================================
+disclaimer: |
+  ⚠️  WARNING: LIVE TRADING WITH REAL MONEY ⚠️
+
+  This configuration will execute REAL trades with REAL money on:
+  - Kraken (BaFin-licensed, August 2025)
+  - One Trading/formerly Bitpanda Pro (BaFin-licensed, January 2025)
+
+  IMPORTANT NOTES:
+  - Start with small amounts (€500 or less)
+  - Monitor trades closely
+  - Understand the risks
+  - Keep security credentials safe
+  - Never share API keys
+  - Use withdrawal restrictions on exchanges
+
+  Past performance does not guarantee future results.
+  Trade at your own risk.

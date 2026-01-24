@@ -1,0 +1,160 @@
+# AI Trading Agents Configuration
+# This file demonstrates configuration options for all trading agents
+
+# Agent Orchestrator Settings
+orchestrator:
+  # Consensus method: majority_vote, weighted_vote, confidence_weighted, best_performer, unanimous
+  consensus_method: "weighted_vote"
+
+  # Conflict resolution: high_confidence, best_performer, risk_averse, majority, manual
+  conflict_resolution: "high_confidence"
+
+  # Minimum confidence threshold for taking action
+  min_confidence_threshold: 0.6
+
+  # Enable disagreement tracking
+  enable_disagreement_tracking: true
+
+# Individual Agent Configuration
+agents:
+  # Technical Analysis Agent
+  # Analyzes RSI, MACD, Bollinger Bands, EMA indicators
+  technical:
+    enabled: true
+    model: "gpt-4"
+    temperature: 0.3
+    max_tokens: 1000
+    min_confidence: 0.6
+    max_confidence: 0.95
+    learning_rate: 0.1
+
+  # Sentiment Analysis Agent
+  # Analyzes news and social media sentiment
+  sentiment:
+    enabled: true
+    model: "gpt-4"
+    temperature: 0.5
+    max_tokens: 500
+    min_confidence: 0.6
+    max_confidence: 0.95
+    learning_rate: 0.1
+
+    # Sentiment data sources
+    sources:
+      - "news"
+      - "twitter"
+      - "reddit"
+
+    # Minimum sentiment volume for analysis
+    min_volume: 50
+
+  # Risk Management Agent
+  # Monitors volatility, exposure, drawdown
+  risk:
+    enabled: true
+    model: "gpt-4"
+    temperature: 0.1
+    max_tokens: 500
+    min_confidence: 0.7
+    max_confidence: 0.95
+    learning_rate: 0.05
+
+    # Risk parameters
+    max_position_size: 0.1
+    max_volatility: 0.05
+    max_drawdown: 0.1
+
+  # Momentum Agent
+  # Trend following using ROC, ADX, volume momentum
+  momentum:
+    enabled: true
+    model: "gpt-4"
+    temperature: 0.3
+    max_tokens: 500
+    min_confidence: 0.5
+    max_confidence: 0.9
+    learning_rate: 0.1
+
+    # Momentum parameters
+    min_roc_threshold: 1.0
+    min_adx_strength: 20
+    volume_multiplier: 1.5
+
+  # Mean Reversion Agent
+  # Statistical arbitrage using z-score, Bollinger Bands, Stochastic
+  mean_reversion:
+    enabled: true
+    model: "gpt-4"
+    temperature: 0.3
+    max_tokens: 500
+    min_confidence: 0.5
+    max_confidence: 0.9
+    learning_rate: 0.1
+
+    # Mean reversion parameters
+    zscore_threshold: 1.5
+    bb_position_threshold: 0.9
+    stochastic_overbought: 80
+    stochastic_oversold: 20
+
+# Agent Performance Weights
+# Initial weights for agents in weighted voting
+# These will be adjusted automatically based on performance
+agent_weights:
+  technical: 1.0
+  sentiment: 1.0
+  risk: 1.2  # Higher weight for risk agent
+  momentum: 1.0
+  mean_reversion: 1.0
+
+# Performance Tracking
+performance:
+  # Track recent performance window (decisions)
+  recent_window: 20
+
+  # Performance history limit (days)
+  history_days: 90
+
+  # Minimum decisions before weight adjustment
+  min_decisions_for_weight: 10
+
+  # Weight adjustment rate
+  weight_adjustment_rate: 0.1
+
+# Decision History
+decision_history:
+  # Maximum decisions to store in memory
+  max_decisions: 10000
+
+  # Export decisions to file
+  export_enabled: true
+  export_path: "data/decisions/"
+
+  # Export format: json, csv
+  export_format: "json"
+
+# Agent Communication
+communication:
+  # Enable agent coordination
+  enable_coordination: true
+
+  # Communication timeout (seconds)
+  timeout: 30
+
+  # Retry failed agents
+  retry_failed: true
+  max_retries: 2
+
+# Logging
+logging:
+  # Agent decision logging
+  log_decisions: true
+
+  # Agent performance logging
+  log_performance: true
+
+  # Log interval (seconds)
+  log_interval: 60
+
+  # Detailed logging
+  verbose: false

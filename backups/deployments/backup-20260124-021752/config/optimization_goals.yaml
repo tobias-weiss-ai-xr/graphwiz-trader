@@ -1,0 +1,254 @@
+# Optimization Goals for GraphWiz Trader
+# These goals guide the SAIA agent in optimizing the trading system
+
+goals:
+  - name: sharpe_ratio
+    category: performance
+    description: Maximize risk-adjusted returns using Sharpe ratio
+    target_value: 2.5
+    current_value: 1.5
+    unit: ratio
+    metadata:
+      priority: high
+      calculation_period: daily
+      risk_free_rate: 0.02
+      min_acceptable: 2.0
+      target: 2.5
+      stretch_goal: 3.0
+
+  - name: max_drawdown
+    category: risk
+    description: Minimize maximum drawdown to protect capital
+    target_value: 0.08  # 8%
+    current_value: 0.15  # 15%
+    unit: ratio
+    metadata:
+      priority: critical
+      calculation_period: since_inception
+      max_acceptable: 0.10  # 10%
+      target: 0.08
+      stretch_goal: 0.05  # 5%
+
+  - name: win_rate
+    category: performance
+    description: Maximize percentage of profitable trades
+    target_value: 0.65  # 65%
+    current_value: 0.55  # 55%
+    unit: ratio
+    metadata:
+      priority: high
+      min_acceptable: 0.60  # 60%
+      target: 0.65
+      stretch_goal: 0.70
+
+  - name: profit_factor
+    category: performance
+    description: Maximize ratio of gross profit to gross loss
+    target_value: 2.5
+    current_value: 1.8
+    unit: ratio
+    metadata:
+      priority: high
+      min_acceptable: 2.0
+      target: 2.5
+      stretch_goal: 3.0
+
+  - name: trading_frequency_cost
+    category: cost
+    description: Minimize trading costs as percentage of portfolio
+    target_value: 0.01  # 1%
+    current_value: 0.02  # 2%
+    unit: ratio
+    metadata:
+      priority: medium
+      max_acceptable: 0.015  # 1.5%
+      target: 0.01
+      stretch_goal: 0.005  # 0.5%
+
+  - name: sortino_ratio
+    category: performance
+    description: Maximize downside risk-adjusted returns
+    target_value: 3.0
+    current_value: 2.0
+    unit: ratio
+    metadata:
+      priority: high
+      min_acceptable: 2.5
+      target: 3.0
+      stretch_goal: 4.0
+
+  - name: monthly_return
+    category: performance
+    description: Achieve consistent monthly returns
+    target_value: 0.05  # 5%
+    current_value: 0.03  # 3%
+    unit: ratio
+    metadata:
+      priority: medium
+      min_acceptable: 0.03  # 3%
+      target: 0.05
+      stretch_goal: 0.08  # 8%
+
+  - name: agent_accuracy
+    category: quality
+    description: Improve agent decision accuracy
+    target_value: 0.70  # 70%
+    current_value: 0.58  # 58%
+    unit: ratio
+    metadata:
+      priority: high
+      min_acceptable: 0.65  # 65%
+      target: 0.70
+      stretch_goal: 0.80
+
+  - name: portfolio_diversification
+    category: risk
+    description: Maintain optimal portfolio diversification
+    target_value: 0.70  # 70% diversification score
+    current_value: 0.50  # 50%
+    unit: score
+    metadata:
+      priority: medium
+      min_acceptable: 0.60
+      target: 0.70
+      stretch_goal: 0.80
+
+  - name: signal_quality
+    category: quality
+    description: Improve quality of trading signals
+    target_value: 0.75  # 75%
+    current_value: 0.60  # 60%
+    unit: score
+    metadata:
+      priority: high
+      min_acceptable: 0.70
+      target: 0.75
+      stretch_goal: 0.85
+
+# Constraints that must always be satisfied
+constraints:
+  risk_limits:
+    max_position_size: 0.20  # 20% of portfolio max per position
+    max_daily_loss: 0.05  # 5% max daily loss
+    max_portfolio_risk: 0.15  # 15% max portfolio risk
+    min_liquidity_usd: 1000000  # $1M minimum daily volume
+    max_correlation_exposure: 0.60  # 60% max in correlated assets
+
+  operational:
+    max_daily_trades: 100
+    max_open_positions: 10
+    min_trade_amount_usd: 10
+    max_slippage_percent: 0.10  # 0.1%
+
+  optimization:
+    require_paper_trading: true
+    paper_trading_duration_hours: 24
+    min_paper_trading_trades: 50
+    require_approval: true
+    auto_rollback_on_failure: true
+    max_concurrent_optimizations: 3
+
+# Optimization priorities
+priorities:
+  tier_1:
+    - sharpe_ratio
+    - max_drawdown
+    - win_rate
+
+  tier_2:
+    - profit_factor
+    - agent_accuracy
+    - signal_quality
+
+  tier_3:
+    - trading_frequency_cost
+    - monthly_return
+    - portfolio_diversification
+
+# Market regimes to optimize for
+market_regimes:
+  bull_market:
+    description: Upward trending market
+    priorities:
+      - maximize_profit
+      - minimize_opportunity_cost
+
+  bear_market:
+    description: Downward trending market
+    priorities:
+      - preserve_capital
+      - minimize_drawdown
+      - short_opportunities
+
+  sideways_market:
+    description: Range-bound market
+    priorities:
+      - mean_reversion
+      - range_trading
+      - minimize_whipsaw
+
+  high_volatility:
+    description: High volatility conditions
+    priorities:
+      - reduce_position_size
+      - tighten_stops
+      - increase_cash_buffer
+
+  low_volatility:
+    description: Low volatility conditions
+    priorities:
+      - increase_position_size
+      - trend_following
+      - momentum_strategies
+
+# Optimization schedule
+schedule:
+  strategy_parameters:
+    frequency: daily
+    time_window: "02:00-04:00 UTC"
+    enabled: true
+
+  risk_limits:
+    frequency: weekly
+    day: sunday
+    time_window: "00:00-02:00 UTC"
+    enabled: true
+
+  agent_weights:
+    frequency: daily
+    time_window: "03:00-05:00 UTC"
+    enabled: true
+
+  trading_pairs:
+    frequency: weekly
+    day: saturday
+    time_window: "00:00-02:00 UTC"
+    enabled: true
+
+  indicators:
+    frequency: monthly
+    day: 1
+    time_window: "00:00-04:00 UTC"
+    enabled: true
+
+# Performance targets by timeframe
+timeframe_targets:
+  daily:
+    max_drawdown: 0.02  # 2%
+    target_return: 0.002  # 0.2%
+
+  weekly:
+    max_drawdown: 0.05  # 5%
+    target_return: 0.01  # 1%
+
+  monthly:
+    max_drawdown: 0.10  # 10%
+    target_return: 0.05  # 5%
+
+  quarterly:
+    max_drawdown: 0.15  # 15%
+    target_return: 0.15  # 15%
+
+  annually:
+    max_drawdown: 0.20  # 20%
+    target_return: 0.50  # 50%

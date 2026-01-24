@@ -1,0 +1,132 @@
+# ============================================================================
+# Alert System Configuration
+# ============================================================================
+# Configure automated alerts for live trading events
+
+alerts:
+  enabled: true
+
+  # Alert Channels
+  channels:
+    # Console logging (always enabled)
+    console:
+      enabled: true
+
+    # Email alerts
+    email:
+      enabled: ${ENABLE_EMAIL_ALERTS:-false}
+      from: ${ALERT_EMAIL_FROM:-trader@example.com}
+      to: ${ALERT_EMAIL_RECIPIENTS:-trader@example.com}
+      smtp_host: ${SMTP_HOST:-smtp.gmail.com}
+      smtp_port: ${SMTP_PORT:-587}
+      smtp_username: ${SMTP_USERNAME:-}
+      smtp_password: ${SMTP_PASSWORD:-}
+
+    # Slack alerts
+    slack:
+      enabled: ${ENABLE_SLACK_ALERTS:-false}
+      webhook_url: ${SLACK_WEBHOOK_URL:-}
+
+    # Telegram alerts
+    telegram:
+      enabled: ${ENABLE_TELEGRAM_ALERTS:-false}
+      bot_token: ${TELEGRAM_BOT_TOKEN:-}
+      chat_id: ${TELEGRAM_CHAT_ID:-}
+
+    # Custom webhook
+    webhook:
+      enabled: ${ENABLE_WEBHOOK_ALERTS:-false}
+      url: ${WEBHOOK_URL:-}
+      headers:
+        Authorization: "Bearer YOUR_TOKEN"
+        Content-Type: "application/json"
+
+  # Alert Rules
+  rules:
+    # Trade Execution Alerts
+    trade_alerts:
+      enabled: true
+      alert_on_execution: true
+      alert_on_fill: true
+      alert_on_cancel: true
+      alert_on_failure: true
+      min_trade_value: 100  # Only alert for trades > €100
+
+    # Profit & Loss Alerts
+    profit_loss_alerts:
+      enabled: true
+      profit_target: 0.04  # Alert at 4% profit
+      stop_loss: 0.02  # Alert at 2% loss
+      daily_loss_limit: 150  # Alert at €150 daily loss
+      daily_profit_record: true  # Alert when daily profit record
+
+    # Price Alerts
+    price_alerts:
+      enabled: true
+      threshold_change_pct: 0.05  # Alert on 5% price movement
+      alert_on_targets: true
+
+    # System Health Alerts
+    system_alerts:
+      enabled: true
+      exchange_disconnected: true
+      api_errors: true
+      rate_limits: true
+      consecutive_errors_threshold: 3
+      high_error_rate_threshold: 5  # errors per minute
+
+    # Risk Management Alerts
+    risk_alerts:
+      enabled: true
+      position_size_warning: 0.90  # Warn at 90% of max
+      drawdown_warning: 0.08  # Warn at 8% drawdown
+      daily_trades_limit: true
+      margin_call_warning: true
+
+    # Summary Alerts
+    summary_alerts:
+      enabled: true
+      daily_summary: true
+      daily_summary_time: "23:59"  # Send at end of day
+      weekly_summary: true
+      weekly_summary_day: "Friday"  # Send on Friday evening
+
+  # Alert Throttling (prevent spam)
+  throttling:
+    enabled: true
+    max_alerts_per_minute: 10
+    max_alerts_per_hour: 100
+    cooldown_seconds: 30  # Minimum time between similar alerts
+
+  # Priority Filters (only send alerts >= priority)
+  priority_filters:
+    console: info  # All alerts to console
+    email: warning  # Warnings and errors to email
+    slack: warning  # Warnings and errors to Slack
+    telegram: warning  # Warnings and errors to Telegram
+    webhook: error  # Only errors to webhook
+
+  # Alert Suppression (don't send these alerts)
+  suppress:
+    # Suppress routine info alerts during trading hours
+    - type: market_data_update
+      during_hours: true
+
+    # Suppress successful connections (only alert on failures)
+    - type: exchange_connected
+
+# ============================================================================
+# Alert Templates
+# ============================================================================
+templates:
+#   trade_executed:
+#     title: "✅ Trade Executed: {side} {symbol}"
+#     message: "Successfully {side_lower} {amount} {symbol} @ {price}"
+#
+#   profit_target:
+#     title: "🎯 Profit Target Hit: {symbol}"
+#     message: "Position has hit {profit_pct}% profit target"
+#
+#   daily_loss_limit:
+#     title: "⚠️ Daily Loss Limit Reached"
+#     message: "Daily loss of €{current_loss} has reached limit of €{limit}"

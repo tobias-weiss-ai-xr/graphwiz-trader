@@ -1,0 +1,208 @@
+# Paper Trading Configuration
+# Safe simulation mode for testing strategies without real money
+
+version: "0.1.0"
+mode: "paper_trading"
+
+# Trading Engine Settings
+trading:
+  execution_type: "simulated"
+  initial_capital: 100000
+  max_position_size: 5000
+  risk_per_trade: 0.01  # 1% risk per trade
+  max_daily_loss: 500   # Stop trading after $500 daily loss
+  max_positions: 10
+  commission_rate: 0.001  # 0.1% commission
+
+  # Order execution simulation
+  slippage_model: 0.0005  # 0.05% average slippage
+  latency_model: 0.1      # 100ms average execution delay
+  fill_ratio: 0.95        # 95% fill rate
+
+  # Paper trading specific
+  paper_trading:
+    track_real_time: true
+    save_trades: true
+    calculate_realistic_fees: true
+    simulate_partial_fills: true
+
+# Knowledge Graph
+neo4j:
+  uri: bolt://localhost:7687
+  username: neo4j
+  password: your_password
+  database: neo4j
+  connection_pool_size: 50
+
+  # Feature flags
+  enable_market_context: true
+  enable_pattern_recognition: true
+  enable_performance_tracking: true
+  cache_ttl: 300
+
+# Exchanges (using testnet/sandbox)
+exchanges:
+  binance:
+    enabled: true
+    api_key: your_testnet_api_key
+    api_secret: your_testnet_api_secret
+    sandbox: true  # Use testnet
+    test_mode: true
+
+    # Trading pairs
+    symbols:
+      - BTC/USDT
+      - ETH/USDT
+      - SOL/USDT
+      - BNB/USDT
+
+    # Rate limiting
+    rate_limit:
+      requests_per_second: 5
+      orders_per_second: 2
+
+  kraken:
+    enabled: false
+    test_mode: true
+
+# AI Agents Configuration
+agents:
+  # Technical Analysis Agent
+  technical:
+    enabled: true
+    model: "gpt-4"
+    temperature: 0.3
+    max_tokens: 500
+    timeout: 10
+
+    # Technical indicators to use
+    indicators:
+      - rsi
+      - macd
+      - sma_cross
+      - bollinger_bands
+      - volume_profile
+
+    # Analysis parameters
+    lookback_periods: [20, 50, 200]
+    confidence_threshold: 0.7
+
+  # Sentiment Analysis Agent
+  sentiment:
+    enabled: true
+    model: "gpt-3.5-turbo"
+    temperature: 0.5
+    timeout: 8
+
+    # Data sources
+    sources:
+      - news
+      - social_media
+      - on_chain_metrics
+
+    # Weight in decision-making
+    weight: 0.3
+
+  # Risk Management Agent
+  risk:
+    enabled: true
+    model: "gpt-4"
+    temperature: 0.1
+
+    # Risk parameters
+    max_drawdown: 0.10
+    position_sizing_method: "kelly"
+    correlation_threshold: 0.7
+
+# Risk Management
+risk:
+  # Position limits
+  max_position_size: 5000
+  max_positions_per_symbol: 1
+  max_total_positions: 10
+
+  # Stop loss / Take profit
+  default_stop_loss_pct: 0.02
+  default_take_profit_pct: 0.06
+  trailing_stop_enabled: true
+  trailing_distance_pct: 0.03
+
+  # Portfolio risk
+  max_correlation_exposure: 0.6
+  max_sector_exposure: 0.4
+  var_confidence: 0.95
+  var_days: 1
+
+  # Daily limits
+  max_daily_trades: 20
+  max_daily_loss: 500
+  daily_loss_stop_trading: true
+
+  # Drawdown limits
+  max_drawdown_pct: 0.10
+  reduce_on_drawdown: true
+  drawdown_reduction_pct: 0.5
+
+# Monitoring and Alerts
+monitoring:
+  enabled: true
+  log_level: "INFO"
+
+  # Metrics to track
+  metrics:
+    - pnl
+    - positions
+    - trades
+    - agent_decisions
+    - risk_metrics
+    - system_health
+
+  # Alert channels
+  alerts:
+    slack:
+      enabled: false
+      webhook_url: your_webhook_url
+
+    email:
+      enabled: false
+      smtp_server: smtp.gmail.com
+      smtp_port: 587
+      username: your_email@gmail.com
+      recipients:
+        - trader@example.com
+
+  # Performance dashboard
+  dashboard:
+    enabled: true
+    port: 8050
+    update_interval: 5
+
+# Backtesting Configuration
+backtesting:
+  data_source: "binance"
+  initial_capital: 100000
+  commission: 0.001
+  slippage: 0.0005
+
+  # Default parameters
+  default_period:
+    start: "2023-01-01"
+    end: "2024-01-01"
+
+  # Optimization
+  optimization_method: "grid_search"
+  cv_folds: 5
+  metric: "sharpe_ratio"
+
+# Logging
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "logs/paper_trading.log"
+  rotation: "10 MB"
+  retention: "30 days"
+
+  # Structured logging
+  structured: true
+  include_timestamp: true
+  include_trace_id: true

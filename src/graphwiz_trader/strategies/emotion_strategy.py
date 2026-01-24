@@ -159,6 +159,27 @@ class EmotionBasedStrategy:
         if len(history) < periods * 2:
             return 0.0
 
+    def get_market_emotion_summary(self, symbol: str) -> Dict[str, Any]:
+        """Generate market emotion summary from historical data."""
+        if symbol not in self.emotion_history or not self.emotion_history[symbol]:
+            return {'dominant_emotion': 'neutral', 'intensity': 0.0}
+        
+        # Aggregate emotion profiles
+        profiles = [p for _, p in self.emotion_history[symbol]]
+        dominant_emotion = max(
+            set(p.dominant_emotion for p in profiles),
+            key=lambda e: sum(1 for p in profiles if p.dominant_emotion == e)
+        )
+        
+        # Calculate average intensity
+        avg_intensity = sum(p.intensity for p in profiles) / len(profiles)
+        
+        logger.info(f"{symbol} emotion summary: {dominant_emotion.value} ({avg_intensity:.2f})")
+        return {
+            'dominant_emotion': dominant_emotion.value,
+            'intensity': avg_intensity
+        }
+
         # Calculate average intensity for recent vs older periods
         recent = history[-periods:]
         older = history[-(periods * 2) : -periods]

@@ -37,7 +37,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.live-trading
-    image: graphwiz-trading:latest
+    image: graphwiz-trader:latest
     container_name: graphwiz-trading
     restart: unless-stopped
     depends_on:
@@ -99,7 +99,9 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
-      
+
+    command: python scripts/live_trade_goemotions_new.py
+
     # Security settings
     security_opt:
       - no-new-privileges:true

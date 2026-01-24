@@ -1,0 +1,17 @@
+{
+  "runtime_hours": 0.068845695,
+  "initial_capital": 10000,
+  "final_value": 10000.0,
+  "total_return": 0.0,
+  "total_return_pct": 0.0,
+  "total_pnl": 0,
+  "total_trades": 0,
+  "buy_orders": 0,
+  "sell_orders": 0,
+  "win_rate": 0,
+  "winning_trades": 0,
+  "max_drawdown": 0.0,
+  "current_position": 0.0,
+  "current_price": 87576.71,
+  "in_grid_range": true
+}

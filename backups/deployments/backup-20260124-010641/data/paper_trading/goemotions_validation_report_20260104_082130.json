@@ -1,0 +1,30 @@
+{
+  "validation_summary": {
+    "start_time": "2026-01-04T08:11:25.315211",
+    "end_time": "2026-01-04T08:21:30.702558",
+    "duration_hours": 0.16816315527777775,
+    "target_duration_hours": 1,
+    "completion_pct": 16.816315527777775
+  },
+  "portfolio": {
+    "initial_capital_eur": 10000.0,
+    "final_value_eur": 10000.0,
+    "total_return_eur": 0.0,
+    "total_return_pct": 0.0
+  },
+  "trading": {
+    "total_trades": 0,
+    "winning_trades": 0,
+    "losing_trades": 0,
+    "win_rate_pct": 0.0
+  },
+  "metrics": {
+    "max_drawdown_pct": 0.0,
+    "sharpe_ratio": 0.0,
+    "final_portfolio": {
+      "EUR": 10000.0,
+      "BTC": 0.0
+    }
+  },
+  "status": "MODERATE - Continue validation"
+}

@@ -1,0 +1,32 @@
+{
+  "validation_summary": {
+    "start_time": "2026-01-03T17:22:25.682910",
+    "end_time": "2026-01-04T17:25:28.479837",
+    "duration_hours": 24.050974274166666,
+    "target_duration_hours": 24,
+    "completion_pct": 100.21239280902779
+  },
+  "portfolio": {
+    "initial_capital": 100000,
+    "final_value": 99808.9187633642,
+    "total_return_usd": -191.08123663580045,
+    "total_return_pct": -0.20333870874966667
+  },
+  "trading": {
+    "total_trades": 182,
+    "winning_trades": 159,
+    "losing_trades": 0,
+    "win_rate_pct": 100.0
+  },
+  "metrics": {
+    "max_drawdown_pct": 0.6742934318528261,
+    "sharpe_ratio": -0.31938828339194636,
+    "final_portfolio": {
+      "USDT": 1330.5020357426438,
+      "BTC": 0.0,
+      "ETH": 31.429415676541673,
+      "SOL": 0.0
+    }
+  },
+  "status": "POOR - Not ready for live trading"
+}

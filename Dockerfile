@@ -14,13 +14,14 @@ LABEL description="GraphWiz Trader - AI-powered trading system with knowledge gr
 WORKDIR /build
 
 # Install build dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    g++ \
-    make \
-    libc-dev \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+    RUN apt-get update && apt-get install -y --no-install-recommends \
+        gcc \
+        g++ \
+        make \
+        libc-dev \
+        git \
+        && rm -rf /var/lib/apt/lists/* \
+        && apt-get clean
 
 # Copy requirements files
 COPY requirements.txt requirements-backtesting.txt ./

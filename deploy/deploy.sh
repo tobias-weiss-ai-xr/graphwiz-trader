@@ -61,6 +61,10 @@ trap 'error_exit "Deployment interrupted by signal"' INT TERM
 
 check_environment() {
     log_info "Validating deployment environment..."
+    
+    # Install system build dependencies
+    sudo apt-get update >/dev/null 2>&1
+    sudo apt-get install -y python3-dev build-essential git >/dev/null 2>&1 || log_warning "Failed to install system build tools"
 
     # Check if running as root (should not be)
     if [[ $EUID -eq 0 ]]; then
@@ -121,8 +125,13 @@ check_dependencies() {
 
     # Install/update dependencies
     log_info "Installing Python dependencies..."
-    pip install --quiet --upgrade pip || error_exit "Failed to upgrade pip"
-    pip install --quiet -r "${PROJECT_ROOT}/requirements.txt" || error_exit "Failed to install dependencies"
+    pip install --quiet --upgrade pip setuptools || error_exit "Failed to upgrade pip/setuptools"
+    # Install build dependencies first
+    # Install critical build dependencies first
+    pip install --quiet numpy==1.26.3 scipy==1.11.4 pandas==2.1.4 cython==3.0.10 || error_exit "Failed to install build dependencies"
+    
+    # Install remaining dependencies
+    pip install --quiet --no-cache-dir --no-build-isolation -r "${PROJECT_ROOT}/requirements.txt" || error_exit "Failed to install dependencies"
 
     log_success "Dependencies check passed"
 }
